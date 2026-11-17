@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 1단계 고객 18개 + 2단계 상품 30개 + 3단계 커뮤니티 12개 = 60개 테이블
+// 1단계 고객 19개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 = 65개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -101,6 +101,23 @@ Table member_home [note: '회원 주거 정보 (맞춤 상품 추천, 집들이 
   has_pet char(1) [note: 'Y/N']
   move_in_planned_at date [note: '이사 예정일 (이사 시즌 기획전 타깃)']
   updated_at datetime
+}
+
+Table member_room [note: '회원이 저장한 방 치수. "우리 집 안방에 들어가는 침대" 추천과 반입 가능 여부 확인'] {
+  room_id bigint [pk, increment]
+  member_id bigint [not null]
+  space_type varchar(20) [not null, note: 'post_image.space_type과 같은 코드 (LIVING/BEDROOM/KITCHEN/KIDS/DRESSROOM/STUDY...)']
+  name varchar(30) [note: '안방, 작은방']
+  width_mm int [not null, note: '가로 (mm)']
+  depth_mm int [not null, note: '세로 (mm)']
+  ceiling_height_mm int [note: '천장 높이 (키 큰 수납장·벙커침대 확인)']
+  door_width_mm int [note: '방문 폭. sku_package 박스가 들어갈 수 있는지 확인']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+
+  indexes {
+    member_id [name: 'ix_member_room_member']
+  }
 }
 
 Table address [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)'] {
@@ -338,6 +355,7 @@ Table category [note: '카테고리 최대 4단계 (예: 가구 > 침대 > 침�
   depth tinyint [not null, note: '1~4']
   sort_order smallint [not null]
   icon_url varchar(500) [note: '카테고리 아이콘 (가구/패브릭/조명/가전/주방/데코/수납/생활/반려동물)']
+  notice_type_id bigint [note: '이 카테고리 상품의 기본 고시 유형 (상품 등록 시 미리 선택). NULL이면 상위 카테고리 값']
   is_active char(1) [not null, default: 'Y', note: 'Y/N']
 
   indexes {
@@ -410,18 +428,49 @@ Table product [note: '상품 (옵션 공통 정보)'] {
   }
 }
 
-Table product_notice [note: '상품정보제공고시 (가구 필수 표시 항목)'] {
+Table notice_type [note: '상품정보제공고시 품목 유형. 가구·침구·주방용품·가전은 법정 표시 항목이 서로 다름'] {
+  notice_type_id bigint [pk, increment]
+  type_code varchar(30) [not null, unique, note: 'FURNITURE(가구)/BEDDING_CURTAIN(침구류·커튼)/KITCHENWARE(주방용품)/HOME_APPLIANCE(가정용 전기제품)/SEASONAL_APPLIANCE(계절가전)/ETC(기타 재화)']
+  name_ko varchar(50) [not null]
+  sort_order smallint [not null]
+}
+
+Table notice_item [note: '품목 유형별 고시 항목. 고시가 바뀌면 행 추가·비활성으로 대응 (컬럼 변경 없음)'] {
+  item_id bigint [pk, increment]
+  notice_type_id bigint [not null]
+  item_code varchar(30) [not null, note: 'MATERIAL/COMPONENTS/SIZE/MANUFACTURER/ORIGIN/KC_CERT/DELIVERY_INSTALL_FEE/RATED_VOLTAGE/POWER_CONSUMPTION/FOOD_CONTACT_MATERIAL...']
+  name_ko varchar(100) [not null, note: '화면 표시 항목명 (예: 정격전압·소비전력)']
+  guide varchar(300) [note: '작성 안내 (예: 구성품별 제조국이 다르면 모두 기재)']
+  is_required char(1) [not null, default: 'Y', note: 'Y/N']
+  is_active char(1) [not null, default: 'Y']
+  sort_order smallint [not null]
+
+  indexes {
+    (notice_type_id, item_code) [unique, name: 'uk_notice_item']
+  }
+}
+
+Table product_notice [note: '상품정보제공고시 헤더 (product와 1:1). 항목 값은 product_notice_value에 행으로 저장'] {
   product_id bigint [pk, note: 'product와 1:1']
-  kc_cert_info varchar(200) [not null, note: 'KC 인증 정보 (해당 없으면 "해당 없음")']
-  color_info varchar(200) [not null]
-  components varchar(500) [not null, note: '구성품']
-  material varchar(200) [not null, note: '주요 소재 (법정 표기 문구)']
-  manufacturer varchar(100) [not null, note: '제조자/수입자']
-  origin varchar(50) [not null, note: '제조국 (구성품별로 다르면 모두 표기)']
-  size_info varchar(200) [not null]
-  delivery_install_fee varchar(300) [not null, note: '배송·설치비용']
-  quality_assurance varchar(500) [not null, note: '품질보증기준']
-  as_contact varchar(100) [not null, note: 'A/S 책임자와 전화번호']
+  notice_type_id bigint [not null, note: '기본값 category.notice_type_id. 바꾸면 기존 값 행 삭제 후 새 항목으로 입력']
+  updated_by bigint [note: '관리자']
+  updated_at datetime
+
+  indexes {
+    notice_type_id [name: 'ix_product_notice_type']
+    updated_by [name: 'ix_product_notice_updated_by']
+  }
+}
+
+Table product_notice_value [note: '상품별 고시 항목 값. item의 유형 = product_notice.notice_type_id (앱 검증). 필수 항목이 모두 채워져야 ON_SALE 가능'] {
+  product_id bigint [not null]
+  item_id bigint [not null]
+  content varchar(1000) [not null, note: '해당 없으면 "해당 없음"']
+
+  indexes {
+    (product_id, item_id) [pk]
+    item_id [name: 'ix_pnv_item']
+  }
 }
 
 Table product_option_group [note: '옵션 그룹 (색상, 사이즈, 매트리스 포함 여부 등). 가구는 옵션 축이 상품마다 다름'] {
@@ -587,6 +636,17 @@ Table price_history [note: '가격 변경 이력 (가격 인하 알림 근거)']
   indexes {
     (product_id, changed_at) [name: 'ix_price_history_product']
     changed_by [name: 'ix_price_history_changed_by']
+  }
+}
+
+Table product_home_fit [note: '상품이 잘 맞는 주거 조건 (MD 지정). member_home·member_room과 매칭해 맞춤 추천'] {
+  product_id bigint [not null]
+  fit_type varchar(20) [not null, note: 'HOUSING(주거형태)/FAMILY(가족형태)/PET(반려동물)/SPACE(공간)']
+  fit_code varchar(20) [not null, note: 'member_home·post_image와 같은 코드 (ONE_ROOM, WITH_KIDS, PET_FRIENDLY, BEDROOM...)']
+
+  indexes {
+    (product_id, fit_type, fit_code) [pk]
+    (fit_type, fit_code) [name: 'ix_phf_fit', note: '조건으로 상품 찾기']
   }
 }
 
@@ -838,11 +898,15 @@ Table post_product_tag [note: '사진 위 상품 태그 (사진 속 가구를 �
   external_name varchar(200) [note: '스토어에 없는 제품 직접 입력 (예: 이케아 빌리 책장). CHECK product_id 또는 external_name 중 하나 필수']
   pos_x decimal(5,2) [not null, note: '사진 가로 위치 % (0~100). 해상도와 무관']
   pos_y decimal(5,2) [not null, note: '사진 세로 위치 % (0~100)']
+  purchase_verified char(1) [not null, default: 'N', note: 'Y = 글 작성자가 이 상품을 구매 확정함 ("구매 인증" 뱃지). CHECK purchase_verified = N OR product_id IS NOT NULL (외부 제품은 인증 불가)']
+  verified_order_item_id bigint [note: '인증 근거 주문 상품. 다음 단계 order_item이 생기면 FK 연결 (지금은 ID만 보관). 반품·취소되면 N으로 되돌리고 NULL']
+  verified_at datetime
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
     image_id [name: 'ix_ppt_image']
-    product_id [name: 'ix_ppt_product', note: '상품 상세의 "이 상품이 쓰인 사진"']
+    (product_id, purchase_verified) [name: 'ix_ppt_product', note: '상품 상세 "이 상품이 쓰인 사진" (구매 인증 사진 먼저)']
+    verified_order_item_id [name: 'ix_ppt_order_item']
   }
 }
 
@@ -998,6 +1062,7 @@ Ref: member_account.grade_id > member_grade.grade_id
 Ref: member_account.referred_by > member_account.member_id
 Ref: member_social.member_id > member_account.member_id
 Ref: member_home.member_id - member_account.member_id
+Ref: member_room.member_id > member_account.member_id
 Ref: address.member_id > member_account.member_id
 Ref: member_terms_agreement.member_id > member_account.member_id
 Ref: member_terms_agreement.terms_id > terms.terms_id
@@ -1018,10 +1083,17 @@ Ref: forbidden_word.created_by > member_account.member_id
 
 // 상품
 Ref: category.parent_id > category.category_id
+Ref: category.notice_type_id > notice_type.notice_type_id
 Ref: product.brand_id > brand.brand_id
 Ref: product.category_id > category.category_id
 Ref: product.shipping_policy_id > shipping_policy.policy_id
 Ref: product_notice.product_id - product.product_id
+Ref: product_notice.notice_type_id > notice_type.notice_type_id
+Ref: product_notice.updated_by > member_account.member_id
+Ref: notice_item.notice_type_id > notice_type.notice_type_id
+Ref: product_notice_value.product_id > product_notice.product_id
+Ref: product_notice_value.item_id > notice_item.item_id
+Ref: product_home_fit.product_id > product.product_id
 Ref: product_option_group.product_id > product.product_id
 Ref: product_option_value.option_group_id > product_option_group.option_group_id
 Ref: product_option_value.color_family_id > color_family.color_family_id
@@ -1122,6 +1194,7 @@ TableGroup member_basic [note: '고객 - 회원 기본'] {
   member_account
   member_social
   member_home
+  member_room
   address
 }
 
@@ -1154,13 +1227,19 @@ TableGroup product_classification [note: '상품 - 분류/브랜드'] {
 
 TableGroup product_core [note: '상품 - 상품/옵션/SKU/문의'] {
   product
-  product_notice
   product_option_group
   product_option_value
   product_sku
   product_sku_option
   product_image
   product_qna
+}
+
+TableGroup product_notice_info [note: '상품 - 정보제공고시 (품목별 항목)'] {
+  notice_type
+  notice_item
+  product_notice
+  product_notice_value
 }
 
 TableGroup product_delivery [note: '상품 - 가구 배송/포장'] {
@@ -1171,8 +1250,9 @@ TableGroup product_delivery [note: '상품 - 가구 배송/포장'] {
   sku_package
 }
 
-TableGroup product_link_history [note: '상품 - 연결/재고/알림'] {
+TableGroup product_link_history [note: '상품 - 연결/추천/재고/알림'] {
   product_style
+  product_home_fit
   member_brand_preference
   stock_history
   price_history

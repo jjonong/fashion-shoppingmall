@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`. (Oracle에서 전환함. Oracle 버전은 `docs/archive_oracle/`)
 - 판매 방식: 여러 브랜드 상품을 **자사가 직접 판매** (입점 판매자·정산 없음). 사용자가 확정한 사항이므로 오픈마켓 구조로 바꾸지 않는다. 브랜드·업체는 실제 업체가 아닌 가상 데이터로 채운다.
 - 커뮤니티 범위: 자사몰은 대형 플랫폼만큼 사용자가 모이지 않으므로 **구매 고객 사진·집들이 + 운영자 매거진으로 축소** (사용자 확정). 팔로우·차단·해시태그·댓글 좋아요·스크랩 폴더·질문과답변(상품 문의와 중복)은 의도적으로 뺐다. 다시 넣기 전에 사용자와 상의한다.
-- 단계: 1단계 고객(18) + 2단계 상품(30) + 3단계 커뮤니티(12) = **60개 테이블**.
+- 단계: 1단계 고객(19) + 2단계 상품(34) + 3단계 커뮤니티(12) = **65개 테이블**.
 - **다음 단계(장바구니·주문·결제, 구매 리뷰, 쿠폰·포인트)는 대기 중.** 사용자가 요청하기 전에는 테이블을 추가하지 않는다. `stock_history.ref_id`는 다음 단계의 주문/클레임 테이블을 가리킬 예정.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 파일 | 역할 |
 |---|---|
-| `docs/erd.dbml` | **기준 원본(source of truth)**. 60개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 13개. https://dbdiagram.io/d 에 붙여넣어 확인 |
+| `docs/erd.dbml` | **기준 원본(source of truth)**. 65개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 14개. https://dbdiagram.io/d 에 붙여넣어 확인 |
 | `docs/DB_설계서.pdf` | `erd.dbml`에서 생성한 설계서 (표지, 전체 구조, 설계 원칙, 흐름도, 영역별 ERD, 테이블 명세, FK 목록). **모든 페이지 A4 세로** (사용자 요청, 가로 페이지 섞지 않음). 직접 수정 불가, 설계가 바뀌면 `tools/design-doc`에서 `npm run pdf`로 다시 생성 |
 | `docs/고객_설계_요약.pdf` | 1단계 고객 요약본 (약 8쪽: 한눈에 보기·핵심 결정, 고객 전체 ERD, 테이블 요약표, 설계 과정, 보안, 생명주기, 정책·향후 검토). 전체 설계서가 길어서 사용자가 요청한 별도 문서. `npm run summary`로 생성 |
 | `docs/archive_fashion/` | 이전 패션몰 설계 (Oracle). 참고용, 갱신하지 않음 |
@@ -56,7 +56,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
   - 이메일: 대소문자 무시 콜레이션이라 일반 `UNIQUE(email)`로 대소문자 중복 방지.
   - 회원당 기본 배송지 1개: 함수 기반 인덱스 `ux_address_default ((CASE WHEN is_default='Y' THEN member_id END))`.
   - nullable 대상 중복 방지(스크랩, 신고): MySQL UNIQUE는 NULL이 포함된 행을 중복으로 보지 않으므로 일반 복합 UNIQUE `(member_id, post_id)`로 충분.
-- **CHECK + FK 주의 (DDL 작성 시)**: MySQL은 `ON DELETE CASCADE`/`SET NULL` 같은 참조 동작이 있는 FK 컬럼을 CHECK에서 쓸 수 없다. CHECK에 들어가는 FK(예: `product_relation`, `scrap`, `report`)는 참조 동작 없이 만든다.
+- **CHECK + FK 주의 (DDL 작성 시)**: MySQL은 `ON DELETE CASCADE`/`SET NULL` 같은 참조 동작이 있는 FK 컬럼을 CHECK에서 쓸 수 없다. CHECK에 들어가는 FK(예: `product_relation`, `scrap`, `report`, `post_product_tag`)는 참조 동작 없이 만든다.
 - **다형 참조**: 대상이 여러 종류인 테이블은 `target_type + target_id` 대신 대상별 nullable FK 컬럼을 둔다. `scrap`, `report`는 CHECK로 정확히 하나만 채우고, `notification`은 관련 대상(글+댓글 등)을 함께 채울 수 있다.
 - **개인정보**: 휴대폰 번호·공동현관 비밀번호는 `_enc`(AES-256), 검색이 필요하면 `_hash`(SHA-256)를 함께 둔다. CI/DI·토큰은 해시만 저장. 탈퇴는 soft delete + 마스킹(`withdrawn_{ID}@deleted.local`, 이름 `탈퇴회원`, 닉네임 `deleted_{ID}`), 커뮤니티 글은 숨김·댓글은 "탈퇴한 회원" 표시. 관리자 조회는 `privacy_access_log`에 기록.
 - **캐시 컬럼**: 좋아요·스크랩·댓글·리뷰 수, 평점 등은 note에 `캐시`로 표시하고 원본과 같은 트랜잭션에서 갱신.
@@ -76,6 +76,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **가구 특화**: 치수(상품 대표 + SKU별), `assembly_type`(완제품/자가조립/기사 설치), `sale_type`(일반/예약/주문제작: 주문제작은 재고 차감 없음), SKU별 포장 박스(`sku_package`).
 - **가구 배송**: `shipping_policy`(일반택배/화물/설치배송, 사다리차·계단 운반비, 출고 소요일, 오늘출발 마감) + `delivery_zone`(권역) + `delivery_zone_zipcode`(우편번호 범위, 겹치면 좁은 범위 우선) + `shipping_policy_zone`(권역별 배송 가능 여부·추가비·추가 소요일). 배송지 `address.floor_no`·`has_elevator`로 사다리차/계단비 판단. 계산 순서는 설계서의 "가구 배송비 계산 흐름" 참고.
 - **재고**: `product_sku.stock` 하나로 관리(조건부 UPDATE로 차감, 낙관적 락 `version`), 모든 변경은 `stock_history`에 기록. 0 → 양수가 되면 `restock_request`(WAITING) 신청자에게 재입고 알림.
+- **상품정보제공고시**: 품목마다 법정 항목이 달라서 컬럼이 아닌 행 구조. `notice_type`(FURNITURE/BEDDING_CURTAIN/KITCHENWARE/HOME_APPLIANCE...) → `notice_item`(유형별 항목) → `product_notice`(상품별 유형, 1:1) + `product_notice_value`(항목 값). `category.notice_type_id`가 기본 유형. 필수 항목이 모두 있어야 ON_SALE. 항목 유형 일치는 앱 검증.
 - **상품 상태 흐름**: `DRAFT → ON_SALE ⇄ SOLD_OUT`, `STOPPED`. 품절 기준은 SKU 재고로 통일(전 SKU 0이면 시스템이 SOLD_OUT, changed_by NULL).
 - **자사몰 규모로 축소한 것 (사용자 확정)**: 창고별 실물 재고(`warehouse`, `sku_inventory`), 상품 검수 승인(`product_approval`), 검색 로그(`search_log`), MD 검색 키워드(`product_search_keyword`)는 뺐다. 다시 넣기 전에 사용자와 상의한다. 포트폴리오 초점은 **가구몰 특화 + 커뮤니티**.
 - **세트 상품**: `product_type='SET'`은 자체 SKU 없이 `product_set_item` 구성품 SKU를 각각 선택.
@@ -87,7 +88,8 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **상품 태그**: `post_product_tag`는 사진 위 % 좌표 + 스토어 상품 또는 외부 제품명(둘 중 하나). 상품 상세의 "이 상품이 쓰인 사진" 근거.
 - **글 상태**: `DRAFT → PUBLISHED → HIDDEN/BLINDED/DELETED`. 신고 누적은 `report_count` 캐시로 자동 BLINDED.
 - **스크랩 = 글 저장 + 상품 찜** (`scrap`, 폴더 없음).
-- 구매 인증(집들이에 태그한 상품을 실제로 샀는지)은 다음 단계 주문 테이블이 생기면 연결한다.
+- **구매 인증**: `post_product_tag.purchase_verified`(Y/N) + `verified_order_item_id` + `verified_at`. 글 작성자의 구매 확정 주문 상품이 있으면 Y, 반품·취소되면 N. 외부 제품 태그는 인증 불가(CHECK). 주문 테이블이 다음 단계라 `verified_order_item_id`는 지금 FK 없이 ID만 보관 → 주문 단계에서 `order_item` FK로 연결한다.
+- **주거 맞춤 추천**: `member_home`(주거형태·평수·가족·반려동물) ↔ `product_home_fit`(MD 지정 주거 조건), `member_room`(방 치수·방문 폭) ↔ SKU 치수·`sku_package`, `member_style` ↔ `product_style`, 비슷한 집의 `housewarming_detail` → `post_product_tag`(구매 인증 가중치). 결과는 저장하지 않고 조회 시 계산. 공간 코드는 `post_image.space_type`·`member_room.space_type`·`product_home_fit`(SPACE)이 공유.
 
 ### 공유 마스터
 - `style`(인테리어 스타일)은 `member_style`, `product_style`, `post_style`이 함께 사용.

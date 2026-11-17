@@ -79,8 +79,9 @@ const groupDesc = {
   member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어.',
   product_classification: '브랜드와 4단계 카테고리.',
   product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조와 이미지, 고시정보, 상품 문의.',
-  product_delivery: '가구 배송 정책, 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, SKU 포장 박스.',
-  product_link_history: '스타일·선호 브랜드 연결, 재고 원장, 가격 이력, 재입고 알림 신청.',
+  product_notice_info: '상품정보제공고시 품목 유형(가구·침구·주방·가전)별 항목 마스터와 상품별 값.',
+  product_delivery:'가구 배송 정책, 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, SKU 포장 박스.',
+  product_link_history: '스타일·주거 조건 연결(맞춤 추천), 선호 브랜드, 재고 원장, 가격 이력, 재입고 알림 신청.',
   product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어.',
   product_composition_operation: '연관·세트 상품, 상품 상태 이력.',
   community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
@@ -205,7 +206,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>공통 설계 원칙</li>
     <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
     <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · ERD</li>
-    <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · ERD</li>
+    <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
     <li>관계(FK) 전체 목록</li>
@@ -268,6 +269,12 @@ ${erOf('member')}
 <section class="page">
   ${fig('가구 배송비 계산 흐름', mm(D.shipfee), '배송지(1단계 address)의 우편번호 · 층수 · 엘리베이터와 상품 배송 정책으로 배송 가능 여부 · 비용 · 출고 예정일을 계산')}
   <div class="callout"><b>가구 배송</b> — shipping_policy: 일반택배 / 화물택배 / 업체 직접 설치배송, 기본 · 무료조건 · 반품 · 교환 비용, 사다리차 · 계단 운반비, 출고 소요일, 오늘출발 마감 시각. 지역 차이는 delivery_zone(권역)과 shipping_policy_zone(권역별 가능 여부 · 추가비 · 추가 소요일)으로 처리한다. sku_package는 SKU 하나가 여러 박스로 나가는 가구의 박스별 크기 · 무게를 저장해 화물 운임과 배송 차량 판단에 쓴다. 상품에는 조립 방식(완제품 / 자가조립 / 기사 설치)과 판매 방식(일반 / 예약 / 주문제작)을 둔다.</div>
+  <div class="callout"><b>상품정보제공고시 (품목별 항목)</b> — 가구 · 침구 · 주방용품 · 가전은 법정 표시 항목이 다르다. 항목을 컬럼으로 두면 품목이 늘 때마다 테이블을 바꿔야 하므로 notice_type(품목 유형) → notice_item(항목 마스터) → product_notice_value(상품별 값) 행 구조로 저장한다. 카테고리에 기본 유형을 두어 등록 화면에서 항목이 자동으로 나오고, 필수 항목이 모두 채워져야 판매 시작(ON_SALE)할 수 있다.
+    <table class="mini"><tr><th>유형</th><th>항목 예시</th></tr>
+      <tr><td>FURNITURE 가구</td><td>KC 인증 · 색상 · 구성품 · 주요 소재 · 제조자 · 제조국 · 크기 · 배송·설치비용 · 품질보증기준 · A/S 책임자</td></tr>
+      <tr><td>HOME_APPLIANCE 가전</td><td>KC 인증 · 정격전압·소비전력 · 에너지효율등급 · 출시년월 · 제조자 · 제조국 · 크기 · 품질보증기준 · A/S 책임자</td></tr>
+      <tr><td>KITCHENWARE 주방용품</td><td>재질 · 구성품 · 크기 · 제조자 · 제조국 · 수입 식품용 기구 신고 여부 · 품질보증기준 · A/S 책임자</td></tr>
+    </table></div>
   <div class="callout"><b>자사몰 규모에 맞춘 축소</b> — 창고별 실물 재고(warehouse · sku_inventory), 등록자 · 검수자 분리 승인(product_approval), 검색 로그 · MD 키워드는 두지 않았다. 재고는 판매 가능 재고 하나로 관리하고, 검색은 동의어 사전과 MySQL FULLTEXT(ngram) 인덱스로 처리한다.</div>
 </section>
 ${erOf('product')}
@@ -280,6 +287,11 @@ ${erOf('product')}
 <section class="page">
   ${fig('블록 에디터 — post_block', blockMock, '집들이 · 매거진 같은 긴 글')}
   ${fig('사진 속 상품 태그 — post_product_tag', tagMock, '오늘의집 핵심 기능')}
+  ${fig('구매 인증 — post_product_tag.purchase_verified', mm(D.verify), '"직접 사서 쓴 가구" 신뢰도 표시. 주문 테이블은 다음 단계라 근거 ID(verified_order_item_id)만 두고, 주문 단계에서 FK로 연결')}
+</section>
+<section class="page">
+  ${fig('주거 정보 맞춤 추천', mm(D.recommend), '고객 · 상품 · 커뮤니티 데이터를 함께 쓰는 추천. "비슷한 집의 집들이"는 "나와 비슷한 집(같은 주거형태 · 평수대)의 집들이에 태그된 상품"으로 커뮤니티가 추천 근거가 된다')}
+  <div class="callout"><b>맞춤 추천 데이터</b> — member_home(주거형태 · 평수 · 가족 · 반려동물)은 product_home_fit(MD가 지정한 잘 맞는 주거 조건)과, member_room(방 가로 · 세로 · 천장 높이 · 방문 폭)은 SKU 치수와 sku_package 박스 크기와 비교한다. 공간 코드는 post_image.space_type · member_room.space_type · product_home_fit(SPACE)이 같은 값을 쓴다. 추천 결과는 저장하지 않고 조회 시 계산한다(데이터가 늘면 배치로 캐시 테이블 추가 검토).</div>
   <div class="callout"><b>반응 · 운영</b> — 댓글은 1단계 대댓글과 @멘션, 대댓글이 있으면 "삭제된 댓글입니다"로 남긴다. 스크랩 = 글 저장 + 상품 찜. 신고는 대상 하나만 지정하고 같은 대상 중복 신고를 막으며, 승인되면 회원 정지를 member_status_history에 남긴다. 자사몰 규모에 맞춰 팔로우 · 해시태그 · 차단 · 질문과답변(상품 문의와 중복)은 두지 않았다. notification은 앱 내 알림함이며 실제 발송은 member_notification_setting을 따른다.</div>
 </section>
 ${erOf('community')}

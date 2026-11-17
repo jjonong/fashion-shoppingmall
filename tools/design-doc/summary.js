@@ -21,7 +21,7 @@ const inboundRefs = refs.filter((r) => !inArea.has(r.child) && inArea.has(r.pare
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 
 const groupDesc = {
-  member_basic: '계정·프로필, 주거 정보, 소셜 연동, 배송지',
+  member_basic: '계정·프로필, 주거 정보·방 치수, 소셜 연동, 배송지',
   member_terms_noti_style: '약관 버전과 동의 이력, 알림 수신 설정, 스타일 취향',
   member_security: '로그인 이력, 1회용 토큰, 기기 세션, 비밀번호 이력, 관리자 조회 기록',
   member_lifecycle: '상태 전환 이력, 닉네임 이력, 금칙어',
