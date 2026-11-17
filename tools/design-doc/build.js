@@ -127,14 +127,15 @@ const groupDesc = {
   member_basic: '회원 계정, 커뮤니티 프로필, 주거 정보, 배송지. 거의 모든 영역이 member_account를 작성자·관리자로 참조한다.',
   member_terms_noti_style: '약관 버전과 동의 이력, 알림 수신 설정, 인테리어 스타일 취향.',
   member_security: '로그인 이력, 1회용 토큰, 기기별 세션, 비밀번호 이력, 관리자 개인정보 접근 기록.',
+  member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어.',
   product_classification: '브랜드, 4단계 카테고리, 가구 배송 정책.',
   product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조와 이미지, 고시정보, 상품 문의.',
   product_link_history: '스타일·선호 브랜드 연결, 재고 원장, 가격 이력.',
   product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어·키워드·로그.',
   product_composition_operation: '연관·세트 상품, 상품 검수와 상태 이력, 창고별 실물 재고.',
-  community_post: '공통 post와 유형별 상세, 사진, 블록 본문, 사진 속 상품 태그.',
-  community_reaction: '스타일·해시태그 분류, 댓글, 좋아요, 스크랩북.',
-  community_operation: '팔로우, 차단, 신고, 앱 내 알림함.',
+  community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
+  community_reaction: '스타일 분류, 댓글, 좋아요, 스크랩(글 저장 + 상품 찜).',
+  community_operation: '신고와 앱 내 알림함.',
 };
 
 // ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
@@ -213,8 +214,18 @@ const D = {
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
   class F1,F2,F3 bad
   class OK good`,
+  mstatus: `stateDiagram-v2
+  direction LR
+  [*] --> ACTIVE: 가입
+  ACTIVE --> DORMANT: 1년 미접속 배치 (11개월에 안내)
+  DORMANT --> ACTIVE: 로그인 + 본인 확인
+  ACTIVE --> SUSPENDED: 신고 승인 · 관리자 제재
+  SUSPENDED --> ACTIVE: 기한 만료 배치
+  ACTIVE --> WITHDRAWN: 탈퇴
+  DORMANT --> WITHDRAWN: 탈퇴
+  WITHDRAWN --> [*]`,
   withdraw: `flowchart TB
-  W(["탈퇴 요청"]) --> M["member_account 마스킹<br/>email → withdrawn_ID 마스킹 주소<br/>(도메인 deleted.local)<br/>name → 탈퇴회원<br/>PHONE · BIRTH · CI · DI → NULL"]
+  W(["탈퇴 요청"]) --> M["member_account 마스킹<br/>email → withdrawn_ID 마스킹 주소<br/>(도메인 deleted.local)<br/>name → 탈퇴회원 · nickname → deleted_ID<br/>PHONE · BIRTH · CI · DI → NULL"]
   W --> X["행 삭제<br/>member_home · address<br/>member_social · member_session"]
   W --> C["커뮤니티<br/>글 → HIDDEN<br/>댓글 작성자 → 탈퇴한 회원"]
   W --> K["기록 유지<br/>status = WITHDRAWN<br/>withdrawn_at · 사유"]`,
@@ -261,8 +272,7 @@ const D = {
     direction TB
     PH["PHOTO 집사진<br/>(상세 없음)"]
     HW["housewarming_detail<br/>평수 · 주거형태 · 시공 · 예산"]
-    KH["knowhow_detail<br/>주제 · 난이도 · 소요 시간"]
-    QD["question_detail<br/>채택된 답변 댓글"]
+    KH["magazine_detail<br/>운영자 작성 · 주제 · 부제"]
   end
   subgraph BODY["본문"]
     direction TB
@@ -273,9 +283,9 @@ const D = {
   subgraph REACT["반응 · 분류 (모든 유형 공통)"]
     direction TB
     RX["<b>반응</b><br/>post_comment · post_like<br/>scrap"]
-    CL["<b>분류 · 운영</b><br/>post_hashtag · post_style<br/>report"]
+    CL["<b>분류 · 운영</b><br/>post_style · report"]
   end
-  post --- PH & HW & KH & QD
+  post --- PH & HW & KH
   post --- IMG & BLK
   IMG --- TAG
   post --- RX & CL
@@ -383,13 +393,13 @@ const makeHtml = () => `<!doctype html><html lang="ko"><head><meta charset="utf-
     <div><b>${groups.length}</b><span>영역</span></div>
   </div>
   <div class="stage-cards">
-    <div class="sc s1"><b>1단계 고객</b><span>${stageCount('member')}개</span><p>회원 · 프로필 · 주거정보 · 약관 · 보안</p></div>
+    <div class="sc s1"><b>1단계 고객</b><span>${stageCount('member')}개</span><p>회원 · 프로필 · 주거정보 · 약관 · 보안 · 상태</p></div>
     <div class="sc s2"><b>2단계 상품</b><span>${stageCount('product')}개</span><p>옵션 · SKU · 배송 · 재고 · 검색 · 운영</p></div>
-    <div class="sc s3"><b>3단계 커뮤니티</b><span>${stageCount('community')}개</span><p>집사진 · 집들이 · 노하우 · 질문 · 반응</p></div>
+    <div class="sc s3"><b>3단계 커뮤니티</b><span>${stageCount('community')}개</span><p>고객 집사진 · 집들이 · 브랜드 매거진</p></div>
   </div>
   <div class="points">
     <div><b>사진 속 상품 태그</b><p>커뮤니티 사진의 % 좌표에 스토어 상품을 연결해 바로 구매로 이어지게 한다.</p></div>
-    <div><b>블록 에디터</b><p>집들이 · 노하우 본문을 제목 · 문단 · 사진 · 상품카드 블록의 순서로 저장한다.</p></div>
+    <div><b>블록 에디터</b><p>집들이 · 매거진 본문을 제목 · 문단 · 사진 · 상품카드 블록의 순서로 저장한다.</p></div>
     <div><b>옵션 그룹 → SKU</b><p>색상 · 사이즈 · 구성처럼 상품마다 다른 가구 옵션을 조합해 재고 단위를 만든다.</p></div>
     <div><b>개인정보 보호</b><p>암호화 · 해시 저장, 로그인 잠금, 탈퇴 마스킹, 관리자 조회 기록.</p></div>
   </div>
@@ -407,7 +417,7 @@ const makeHtml = () => `<!doctype html><html lang="ko"><head><meta charset="utf-
   <ol>
     <li>개요와 전체 구조</li>
     <li>공통 설계 원칙</li>
-    <li>1단계 고객 — 보안 · 로그인 · 탈퇴 · ERD</li>
+    <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
     <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · ERD</li>
     <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · ERD</li>
     <li>표 읽는 법</li>
@@ -455,9 +465,11 @@ const makeHtml = () => `<!doctype html><html lang="ko"><head><meta charset="utf-
     <tr><td>토큰</td><td>인증 · 재설정 · 리프레시 토큰은 SHA-256 해시만 저장, 만료 · 사용 · 폐기 시각 기록</td></tr>
     <tr><td>관리자 조회</td><td>privacy_access_log에 조회 · 수정 · 다운로드 · 마스킹 해제 기록</td></tr>
   </table>
-  ${fig('로그인 처리 흐름', mm(D.login), '5회 실패 시 30분 잠금, 모든 시도를 기록')}
+  ${fig('로그인 처리 흐름', mm(D.login), '5회 실패 시 30분 잠금, 모든 시도를 기록. 잠금은 회원 상태가 아니라 locked_until로 판단')}
+  ${fig('회원 상태 흐름', mm(D.mstatus), '전환할 때마다 member_status_history에 사유 · 처리자 · 근거 신고를 기록. 휴면은 상태값만 바꾸고 분리보관하지 않음(2023년 법 개정으로 의무 폐지)')}
   ${fig('탈퇴 처리', mm(D.withdraw), 'soft delete + 마스킹. 같은 이메일로 재가입 가능')}
-  <div class="callout"><b>인테리어몰 특화</b> — member_home(주거형태 · 평수 · 가족형태 · 반려동물 · 이사 예정일)은 맞춤 추천과 집들이 작성 기본값에 쓴다. 배송지에는 층수 · 엘리베이터 여부를 둬서 대형 가구 사다리차 필요 여부를 판단한다. style은 회원 · 상품 · 커뮤니티 글이 함께 쓰는 공유 마스터다.</div>
+  <div class="callout"><b>인테리어몰 특화</b> — member_home(주거형태 · 평수 · 가족형태 · 반려동물 · 이사 예정일)은 맞춤 추천과 집들이 작성 기본값에 쓴다. 배송지에는 층수 · 엘리베이터 여부를 둬서 대형 가구 사다리차 필요 여부를 판단하고, 배송 요청사항과 공동현관 비밀번호(암호화)를 저장한다. style은 회원 · 상품 · 커뮤니티 글이 함께 쓰는 공유 마스터다.</div>
+  <div class="callout"><b>닉네임 정책</b> — 2~12자 한글/영문/숫자/_ · forbidden_word 금칙어 불가 · 변경 후 30일간 재변경 불가(nickname_changed_at) · 이전 닉네임은 nickname_history에 남겨 30일간 다른 회원이 쓰지 못하게 해 사칭을 막고 신고 추적에 쓴다. 대소문자 · 악센트 무시 콜레이션이라 'Wood'와 'wood'는 같은 닉네임으로 본다.</div>
 </section>
 ${erOf('member')}
 
@@ -476,9 +488,9 @@ ${erOf('product')}
   ${fig('글 상태 흐름', mm(D.poststatus), '신고 누적은 report_count 캐시로 자동 BLINDED')}
 </section>
 <section class="page">
-  ${fig('블록 에디터 — post_block', blockMock, '집들이 · 노하우 같은 긴 글')}
+  ${fig('블록 에디터 — post_block', blockMock, '집들이 · 매거진 같은 긴 글')}
   ${fig('사진 속 상품 태그 — post_product_tag', tagMock, '오늘의집 핵심 기능')}
-  <div class="callout"><b>반응 · 운영</b> — 댓글은 1단계 대댓글과 @멘션, 대댓글이 있으면 "삭제된 댓글입니다"로 남긴다. 스크랩 = 글 저장 + 상품 찜(폴더별 공개 설정). 팔로우 · 차단은 자기 자신 금지(CHECK), 신고는 대상 하나만 지정하고 같은 대상 중복 신고를 막는다. notification은 앱 내 알림함이며 실제 발송은 member_notification_setting을 따른다.</div>
+  <div class="callout"><b>반응 · 운영</b> — 댓글은 1단계 대댓글과 @멘션, 대댓글이 있으면 "삭제된 댓글입니다"로 남긴다. 스크랩 = 글 저장 + 상품 찜. 신고는 대상 하나만 지정하고 같은 대상 중복 신고를 막으며, 승인되면 회원 정지를 member_status_history에 남긴다. 자사몰 규모에 맞춰 팔로우 · 해시태그 · 차단 · 질문과답변(상품 문의와 중복)은 두지 않았다. notification은 앱 내 알림함이며 실제 발송은 member_notification_setting을 따른다.</div>
 </section>
 ${erOf('community')}
 

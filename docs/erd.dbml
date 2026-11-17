@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
-// 벤치마킹: 오늘의집 (스토어 + 사진/집들이/노하우/질문과답변 커뮤니티)
-// 1단계 고객 15개 + 2단계 상품 30개 + 3단계 커뮤니티 19개 = 64개 테이블
+// 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
+// 1단계 고객 18개 + 2단계 상품 30개 + 3단계 커뮤니티 12개 = 60개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -12,7 +12,7 @@ Project interior_mall {
   Note: '''
   인테리어 가구몰 + 커뮤니티 포트폴리오 DB (MySQL 8.0, InnoDB, utf8mb4 / utf8mb4_0900_ai_ci)
   - 여러 브랜드 가구/소품을 자사가 직접 판매 (입점사 정산 없음)
-  - 커뮤니티 글(사진/집들이/노하우/질문)에 상품을 태그해서 스토어로 연결
+  - 커뮤니티 글(사진/집들이/매거진)에 상품을 태그해서 스토어로 연결
   - 이름은 소문자 snake_case, PK는 BIGINT AUTO_INCREMENT
   - 상태값은 VARCHAR + CHECK, Y/N은 CHAR(1) + CHECK
   - created_at DEFAULT CURRENT_TIMESTAMP, updated_at은 ON UPDATE CURRENT_TIMESTAMP
@@ -39,7 +39,8 @@ Table member_account [note: '회원 (커뮤니티 프로필 포함)'] {
   email varchar(200) [not null, unique, note: '대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{ID}@deleted.local로 마스킹']
   password_hash varchar(100) [note: 'bcrypt 해시. 소셜 전용 가입은 NULL']
   name varchar(50) [not null, note: '실명. 탈퇴 시 탈퇴회원']
-  nickname varchar(30) [not null, unique, note: '커뮤니티 표시 이름']
+  nickname varchar(30) [not null, unique, note: '커뮤니티 표시 이름. 2~12자 한글/영문/숫자/_ (앱 검증), forbidden_word 금칙어 불가, 최근 30일 내 다른 회원이 쓰던 닉네임 불가(nickname_history). 탈퇴 시 deleted_{ID}로 변경']
+  nickname_changed_at datetime [note: '마지막 닉네임 변경 시각. 변경 후 30일간 재변경 불가']
   profile_image_url varchar(500)
   introduction varchar(200) [note: '프로필 한 줄 소개']
   phone_enc varchar(200) [note: '휴대폰 번호 AES-256 암호문']
@@ -49,14 +50,14 @@ Table member_account [note: '회원 (커뮤니티 프로필 포함)'] {
   ci_hash char(64) [unique, note: '본인인증 CI 해시. 중복 가입 방지']
   di_hash char(64) [note: '본인인증 DI 해시']
   identity_verified_at datetime
-  role varchar(20) [not null, default: 'USER', note: 'USER/ADMIN/EDITOR(커뮤니티 큐레이션)']
+  role varchar(20) [not null, default: 'USER', note: 'USER/ADMIN/EDITOR(매거진 작성·큐레이션)']
   grade_id bigint [not null]
-  status varchar(20) [not null, default: 'ACTIVE', note: 'ACTIVE/DORMANT/LOCKED/SUSPENDED(커뮤니티 활동 정지)/WITHDRAWN']
-  suspended_until datetime [note: '신고 누적으로 글쓰기 정지된 기한']
+  status varchar(20) [not null, default: 'ACTIVE', note: 'ACTIVE/DORMANT(휴면)/SUSPENDED(활동 정지)/WITHDRAWN. 바뀔 때마다 member_status_history에 기록. 로그인 잠금은 상태가 아니라 locked_until로 판단']
+  status_changed_at datetime [note: '마지막 상태 변경 시각']
+  suspended_until datetime [note: 'SUSPENDED 기한. 지나면 배치로 ACTIVE 복구']
+  dormant_notice_sent_at datetime [note: '휴면 예정 안내 발송 시각. last_login_at 기준 11개월에 안내, 1년 미접속 시 배치로 DORMANT (상태값만 변경, 분리보관 없음)']
   total_purchase_amount bigint [not null, default: 0, note: '등급 산정용 캐시']
   point_balance bigint [not null, default: 0, note: '포인트 잔액 캐시']
-  follower_count int [not null, default: 0, note: '캐시']
-  following_count int [not null, default: 0, note: '캐시']
   post_count int [not null, default: 0, note: '공개 글 수 캐시']
   referral_code varchar(20) [unique, note: '내 추천 코드']
   referred_by bigint [note: '나를 추천한 회원']
@@ -74,6 +75,7 @@ Table member_account [note: '회원 (커뮤니티 프로필 포함)'] {
     phone_hash [name: 'ix_member_phone_hash']
     grade_id [name: 'ix_member_grade']
     referred_by [name: 'ix_member_referred_by']
+    (status, last_login_at) [name: 'ix_member_dormant_target', note: '휴면 안내·전환 대상 배치 조회']
   }
 }
 
@@ -112,6 +114,8 @@ Table address [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)
   address2 varchar(200)
   floor_info varchar(30) [note: '가구 배송용: 층수']
   has_elevator char(1) [note: '가구 배송용: 엘리베이터 Y/N (사다리차 필요 판단)']
+  delivery_request varchar(200) [note: '배송 요청사항 (예: 부재 시 문 앞, 설치 전 연락 주세요). 주문 시 기본값으로 복사']
+  entrance_password_enc varchar(200) [note: '공동현관 비밀번호 AES-256 암호문. 배송 기사 전달용, 화면에는 마스킹 표시']
   is_default char(1) [not null, default: 'N', note: 'Y/N']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime
@@ -156,7 +160,7 @@ Table member_terms_agreement [note: '약관 동의/철회 이력'] {
 
 Table member_notification_setting [note: '알림 수신 설정. EVENT(광고성)는 마케팅 약관 동의가 있어야 발송'] {
   member_id bigint [not null]
-  noti_type varchar(20) [not null, note: 'ORDER/DELIVERY/RESTOCK/PRICE_DROP/EVENT/COMMENT/LIKE/FOLLOW/ANSWER']
+  noti_type varchar(20) [not null, note: 'ORDER/DELIVERY/RESTOCK/PRICE_DROP/EVENT/COMMENT/LIKE']
   channel varchar(10) [not null, note: 'PUSH/SMS/EMAIL/KAKAO']
   enabled char(1) [not null, default: 'Y', note: 'Y/N']
   updated_at datetime
@@ -256,6 +260,58 @@ Table privacy_access_log [note: '관리자 개인정보 접근 기록 (개인정
   indexes {
     admin_id [name: 'ix_pal_admin']
     (target_member_id, created_at) [name: 'ix_pal_target']
+  }
+}
+
+// =====================================================================
+// 1단계: 고객 - 상태 / 닉네임 정책
+// =====================================================================
+
+Table member_status_history [note: '회원 상태 변경 이력 (가입·휴면·정지·탈퇴 전환 사유와 처리자)'] {
+  history_id bigint [pk, increment]
+  member_id bigint [not null]
+  from_status varchar(20) [note: '가입 시 NULL']
+  to_status varchar(20) [not null, note: 'ACTIVE/DORMANT/SUSPENDED/WITHDRAWN']
+  reason_type varchar(30) [not null, note: 'SIGN_UP/DORMANT_BATCH/DORMANT_RELEASE/SANCTION/SANCTION_END/WITHDRAW/ADMIN_CHANGE']
+  reason varchar(500) [note: '상세 사유 (정지 사유, 탈퇴 사유 등)']
+  effective_until datetime [note: 'SUSPENDED 기한']
+  report_id bigint [note: '정지 근거가 된 신고']
+  changed_by bigint [note: '처리 관리자. 배치·본인 처리는 NULL']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (member_id, created_at) [name: 'ix_msh_member', note: '회원별 상태 이력 (누적 정지 횟수 판단)']
+    (to_status, created_at) [name: 'ix_msh_status', note: '기간별 휴면·탈퇴 통계']
+    report_id [name: 'ix_msh_report']
+    changed_by [name: 'ix_msh_changed_by']
+  }
+}
+
+Table nickname_history [note: '닉네임 변경 이력 (사칭 방지, 신고 추적)'] {
+  history_id bigint [pk, increment]
+  member_id bigint [not null]
+  nickname varchar(30) [not null, note: '이전 닉네임']
+  used_from datetime [not null]
+  used_until datetime [not null, note: '변경 시각. 이후 30일간 다른 회원이 이 닉네임 사용 불가']
+
+  indexes {
+    (nickname, used_until) [name: 'ix_nickname_history_nickname', note: '최근 30일 내 사용된 닉네임인지 확인']
+    (member_id, used_until) [name: 'ix_nickname_history_member']
+  }
+}
+
+Table forbidden_word [note: '금칙어 (닉네임, 글, 댓글 공용)'] {
+  word_id bigint [pk, increment]
+  word varchar(50) [not null, unique]
+  match_type varchar(10) [not null, default: 'CONTAINS', note: 'EXACT(완전 일치)/CONTAINS(포함). 공백·특수문자 제거 후 비교 (앱)']
+  target varchar(10) [not null, default: 'ALL', note: 'NICKNAME/CONTENT/ALL']
+  is_active char(1) [not null, default: 'Y']
+  created_by bigint [not null, note: '등록 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (target, is_active) [name: 'ix_forbidden_word_target']
+    created_by [name: 'ix_forbidden_word_created_by']
   }
 }
 
@@ -718,13 +774,13 @@ Table sku_inventory [note: '창고별 실물 재고와 적재 위치'] {
 }
 
 // =====================================================================
-// 3단계: 커뮤니티 - 글 (공통 post + 유형별 상세)
+// 3단계: 커뮤니티 - 글 (구매 고객 콘텐츠 + 브랜드 매거진)
 // =====================================================================
 
-Table post [note: '커뮤니티 글 공통. 유형별 추가 정보는 *_DETAIL 테이블 (슈퍼타입/서브타입)'] {
+Table post [note: '커뮤니티 글 공통. 유형별 추가 정보는 *_detail 테이블 (슈퍼타입/서브타입). 자사몰 규모에 맞춰 고객 사진·집들이와 운영자 매거진만 운영'] {
   post_id bigint [pk, increment]
-  member_id bigint [not null, note: '작성자']
-  post_type varchar(20) [not null, note: 'PHOTO(집사진)/HOUSEWARMING(집들이)/KNOWHOW(노하우)/QUESTION(질문과답변)']
+  member_id bigint [not null, note: '작성자. MAGAZINE은 role이 EDITOR/ADMIN인 회원만 (앱 검증)']
+  post_type varchar(20) [not null, note: 'PHOTO(집사진)/HOUSEWARMING(집들이)/MAGAZINE(브랜드 매거진)']
   title varchar(200) [note: 'PHOTO는 NULL 허용, 나머지는 필수 (CHECK)']
   cover_image_id bigint [note: '목록 썸네일로 쓸 이미지']
   status varchar(20) [not null, default: 'DRAFT', note: 'DRAFT(임시저장)/PUBLISHED/HIDDEN(작성자 숨김)/BLINDED(신고 누적·관리자 블라인드)/DELETED']
@@ -767,7 +823,7 @@ Table post_image [note: '글에 올린 사진. 상품 태그의 기준'] {
   }
 }
 
-Table post_block [note: '본문 블록 (집들이/노하우 같은 긴 글 에디터). 글 = 블록을 sort_order 순서로 이어 붙인 것'] {
+Table post_block [note: '본문 블록 (집들이/매거진 같은 긴 글 에디터). 글 = 블록을 sort_order 순서로 이어 붙인 것'] {
   block_id bigint [pk, increment]
   post_id bigint [not null]
   sort_order smallint [not null]
@@ -817,22 +873,15 @@ Table housewarming_detail [note: '집들이 상세 (post와 1:1). 목록 필터 
   }
 }
 
-Table knowhow_detail [note: '노하우 상세 (post와 1:1)'] {
-  post_id bigint [pk, note: 'post_type = KNOWHOW']
-  topic varchar(20) [not null, note: 'DECORATING/STORAGE/CLEANING/DIY/REMODELING/PLANTS/LIFE_TIP']
-  difficulty varchar(10) [note: 'EASY/NORMAL/HARD']
-  duration_min int [note: '소요 시간 (분)']
+Table magazine_detail [note: '브랜드 매거진 상세 (post와 1:1). 운영자가 쓰는 인테리어 가이드·신상품 소개'] {
+  post_id bigint [pk, note: 'post_type = MAGAZINE']
+  topic varchar(20) [not null, note: 'STYLING(스타일링)/GUIDE(구매 가이드)/CARE(관리법)/NEW_ARRIVAL(신상품)/TREND/DIY']
+  subtitle varchar(200)
+  reading_min smallint [note: '읽는 시간 (분)']
 
   indexes {
-    topic [name: 'ix_knowhow_topic']
+    topic [name: 'ix_magazine_topic']
   }
-}
-
-Table question_detail [note: '질문과답변 상세 (post와 1:1). 답변은 댓글로 달고 하나를 채택'] {
-  post_id bigint [pk, note: 'post_type = QUESTION']
-  topic varchar(20) [not null, note: 'FURNITURE/REMODELING/STORAGE/LIGHTING/PLANTS/ETC']
-  accepted_comment_id bigint [unique, note: '채택된 답변 댓글. 질문 작성자만 채택']
-  accepted_at datetime
 }
 
 // =====================================================================
@@ -849,23 +898,6 @@ Table post_style [note: '글의 인테리어 스타일 (1단계 style 재사용 
   }
 }
 
-Table hashtag [note: '해시태그'] {
-  hashtag_id bigint [pk, increment]
-  name varchar(50) [not null, unique, note: '# 제외, 소문자/공백 제거해서 저장']
-  post_count int [not null, default: 0, note: '캐시. 인기 태그']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table post_hashtag [note: '글-해시태그 연결'] {
-  post_id bigint [not null]
-  hashtag_id bigint [not null]
-
-  indexes {
-    (post_id, hashtag_id) [pk]
-    hashtag_id [name: 'ix_post_hashtag_tag']
-  }
-}
-
 Table post_comment [note: '댓글 + 대댓글 (1단계 깊이)'] {
   comment_id bigint [pk, increment]
   post_id bigint [not null]
@@ -874,7 +906,6 @@ Table post_comment [note: '댓글 + 대댓글 (1단계 깊이)'] {
   mention_member_id bigint [note: '@닉네임 멘션 대상']
   content varchar(1000) [not null]
   status varchar(20) [not null, default: 'ACTIVE', note: 'ACTIVE/DELETED/BLINDED. 대댓글이 있으면 "삭제된 댓글입니다"로 표시']
-  like_count int [not null, default: 0, note: '캐시']
   report_count int [not null, default: 0, note: '캐시']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime
@@ -898,35 +929,9 @@ Table post_like [note: '글 좋아요'] {
   }
 }
 
-Table comment_like [note: '댓글 좋아요'] {
-  member_id bigint [not null]
-  comment_id bigint [not null]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (member_id, comment_id) [pk]
-    comment_id [name: 'ix_comment_like_comment']
-  }
-}
-
-Table scrap_folder [note: '스크랩북 폴더 (예: 거실 아이디어, 신혼집 위시리스트)'] {
-  folder_id bigint [pk, increment]
-  member_id bigint [not null]
-  name varchar(50) [not null]
-  description varchar(300)
-  is_public char(1) [not null, default: 'Y', note: '다른 사람에게 공개']
-  sort_order smallint [not null]
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (member_id, name) [unique, name: 'uk_scrap_folder_name']
-  }
-}
-
 Table scrap [note: '스크랩 = 글 저장 + 상품 찜. 대상은 post 또는 product 중 하나 (CHECK)'] {
   scrap_id bigint [pk, increment]
   member_id bigint [not null]
-  folder_id bigint [note: 'NULL이면 기본 폴더 (모두 보기)']
   post_id bigint
   product_id bigint
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
@@ -934,40 +939,17 @@ Table scrap [note: '스크랩 = 글 저장 + 상품 찜. 대상은 post 또는 p
   indexes {
     (member_id, post_id) [unique, name: 'uk_scrap_post', note: '같은 글 중복 스크랩 방지. MySQL UNIQUE는 NULL 행을 중복으로 보지 않아 상품 스크랩 행과 충돌하지 않음']
     (member_id, product_id) [unique, name: 'uk_scrap_product', note: '같은 상품 중복 찜 방지']
-    (member_id, folder_id, created_at) [name: 'ix_scrap_member']
-    folder_id [name: 'ix_scrap_folder']
+    (member_id, created_at) [name: 'ix_scrap_member', note: '내 스크랩 최신순']
     post_id [name: 'ix_scrap_post']
     product_id [name: 'ix_scrap_product']
   }
 }
 
 // =====================================================================
-// 3단계: 커뮤니티 - 관계 / 운영
+// 3단계: 커뮤니티 - 운영
 // =====================================================================
 
-Table follow [note: '팔로우 (팔로잉 피드)'] {
-  follower_id bigint [not null, note: '팔로우하는 사람']
-  followee_id bigint [not null, note: '팔로우 받는 사람. CHECK follower_id <> followee_id']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (follower_id, followee_id) [pk]
-    followee_id [name: 'ix_follow_followee', note: '팔로워 목록']
-  }
-}
-
-Table member_block [note: '회원 차단 (차단한 사람의 글/댓글 숨김, 댓글·멘션 금지)'] {
-  blocker_id bigint [not null]
-  blocked_id bigint [not null, note: 'CHECK blocker_id <> blocked_id']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-
-  indexes {
-    (blocker_id, blocked_id) [pk]
-    blocked_id [name: 'ix_member_block_blocked']
-  }
-}
-
-Table report [note: '신고 (글/댓글/회원). 대상 컬럼 중 정확히 하나만 채움 (CHECK)'] {
+Table report [note: '신고 (글/댓글/회원). 대상 컬럼 중 정확히 하나만 채움 (CHECK). 승인되면 회원 정지는 member_status_history로 기록'] {
   report_id bigint [pk, increment]
   reporter_id bigint [not null]
   post_id bigint
@@ -995,8 +977,8 @@ Table report [note: '신고 (글/댓글/회원). 대상 컬럼 중 정확히 하
 Table notification [note: '알림함 (앱 내 알림 목록). 발송 여부는 member_notification_setting 기준'] {
   notification_id bigint [pk, increment]
   member_id bigint [not null, note: '받는 사람']
-  actor_id bigint [note: '행동한 사람 (좋아요/댓글/팔로우한 회원). 시스템 알림은 NULL']
-  noti_type varchar(20) [not null, note: 'COMMENT/REPLY/MENTION/LIKE/FOLLOW/ANSWER_ACCEPTED/RESTOCK/PRICE_DROP/ORDER/DELIVERY/NOTICE']
+  actor_id bigint [note: '행동한 사람 (좋아요/댓글 단 회원). 시스템 알림은 NULL']
+  noti_type varchar(20) [not null, note: 'COMMENT/REPLY/MENTION/LIKE/FEATURED(추천 선정)/RESTOCK/PRICE_DROP/ORDER/DELIVERY/NOTICE']
   post_id bigint
   comment_id bigint
   product_id bigint
@@ -1036,6 +1018,11 @@ Ref: member_session.member_id > member_account.member_id
 Ref: password_history.member_id > member_account.member_id
 Ref: privacy_access_log.admin_id > member_account.member_id
 Ref: privacy_access_log.target_member_id > member_account.member_id
+Ref: member_status_history.member_id > member_account.member_id
+Ref: member_status_history.changed_by > member_account.member_id
+Ref: member_status_history.report_id > report.report_id
+Ref: nickname_history.member_id > member_account.member_id
+Ref: forbidden_word.created_by > member_account.member_id
 
 // 상품
 Ref: category.parent_id > category.category_id
@@ -1107,34 +1094,22 @@ Ref: post_block.product_id > product.product_id
 Ref: post_product_tag.image_id > post_image.image_id
 Ref: post_product_tag.product_id > product.product_id
 Ref: housewarming_detail.post_id - post.post_id
-Ref: knowhow_detail.post_id - post.post_id
-Ref: question_detail.post_id - post.post_id
-Ref: question_detail.accepted_comment_id - post_comment.comment_id
+Ref: magazine_detail.post_id - post.post_id
 
 // 커뮤니티 - 분류 / 반응
 Ref: post_style.post_id > post.post_id
 Ref: post_style.style_id > style.style_id
-Ref: post_hashtag.post_id > post.post_id
-Ref: post_hashtag.hashtag_id > hashtag.hashtag_id
 Ref: post_comment.post_id > post.post_id
 Ref: post_comment.member_id > member_account.member_id
 Ref: post_comment.parent_id > post_comment.comment_id
 Ref: post_comment.mention_member_id > member_account.member_id
 Ref: post_like.member_id > member_account.member_id
 Ref: post_like.post_id > post.post_id
-Ref: comment_like.member_id > member_account.member_id
-Ref: comment_like.comment_id > post_comment.comment_id
-Ref: scrap_folder.member_id > member_account.member_id
 Ref: scrap.member_id > member_account.member_id
-Ref: scrap.folder_id > scrap_folder.folder_id
 Ref: scrap.post_id > post.post_id
 Ref: scrap.product_id > product.product_id
 
-// 커뮤니티 - 관계 / 운영
-Ref: follow.follower_id > member_account.member_id
-Ref: follow.followee_id > member_account.member_id
-Ref: member_block.blocker_id > member_account.member_id
-Ref: member_block.blocked_id > member_account.member_id
+// 커뮤니티 - 운영
 Ref: report.reporter_id > member_account.member_id
 Ref: report.post_id > post.post_id
 Ref: report.comment_id > post_comment.comment_id
@@ -1172,6 +1147,12 @@ TableGroup member_security [note: '고객 - 보안'] {
   member_session
   password_history
   privacy_access_log
+}
+
+TableGroup member_lifecycle [note: '고객 - 상태/닉네임 정책'] {
+  member_status_history
+  nickname_history
+  forbidden_word
 }
 
 TableGroup product_classification [note: '상품 - 분류/브랜드/배송'] {
@@ -1219,30 +1200,23 @@ TableGroup product_composition_operation [note: '상품 - 구성/운영'] {
   sku_inventory
 }
 
-TableGroup community_post [note: '커뮤니티 - 글 (사진/집들이/노하우/질문)'] {
+TableGroup community_post [note: '커뮤니티 - 글 (사진/집들이/매거진)'] {
   post
   post_image
   post_block
   post_product_tag
   housewarming_detail
-  knowhow_detail
-  question_detail
+  magazine_detail
 }
 
 TableGroup community_reaction [note: '커뮤니티 - 분류/반응/스크랩'] {
   post_style
-  hashtag
-  post_hashtag
   post_comment
   post_like
-  comment_like
-  scrap_folder
   scrap
 }
 
-TableGroup community_operation [note: '커뮤니티 - 팔로우/차단/신고/알림'] {
-  follow
-  member_block
+TableGroup community_operation [note: '커뮤니티 - 신고/알림'] {
   report
   notification
 }
