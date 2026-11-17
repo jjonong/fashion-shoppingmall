@@ -1,0 +1,853 @@
+// =====================================================================
+// 패션 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
+// 1단계 고객 15개 + 2단계 상품 30개 = 45개 테이블
+// 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
+// =====================================================================
+
+Project fashion_mall {
+  database_type: 'Oracle'
+  Note: '''
+  패션 쇼핑몰 포트폴리오 DB (Oracle 12c 이상, PK는 IDENTITY)
+  - 멀티 브랜드 편집숍 가정
+  - 상태값은 VARCHAR2 + CHECK, Y/N은 CHAR(1) + CHECK
+  - 탈퇴는 soft delete + 개인정보 마스킹
+  '''
+}
+
+// =====================================================================
+// 1단계: 고객 - 회원 기본
+// =====================================================================
+
+Table MEMBER_GRADE [note: '회원 등급 (혜택을 DB에서 바로 변경)'] {
+  GRADE_ID number(19) [pk, increment]
+  GRADE_NAME varchar2(20) [not null, unique, note: 'WELCOME/SILVER/GOLD/VIP']
+  POINT_RATE number(5,2) [not null, default: 0, note: '적립률 %']
+  DISCOUNT_RATE number(5,2) [not null, default: 0, note: '할인율 %']
+  MIN_PURCHASE_AMOUNT number(12) [not null, default: 0, note: '승급 기준 누적 구매액']
+  FREE_SHIPPING char(1) [not null, default: 'N', note: 'Y/N']
+  SORT_ORDER number(3) [not null]
+}
+
+Table MEMBER [note: '회원'] {
+  MEMBER_ID number(19) [pk, increment]
+  EMAIL varchar2(200) [not null, note: 'LOWER(EMAIL) 함수 기반 UNIQUE. 탈퇴 시 withdrawn_{ID}@deleted.local로 마스킹']
+  PASSWORD_HASH varchar2(100) [note: 'bcrypt 해시. 소셜 전용 가입은 NULL']
+  NAME varchar2(50) [not null, note: '탈퇴 시 탈퇴회원']
+  NICKNAME varchar2(30) [not null, unique]
+  PHONE_ENC varchar2(200) [note: '휴대폰 번호 AES-256 암호문']
+  PHONE_HASH char(64) [note: '휴대폰 번호 SHA-256 (검색/중복확인용)']
+  BIRTH_DATE date
+  GENDER char(1) [note: 'M/F']
+  CI_HASH char(64) [unique, note: '본인인증 CI 해시. 중복 가입 방지']
+  DI_HASH char(64) [note: '본인인증 DI 해시']
+  IDENTITY_VERIFIED_AT timestamp
+  ROLE varchar2(20) [not null, default: 'USER', note: 'USER/ADMIN']
+  GRADE_ID number(19) [not null]
+  STATUS varchar2(20) [not null, default: 'ACTIVE', note: 'ACTIVE/DORMANT/LOCKED/WITHDRAWN']
+  TOTAL_PURCHASE_AMOUNT number(12) [not null, default: 0, note: '등급 산정용 캐시']
+  POINT_BALANCE number(12) [not null, default: 0, note: '포인트 잔액 캐시']
+  REFERRAL_CODE varchar2(20) [unique, note: '내 추천 코드']
+  REFERRED_BY number(19) [note: '나를 추천한 회원']
+  EMAIL_VERIFIED char(1) [not null, default: 'N', note: 'Y/N']
+  LOGIN_FAIL_COUNT number(2) [not null, default: 0, note: '5회 실패 시 30분 잠금']
+  LOCKED_UNTIL timestamp
+  LAST_LOGIN_AT timestamp
+  PASSWORD_CHANGED_AT timestamp
+  WITHDRAWN_AT timestamp
+  WITHDRAW_REASON varchar2(500)
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+  UPDATED_AT timestamp
+
+  indexes {
+    `LOWER(EMAIL)` [unique, name: 'UX_MEMBER_EMAIL']
+    PHONE_HASH [name: 'IX_MEMBER_PHONE_HASH']
+    GRADE_ID [name: 'IX_MEMBER_GRADE']
+    REFERRED_BY [name: 'IX_MEMBER_REFERRED_BY']
+  }
+}
+
+Table MEMBER_SOCIAL [note: '소셜 계정 연동 (한 회원이 여러 개 연결 가능)'] {
+  SOCIAL_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [not null]
+  PROVIDER varchar2(20) [not null, note: 'KAKAO/NAVER/GOOGLE']
+  PROVIDER_USER_ID varchar2(100) [not null, note: '소셜 서비스의 회원 고유 ID']
+  CONNECTED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (PROVIDER, PROVIDER_USER_ID) [unique, name: 'UK_MEMBER_SOCIAL']
+    MEMBER_ID [name: 'IX_MEMBER_SOCIAL_MEMBER']
+  }
+}
+
+Table MEMBER_BODY [note: '회원 체형 (사이즈 추천, 비슷한 체형 리뷰 필터)'] {
+  MEMBER_ID number(19) [pk, note: 'MEMBER와 1:1']
+  HEIGHT_CM number(3)
+  WEIGHT_KG number(3)
+  TOP_SIZE varchar2(10) [note: 'XS/S/M/L/XL/XXL']
+  BOTTOM_SIZE number(2) [note: '허리 인치']
+  SHOE_SIZE number(3) [note: 'mm']
+  UPDATED_AT timestamp
+}
+
+Table ADDRESS [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)'] {
+  ADDRESS_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [not null]
+  ALIAS varchar2(30) [note: '집/회사']
+  RECEIVER_NAME varchar2(50) [not null]
+  RECEIVER_PHONE_ENC varchar2(200) [not null, note: 'AES-256 암호문']
+  ZIPCODE varchar2(10) [not null]
+  ADDRESS1 varchar2(200) [not null]
+  ADDRESS2 varchar2(200)
+  IS_DEFAULT char(1) [not null, default: 'N', note: 'Y/N']
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+  UPDATED_AT timestamp
+
+  indexes {
+    MEMBER_ID [name: 'IX_ADDRESS_MEMBER']
+    `CASE WHEN IS_DEFAULT = 'Y' THEN MEMBER_ID END` [unique, name: 'UX_ADDRESS_DEFAULT', note: '회원당 기본 배송지 1개']
+  }
+}
+
+// =====================================================================
+// 1단계: 고객 - 약관 / 알림 / 취향
+// =====================================================================
+
+Table TERMS [note: '약관 (버전 관리)'] {
+  TERMS_ID number(19) [pk, increment]
+  TERMS_TYPE varchar2(30) [not null, note: 'SERVICE/PRIVACY/AGE14/MARKETING_SMS/MARKETING_EMAIL/MARKETING_PUSH']
+  VERSION varchar2(10) [not null]
+  TITLE varchar2(100) [not null]
+  CONTENT clob [not null]
+  IS_REQUIRED char(1) [not null, note: 'Y/N']
+  EFFECTIVE_AT timestamp [not null, note: '시행일']
+
+  indexes {
+    (TERMS_TYPE, VERSION) [unique, name: 'UK_TERMS_TYPE_VERSION']
+  }
+}
+
+Table MEMBER_TERMS_AGREEMENT [note: '약관 동의/철회 이력'] {
+  AGREEMENT_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [not null]
+  TERMS_ID number(19) [not null]
+  AGREED char(1) [not null, note: 'Y/N']
+  AGREED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+  WITHDRAWN_AT timestamp [note: '동의 철회 시각']
+
+  indexes {
+    MEMBER_ID [name: 'IX_MTA_MEMBER']
+    TERMS_ID [name: 'IX_MTA_TERMS']
+  }
+}
+
+Table MEMBER_NOTIFICATION_SETTING [note: '알림 수신 설정. EVENT(광고성)는 마케팅 약관 동의가 있어야 발송'] {
+  MEMBER_ID number(19) [not null]
+  NOTI_TYPE varchar2(20) [not null, note: 'ORDER/DELIVERY/RESTOCK/PRICE_DROP/EVENT']
+  CHANNEL varchar2(10) [not null, note: 'PUSH/SMS/EMAIL/KAKAO']
+  ENABLED char(1) [not null, default: 'Y', note: 'Y/N']
+  UPDATED_AT timestamp
+
+  indexes {
+    (MEMBER_ID, NOTI_TYPE, CHANNEL) [pk]
+  }
+}
+
+Table STYLE [note: '스타일 (회원 취향과 상품 스타일에서 함께 사용)'] {
+  STYLE_ID number(19) [pk, increment]
+  NAME varchar2(30) [not null, unique, note: '미니멀/스트릿/캐주얼/오피스룩/아메카지/스포티']
+  SORT_ORDER number(3) [not null]
+}
+
+Table MEMBER_STYLE [note: '회원 선호 스타일'] {
+  MEMBER_ID number(19) [not null]
+  STYLE_ID number(19) [not null]
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (MEMBER_ID, STYLE_ID) [pk]
+    STYLE_ID [name: 'IX_MEMBER_STYLE_STYLE']
+  }
+}
+
+// =====================================================================
+// 1단계: 고객 - 보안
+// =====================================================================
+
+Table LOGIN_HISTORY [note: '로그인 시도 이력 (이상 로그인 탐지, 새 기기 알림)'] {
+  LOGIN_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [note: '없는 계정으로 시도하면 NULL']
+  LOGIN_EMAIL varchar2(200) [note: '시도한 이메일']
+  LOGIN_TYPE varchar2(20) [not null, note: 'EMAIL/KAKAO/NAVER/GOOGLE']
+  RESULT varchar2(20) [not null, note: 'SUCCESS/FAIL_PASSWORD/FAIL_LOCKED/FAIL_NOT_FOUND']
+  IP_ADDRESS varchar2(45) [not null, note: 'IPv6 포함']
+  USER_AGENT varchar2(500)
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (MEMBER_ID, CREATED_AT) [name: 'IX_LOGIN_HISTORY_MEMBER']
+    (IP_ADDRESS, CREATED_AT) [name: 'IX_LOGIN_HISTORY_IP']
+  }
+}
+
+Table MEMBER_TOKEN [note: '이메일 인증, 비밀번호 재설정용 1회용 토큰'] {
+  TOKEN_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [not null]
+  TOKEN_TYPE varchar2(20) [not null, note: 'EMAIL_VERIFY/PASSWORD_RESET']
+  TOKEN_HASH char(64) [not null, unique, note: 'SHA-256. 원문은 저장하지 않음']
+  EXPIRES_AT timestamp [not null]
+  USED_AT timestamp [note: '사용하면 기록, 재사용 불가']
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    MEMBER_ID [name: 'IX_MEMBER_TOKEN_MEMBER']
+  }
+}
+
+Table MEMBER_SESSION [note: '기기별 로그인 세션 (리프레시 토큰)'] {
+  SESSION_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [not null]
+  REFRESH_TOKEN_HASH char(64) [not null, unique, note: 'SHA-256']
+  DEVICE_INFO varchar2(200)
+  IP_ADDRESS varchar2(45)
+  EXPIRES_AT timestamp [not null]
+  REVOKED_AT timestamp [note: '강제 로그아웃, 비밀번호 변경 시 전체 폐기']
+  LAST_USED_AT timestamp
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (MEMBER_ID, REVOKED_AT) [name: 'IX_MEMBER_SESSION_MEMBER']
+  }
+}
+
+Table PASSWORD_HISTORY [note: '비밀번호 변경 이력 (최근 3개 재사용 금지)'] {
+  HISTORY_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [not null]
+  PASSWORD_HASH varchar2(100) [not null]
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (MEMBER_ID, CREATED_AT) [name: 'IX_PASSWORD_HISTORY_MEMBER']
+  }
+}
+
+Table PRIVACY_ACCESS_LOG [note: '관리자 개인정보 접근 기록 (개인정보 안전성 확보조치 기준)'] {
+  LOG_ID number(19) [pk, increment]
+  ADMIN_ID number(19) [not null, note: '조회한 관리자']
+  TARGET_MEMBER_ID number(19) [not null, note: '조회 대상 회원']
+  ACTION varchar2(20) [not null, note: 'VIEW/UPDATE/EXPORT/UNMASK']
+  REASON varchar2(500) [not null]
+  IP_ADDRESS varchar2(45) [not null]
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    ADMIN_ID [name: 'IX_PAL_ADMIN']
+    (TARGET_MEMBER_ID, CREATED_AT) [name: 'IX_PAL_TARGET']
+  }
+}
+
+// =====================================================================
+// 2단계: 상품 - 분류 / 브랜드
+// =====================================================================
+
+Table BRAND [note: '브랜드'] {
+  BRAND_ID number(19) [pk, increment]
+  NAME_KO varchar2(100) [not null]
+  NAME_EN varchar2(100) [not null, unique]
+  LOGO_URL varchar2(500)
+  DESCRIPTION varchar2(1000)
+  STATUS varchar2(20) [not null, default: 'ACTIVE', note: 'ACTIVE/HIDDEN']
+  LIKE_COUNT number(10) [not null, default: 0, note: '캐시']
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+  UPDATED_AT timestamp
+}
+
+Table CATEGORY [note: '카테고리 3단계 (예: 상의 > 니트 > 카디건)'] {
+  CATEGORY_ID number(19) [pk, increment]
+  PARENT_ID number(19) [note: '최상위는 NULL']
+  NAME varchar2(50) [not null]
+  DEPTH number(1) [not null, note: '1~3']
+  SORT_ORDER number(3) [not null]
+  SIZE_TYPE varchar2(10) [not null, note: 'TOP/BOTTOM/OUTER/SHOES/BAG/FREE. 실측 항목 결정']
+  IS_ACTIVE char(1) [not null, default: 'Y', note: 'Y/N']
+
+  indexes {
+    (PARENT_ID, NAME) [unique, name: 'UK_CATEGORY_PARENT_NAME']
+  }
+}
+
+Table SIZE_MEASURE_ITEM [note: '사이즈 종류별 실측 항목 마스터'] {
+  ITEM_ID number(19) [pk, increment]
+  SIZE_TYPE varchar2(10) [not null, note: 'CATEGORY.SIZE_TYPE과 같은 값']
+  ITEM_CODE varchar2(20) [not null, note: 'LENGTH/SHOULDER/CHEST/SLEEVE/WAIST/THIGH/RISE/HEM...']
+  ITEM_NAME varchar2(30) [not null, note: '총장/어깨너비/가슴단면/소매길이/허리단면...']
+  SORT_ORDER number(3) [not null]
+
+  indexes {
+    (SIZE_TYPE, ITEM_CODE) [unique, name: 'UK_SIZE_MEASURE_ITEM']
+  }
+}
+
+// =====================================================================
+// 2단계: 상품 - 상품 → 컬러 → SKU
+// =====================================================================
+
+Table PRODUCT [note: '상품 (컬러/사이즈 공통 정보)'] {
+  PRODUCT_ID number(19) [pk, increment]
+  BRAND_ID number(19) [not null]
+  CATEGORY_ID number(19) [not null, note: '3단계 카테고리']
+  STYLE_CODE varchar2(30) [not null, unique, note: '품번']
+  NAME varchar2(200) [not null]
+  GENDER varchar2(10) [not null, note: 'MEN/WOMEN/UNISEX']
+  SEASON_ID number(19) [note: '시즌 마스터 (26SS/26FW). 시즌리스는 NULL']
+  PRODUCT_TYPE varchar2(10) [not null, default: 'SINGLE', note: 'SINGLE/SET. SET은 PRODUCT_SET_ITEM으로 구성']
+  SALE_TYPE varchar2(20) [not null, default: 'NORMAL', note: 'NORMAL/PRE_ORDER/LIMITED_RELEASE']
+  RELEASE_AT timestamp [note: '발매 일시. 한정 발매는 이 시각부터 구매 가능']
+  SHIP_EXPECTED_DATE date [note: '예약 판매 출고 예정일']
+  MAX_PER_ORDER number(3) [note: '주문 1건당 최대 수량. NULL이면 제한 없음']
+  MAX_PER_MEMBER number(3) [note: '회원 1인당 최대 구매 수량 (한정 발매)']
+  LIST_PRICE number(12) [not null, note: '정가']
+  SALE_PRICE number(12) [not null, note: '판매가. CHECK SALE_PRICE <= LIST_PRICE. 할인율은 계산']
+  DESCRIPTION clob
+  FIT varchar2(10) [note: 'SLIM/REGULAR/OVER']
+  THICKNESS varchar2(10) [note: 'THIN/NORMAL/THICK']
+  ELASTICITY varchar2(10) [note: 'NONE/LOW/HIGH']
+  SHEERNESS varchar2(10) [note: 'NONE/LOW/HIGH (비침)']
+  LINING char(1) [note: '안감 Y/N']
+  MODEL_HEIGHT_CM number(3)
+  MODEL_WEIGHT_KG number(3)
+  MODEL_WEAR_SIZE varchar2(10) [note: '모델 착용 사이즈']
+  STATUS varchar2(20) [not null, default: 'DRAFT', note: 'DRAFT/PENDING_REVIEW/REJECTED/APPROVED/ON_SALE/SOLD_OUT/STOPPED. 검수 승인 후 판매']
+  SALE_START_AT timestamp
+  SALE_END_AT timestamp
+  IS_FREE_SHIPPING char(1) [not null, default: 'N', note: 'Y/N']
+  VIEW_COUNT number(10) [not null, default: 0, note: '캐시']
+  LIKE_COUNT number(10) [not null, default: 0, note: '캐시']
+  REVIEW_COUNT number(10) [not null, default: 0, note: '캐시']
+  AVG_RATING number(2,1) [not null, default: 0, note: '캐시']
+  SALES_COUNT number(10) [not null, default: 0, note: '캐시']
+  CREATED_BY number(19) [not null, note: '등록 관리자']
+  UPDATED_BY number(19) [note: '수정 관리자']
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+  UPDATED_AT timestamp
+
+  indexes {
+    (CATEGORY_ID, STATUS, SALE_PRICE) [name: 'IX_PRODUCT_CATEGORY']
+    (BRAND_ID, STATUS) [name: 'IX_PRODUCT_BRAND']
+    (STATUS, SALES_COUNT) [name: 'IX_PRODUCT_BEST', note: 'SALES_COUNT DESC']
+    SEASON_ID [name: 'IX_PRODUCT_SEASON']
+    (SALE_TYPE, RELEASE_AT) [name: 'IX_PRODUCT_RELEASE', note: '발매 예정 상품 조회']
+    CREATED_BY [name: 'IX_PRODUCT_CREATED_BY']
+    UPDATED_BY [name: 'IX_PRODUCT_UPDATED_BY']
+  }
+}
+
+Table PRODUCT_NOTICE [note: '상품정보제공고시 (의류 필수 표시 항목)'] {
+  PRODUCT_ID number(19) [pk, note: 'PRODUCT와 1:1']
+  MATERIAL varchar2(200) [not null, note: '소재 혼용률']
+  COLOR_INFO varchar2(200) [not null]
+  SIZE_INFO varchar2(200) [not null]
+  MANUFACTURER varchar2(100) [not null]
+  ORIGIN varchar2(50) [not null, note: '제조국']
+  MANUFACTURED_YM varchar2(7) [not null, note: '제조연월 YYYY-MM']
+  WASHING_CARE varchar2(500) [not null, note: '세탁 방법 및 취급 시 주의사항']
+  QUALITY_ASSURANCE varchar2(500) [not null, note: '품질보증기준']
+  AS_CONTACT varchar2(100) [not null, note: 'A/S 책임자와 전화번호']
+}
+
+Table PRODUCT_COLOR [note: '상품 컬러 (컬러마다 이미지가 다름)'] {
+  COLOR_ID number(19) [pk, increment]
+  PRODUCT_ID number(19) [not null]
+  COLOR_CODE varchar2(10) [not null, note: 'BK/WH/NV. SKU 코드에 사용']
+  COLOR_NAME varchar2(50) [not null, note: '예: 멜란지 그레이']
+  COLOR_HEX char(7) [note: '#B5B5B5']
+  COLOR_FAMILY_ID number(19) [not null, note: '컬러 계열 (필터용). 멜란지 그레이 → GRAY']
+  SORT_ORDER number(3) [not null]
+
+  indexes {
+    (PRODUCT_ID, COLOR_CODE) [unique, name: 'UK_PRODUCT_COLOR_CODE']
+    (PRODUCT_ID, COLOR_NAME) [unique, name: 'UK_PRODUCT_COLOR_NAME']
+    COLOR_FAMILY_ID [name: 'IX_PRODUCT_COLOR_FAMILY']
+  }
+}
+
+Table PRODUCT_IMAGE [note: '상품 이미지 (컬러별 + 공통)'] {
+  IMAGE_ID number(19) [pk, increment]
+  PRODUCT_ID number(19) [not null]
+  COLOR_ID number(19) [note: 'NULL이면 컬러 공통 이미지']
+  IMAGE_TYPE varchar2(20) [not null, note: 'THUMBNAIL/MAIN/DETAIL/MODEL']
+  IMAGE_URL varchar2(500) [not null]
+  SORT_ORDER number(3) [not null]
+
+  indexes {
+    (PRODUCT_ID, COLOR_ID) [name: 'IX_PRODUCT_IMAGE_PRODUCT']
+    COLOR_ID [name: 'IX_PRODUCT_IMAGE_COLOR']
+  }
+}
+
+Table PRODUCT_SKU [note: 'SKU = 컬러 x 사이즈. 재고, 장바구니, 주문의 기준 단위'] {
+  SKU_ID number(19) [pk, increment]
+  PRODUCT_ID number(19) [not null]
+  COLOR_ID number(19) [not null]
+  SIZE_NAME varchar2(10) [not null, note: 'S/M/L, 28/30, 250, FREE']
+  SIZE_ORDER number(3) [not null, note: '사이즈 정렬 순서']
+  SKU_CODE varchar2(50) [not null, unique, note: '품번-컬러코드-사이즈']
+  BARCODE varchar2(30) [unique, note: '바코드 (EAN-13 등). 입출고 스캔용']
+  EXTRA_PRICE number(12) [not null, default: 0, note: '옵션 추가금']
+  STOCK number(10) [not null, default: 0, note: '판매 가능 재고 (주문 시 차감 대상). CHECK STOCK >= 0. 창고별 실물 재고는 SKU_INVENTORY']
+  SAFETY_STOCK number(10) [not null, default: 0, note: '품절 임박 기준']
+  STATUS varchar2(20) [not null, default: 'ON_SALE', note: 'ON_SALE/SOLD_OUT/STOPPED']
+  VERSION number(10) [not null, default: 0, note: '낙관적 락']
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+  UPDATED_AT timestamp
+
+  indexes {
+    (PRODUCT_ID, COLOR_ID, SIZE_NAME) [unique, name: 'UK_PRODUCT_SKU_OPTION']
+    COLOR_ID [name: 'IX_PRODUCT_SKU_COLOR']
+  }
+}
+
+Table PRODUCT_SIZE_SPEC [note: '실측 사이즈표 (회원 체형과 비교해 사이즈 추천)'] {
+  SPEC_ID number(19) [pk, increment]
+  PRODUCT_ID number(19) [not null]
+  SIZE_NAME varchar2(10) [not null]
+  ITEM_ID number(19) [not null, note: '실측 항목']
+  VALUE_CM number(5,1) [not null]
+
+  indexes {
+    (PRODUCT_ID, SIZE_NAME, ITEM_ID) [unique, name: 'UK_PRODUCT_SIZE_SPEC']
+    ITEM_ID [name: 'IX_PRODUCT_SIZE_SPEC_ITEM']
+  }
+}
+
+// =====================================================================
+// 2단계: 상품 - 연결 / 이력
+// =====================================================================
+
+Table PRODUCT_STYLE [note: '상품 스타일 태그 (1단계 STYLE 재사용)'] {
+  PRODUCT_ID number(19) [not null]
+  STYLE_ID number(19) [not null]
+
+  indexes {
+    (PRODUCT_ID, STYLE_ID) [pk]
+    STYLE_ID [name: 'IX_PRODUCT_STYLE_STYLE']
+  }
+}
+
+Table MEMBER_BRAND_PREFERENCE [note: '회원 선호 브랜드'] {
+  MEMBER_ID number(19) [not null]
+  BRAND_ID number(19) [not null]
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (MEMBER_ID, BRAND_ID) [pk]
+    BRAND_ID [name: 'IX_MBP_BRAND']
+  }
+}
+
+Table STOCK_HISTORY [note: '재고 원장. SKU.STOCK 변경과 같은 트랜잭션에서 기록'] {
+  STOCK_HISTORY_ID number(19) [pk, increment]
+  SKU_ID number(19) [not null]
+  WAREHOUSE_ID number(19) [note: '실물 이동이 있는 경우 창고. 판매 가능 재고만 바뀌면 NULL']
+  CHANGE_TYPE varchar2(20) [not null, note: 'INBOUND/ORDER/CANCEL/RETURN/EXCHANGE/ADJUST/MOVE']
+  QUANTITY number(10) [not null, note: '+입고 / -출고']
+  STOCK_AFTER number(10) [not null, note: '변경 후 재고']
+  REF_TYPE varchar2(20) [note: 'ORDER/CLAIM']
+  REF_ID number(19) [note: '주문/클레임 ID (다음 단계 테이블)']
+  MEMO varchar2(500)
+  CREATED_BY number(19) [note: '관리자. 시스템 처리는 NULL']
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (SKU_ID, CREATED_AT) [name: 'IX_STOCK_HISTORY_SKU']
+    WAREHOUSE_ID [name: 'IX_STOCK_HISTORY_WAREHOUSE']
+    CREATED_BY [name: 'IX_STOCK_HISTORY_CREATED_BY']
+  }
+}
+
+Table PRICE_HISTORY [note: '가격 변경 이력 (가격 인하 알림 근거)'] {
+  PRICE_HISTORY_ID number(19) [pk, increment]
+  PRODUCT_ID number(19) [not null]
+  LIST_PRICE number(12) [not null]
+  SALE_PRICE number(12) [not null]
+  CHANGED_BY number(19) [not null, note: '관리자']
+  CHANGED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (PRODUCT_ID, CHANGED_AT) [name: 'IX_PRICE_HISTORY_PRODUCT']
+    CHANGED_BY [name: 'IX_PRICE_HISTORY_CHANGED_BY']
+  }
+}
+
+// =====================================================================
+// 2단계 확장: 검색 / 필터
+// =====================================================================
+
+Table COLOR_FAMILY [note: '컬러 계열 마스터. 컬러 필터 칩으로 노출'] {
+  COLOR_FAMILY_ID number(19) [pk, increment]
+  FAMILY_CODE varchar2(20) [not null, unique, note: 'BLACK/WHITE/GRAY/NAVY/BLUE/BEIGE/BROWN/KHAKI/GREEN/RED/PINK/YELLOW/PURPLE/MULTI']
+  NAME_KO varchar2(30) [not null, note: '블랙/화이트/그레이...']
+  REPRESENT_HEX char(7) [not null, note: '필터 칩 표시 색']
+  SORT_ORDER number(3) [not null]
+}
+
+Table MATERIAL [note: '소재 마스터'] {
+  MATERIAL_ID number(19) [pk, increment]
+  MATERIAL_CODE varchar2(20) [not null, unique, note: 'COTTON/WOOL/CASHMERE/LINEN/POLYESTER/NYLON/RAYON/LEATHER/DOWN...']
+  NAME_KO varchar2(30) [not null, note: '면/울/캐시미어/린넨...']
+  SORT_ORDER number(3) [not null]
+}
+
+Table PRODUCT_MATERIAL [note: '상품 소재 혼용률 (구조화). PRODUCT_NOTICE.MATERIAL은 법정 표기 문구로 유지'] {
+  PRODUCT_ID number(19) [not null]
+  PART varchar2(20) [not null, note: 'SHELL(겉감)/LINING(안감)/FILLING(충전재)/RIB(배색)']
+  MATERIAL_ID number(19) [not null]
+  RATIO number(5,2) [not null, note: '혼용률 %. CHECK 0 < RATIO <= 100. 부위별 합계 100은 애플리케이션에서 검증']
+
+  indexes {
+    (PRODUCT_ID, PART, MATERIAL_ID) [pk]
+    (MATERIAL_ID, RATIO) [name: 'IX_PRODUCT_MATERIAL_FILTER', note: '울 50% 이상 같은 필터']
+  }
+}
+
+Table ATTRIBUTE [note: '필터 속성 정의 (넥라인/기장/소매기장/패턴/여밈/굽높이...)'] {
+  ATTRIBUTE_ID number(19) [pk, increment]
+  ATTRIBUTE_CODE varchar2(30) [not null, unique, note: 'NECKLINE/LENGTH/SLEEVE_LENGTH/PATTERN/CLOSURE/HEEL_HEIGHT']
+  NAME_KO varchar2(30) [not null]
+  SIZE_TYPE varchar2(10) [note: '적용 카테고리 종류 (TOP/BOTTOM/...). NULL이면 전체']
+  IS_FILTERABLE char(1) [not null, default: 'Y', note: '검색 필터 노출 여부']
+  IS_MULTI_SELECT char(1) [not null, default: 'N', note: '상품 하나에 값 여러 개 허용 여부']
+  SORT_ORDER number(3) [not null]
+}
+
+Table ATTRIBUTE_VALUE [note: '속성 값 (넥라인 → 라운드/브이넥/터틀넥...)'] {
+  VALUE_ID number(19) [pk, increment]
+  ATTRIBUTE_ID number(19) [not null]
+  VALUE_CODE varchar2(30) [not null, note: 'ROUND/V_NECK/TURTLE...']
+  NAME_KO varchar2(30) [not null]
+  SORT_ORDER number(3) [not null]
+
+  indexes {
+    (ATTRIBUTE_ID, VALUE_CODE) [unique, name: 'UK_ATTRIBUTE_VALUE']
+  }
+}
+
+Table PRODUCT_ATTRIBUTE_VALUE [note: '상품별 속성 값'] {
+  PRODUCT_ID number(19) [not null]
+  VALUE_ID number(19) [not null]
+
+  indexes {
+    (PRODUCT_ID, VALUE_ID) [pk]
+    VALUE_ID [name: 'IX_PAV_VALUE', note: '속성 값으로 상품 찾기']
+  }
+}
+
+Table SEARCH_SYNONYM [note: '검색 동의어 (가디건 → 카디건, 맨투맨 → 스웨트셔츠)'] {
+  SYNONYM_ID number(19) [pk, increment]
+  TERM varchar2(50) [not null, unique, note: '사용자가 입력하는 단어']
+  STANDARD_TERM varchar2(50) [not null, note: '표준 검색어']
+  IS_ACTIVE char(1) [not null, default: 'Y']
+  CREATED_BY number(19) [not null]
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    CREATED_BY [name: 'IX_SEARCH_SYNONYM_CREATED_BY']
+  }
+}
+
+Table PRODUCT_SEARCH_KEYWORD [note: 'MD가 지정한 상품 검색 키워드 (상품명에 없는 단어로도 검색)'] {
+  PRODUCT_ID number(19) [not null]
+  KEYWORD varchar2(50) [not null, note: '예: 하객룩, 교복 위 카디건']
+
+  indexes {
+    (PRODUCT_ID, KEYWORD) [pk]
+    KEYWORD [name: 'IX_PSK_KEYWORD']
+  }
+}
+
+Table SEARCH_LOG [note: '검색 로그 (인기 검색어, 결과 없는 검색어 분석)'] {
+  SEARCH_LOG_ID number(19) [pk, increment]
+  MEMBER_ID number(19) [note: '비회원은 NULL']
+  KEYWORD varchar2(100) [not null, note: '입력 원문']
+  NORMALIZED_KEYWORD varchar2(100) [not null, note: '동의어/공백 정리 후']
+  RESULT_COUNT number(10) [not null, note: '0이면 동의어 추가 후보']
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (NORMALIZED_KEYWORD, CREATED_AT) [name: 'IX_SEARCH_LOG_KEYWORD']
+    (CREATED_AT) [name: 'IX_SEARCH_LOG_CREATED']
+    MEMBER_ID [name: 'IX_SEARCH_LOG_MEMBER']
+  }
+}
+
+// =====================================================================
+// 2단계 확장: 상품 구성
+// =====================================================================
+
+Table PRODUCT_RELATION [note: '연관 상품 (코디 추천, 같은 상품 다른 핏 등)'] {
+  PRODUCT_ID number(19) [not null]
+  RELATED_PRODUCT_ID number(19) [not null, note: 'CHECK PRODUCT_ID <> RELATED_PRODUCT_ID']
+  RELATION_TYPE varchar2(20) [not null, note: 'COORDI(코디)/OTHER_FIT(다른 핏)/SAME_SERIES(같은 라인)/SIMILAR(비슷한 상품)']
+  SORT_ORDER number(3) [not null]
+  CREATED_BY number(19) [not null]
+  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (PRODUCT_ID, RELATION_TYPE, RELATED_PRODUCT_ID) [pk]
+    RELATED_PRODUCT_ID [name: 'IX_PRODUCT_RELATION_RELATED']
+    CREATED_BY [name: 'IX_PRODUCT_RELATION_CREATED_BY']
+  }
+}
+
+Table PRODUCT_SET_ITEM [note: '세트 상품 구성품 (셋업, 묶음). 세트는 자체 SKU 없이 구성품 SKU를 각각 선택해 주문'] {
+  SET_PRODUCT_ID number(19) [not null, note: 'PRODUCT_TYPE = SET인 상품']
+  COMPONENT_PRODUCT_ID number(19) [not null, note: 'PRODUCT_TYPE = SINGLE인 상품']
+  QUANTITY number(3) [not null, default: 1]
+  SORT_ORDER number(3) [not null]
+
+  indexes {
+    (SET_PRODUCT_ID, COMPONENT_PRODUCT_ID) [pk]
+    COMPONENT_PRODUCT_ID [name: 'IX_PRODUCT_SET_ITEM_COMPONENT']
+  }
+}
+
+Table BRAND_SIZE_GUIDE [note: '브랜드별 사이즈 가이드 (회원 체형으로 사이즈 추천)'] {
+  GUIDE_ID number(19) [pk, increment]
+  BRAND_ID number(19) [not null]
+  SIZE_TYPE varchar2(10) [not null, note: 'TOP/BOTTOM/OUTER/SHOES']
+  GENDER varchar2(10) [not null, note: 'MEN/WOMEN/UNISEX']
+  SIZE_NAME varchar2(10) [not null, note: 'S/M/L, 28/30, 250']
+  SIZE_ORDER number(3) [not null]
+  KR_SIZE varchar2(10) [note: '국내 호칭 (90/95/100)']
+  INTL_SIZE varchar2(10) [note: '해외 호칭 (US 8, EU 42)']
+  HEIGHT_MIN_CM number(3)
+  HEIGHT_MAX_CM number(3)
+  WEIGHT_MIN_KG number(3)
+  WEIGHT_MAX_KG number(3)
+
+  indexes {
+    (BRAND_ID, SIZE_TYPE, GENDER, SIZE_NAME) [unique, name: 'UK_BRAND_SIZE_GUIDE']
+  }
+}
+
+// =====================================================================
+// 2단계 확장: 운영
+// =====================================================================
+
+Table SEASON [note: '시즌 마스터 (표기 통일: 26FW)'] {
+  SEASON_ID number(19) [pk, increment]
+  SEASON_CODE varchar2(10) [not null, unique, note: '26SS/26FW']
+  SEASON_YEAR number(4) [not null]
+  TERM varchar2(5) [not null, note: 'SS/FW']
+  NAME_KO varchar2(30) [not null, note: '2026 가을/겨울']
+  START_DATE date [not null]
+  END_DATE date [not null, note: '시즌오프 기준']
+}
+
+Table PRODUCT_APPROVAL [note: '상품 검수 요청/결과 (등록자와 승인자 분리)'] {
+  APPROVAL_ID number(19) [pk, increment]
+  PRODUCT_ID number(19) [not null]
+  REQUESTED_BY number(19) [not null, note: '등록 MD']
+  REQUESTED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+  REVIEWER_ID number(19) [note: '검수자. CHECK REVIEWER_ID <> REQUESTED_BY']
+  RESULT varchar2(20) [not null, default: 'PENDING', note: 'PENDING/APPROVED/REJECTED']
+  REJECT_REASON varchar2(1000) [note: '반려 사유 (이미지 불량, 고시정보 누락 등)']
+  REVIEWED_AT timestamp
+
+  indexes {
+    (PRODUCT_ID, REQUESTED_AT) [name: 'IX_PRODUCT_APPROVAL_PRODUCT']
+    (RESULT, REQUESTED_AT) [name: 'IX_PRODUCT_APPROVAL_QUEUE', note: '검수 대기 목록']
+    REQUESTED_BY [name: 'IX_PRODUCT_APPROVAL_REQUESTED_BY']
+    REVIEWER_ID [name: 'IX_PRODUCT_APPROVAL_REVIEWER']
+  }
+}
+
+Table PRODUCT_STATUS_HISTORY [note: '상품 상태 변경 이력 (판매중지 사유 추적)'] {
+  HISTORY_ID number(19) [pk, increment]
+  PRODUCT_ID number(19) [not null]
+  FROM_STATUS varchar2(20) [note: '최초 등록은 NULL']
+  TO_STATUS varchar2(20) [not null]
+  REASON varchar2(500)
+  CHANGED_BY number(19) [note: '관리자. 자동 품절 처리 등 시스템 변경은 NULL']
+  CHANGED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+
+  indexes {
+    (PRODUCT_ID, CHANGED_AT) [name: 'IX_PSH_PRODUCT']
+    CHANGED_BY [name: 'IX_PSH_CHANGED_BY']
+  }
+}
+
+Table WAREHOUSE [note: '창고'] {
+  WAREHOUSE_ID number(19) [pk, increment]
+  WAREHOUSE_CODE varchar2(20) [not null, unique]
+  NAME varchar2(50) [not null]
+  ZIPCODE varchar2(10) [not null]
+  ADDRESS1 varchar2(200) [not null]
+  ADDRESS2 varchar2(200)
+  IS_ACTIVE char(1) [not null, default: 'Y']
+}
+
+Table SKU_INVENTORY [note: '창고별 실물 재고와 적재 위치'] {
+  SKU_ID number(19) [not null]
+  WAREHOUSE_ID number(19) [not null]
+  QUANTITY number(10) [not null, default: 0, note: '실물 수량. CHECK >= 0']
+  LOCATION_CODE varchar2(20) [note: '적재 위치 (A-03-2: 구역-선반-칸)']
+  UPDATED_AT timestamp
+
+  indexes {
+    (SKU_ID, WAREHOUSE_ID) [pk]
+    WAREHOUSE_ID [name: 'IX_SKU_INVENTORY_WAREHOUSE']
+  }
+}
+
+// =====================================================================
+// 관계 (> 다대일, - 일대일)
+// =====================================================================
+
+// 고객
+Ref: MEMBER.GRADE_ID > MEMBER_GRADE.GRADE_ID
+Ref: MEMBER.REFERRED_BY > MEMBER.MEMBER_ID
+Ref: MEMBER_SOCIAL.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_BODY.MEMBER_ID - MEMBER.MEMBER_ID
+Ref: ADDRESS.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_TERMS_AGREEMENT.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_TERMS_AGREEMENT.TERMS_ID > TERMS.TERMS_ID
+Ref: MEMBER_NOTIFICATION_SETTING.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_STYLE.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_STYLE.STYLE_ID > STYLE.STYLE_ID
+Ref: LOGIN_HISTORY.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_TOKEN.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_SESSION.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: PASSWORD_HISTORY.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: PRIVACY_ACCESS_LOG.ADMIN_ID > MEMBER.MEMBER_ID
+Ref: PRIVACY_ACCESS_LOG.TARGET_MEMBER_ID > MEMBER.MEMBER_ID
+
+// 상품
+Ref: CATEGORY.PARENT_ID > CATEGORY.CATEGORY_ID
+Ref: PRODUCT.BRAND_ID > BRAND.BRAND_ID
+Ref: PRODUCT.CATEGORY_ID > CATEGORY.CATEGORY_ID
+Ref: PRODUCT_NOTICE.PRODUCT_ID - PRODUCT.PRODUCT_ID
+Ref: PRODUCT_COLOR.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_IMAGE.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_IMAGE.COLOR_ID > PRODUCT_COLOR.COLOR_ID
+Ref: PRODUCT_SKU.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_SKU.COLOR_ID > PRODUCT_COLOR.COLOR_ID
+Ref: PRODUCT_SIZE_SPEC.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_SIZE_SPEC.ITEM_ID > SIZE_MEASURE_ITEM.ITEM_ID
+Ref: STOCK_HISTORY.SKU_ID > PRODUCT_SKU.SKU_ID
+Ref: PRICE_HISTORY.PRODUCT_ID > PRODUCT.PRODUCT_ID
+
+// 고객 ↔ 상품
+Ref: PRODUCT_STYLE.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_STYLE.STYLE_ID > STYLE.STYLE_ID
+Ref: MEMBER_BRAND_PREFERENCE.MEMBER_ID > MEMBER.MEMBER_ID
+Ref: MEMBER_BRAND_PREFERENCE.BRAND_ID > BRAND.BRAND_ID
+Ref: PRODUCT.CREATED_BY > MEMBER.MEMBER_ID
+Ref: PRODUCT.UPDATED_BY > MEMBER.MEMBER_ID
+Ref: STOCK_HISTORY.CREATED_BY > MEMBER.MEMBER_ID
+Ref: PRICE_HISTORY.CHANGED_BY > MEMBER.MEMBER_ID
+
+// 확장: 검색 / 필터
+Ref: PRODUCT_COLOR.COLOR_FAMILY_ID > COLOR_FAMILY.COLOR_FAMILY_ID
+Ref: PRODUCT_MATERIAL.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_MATERIAL.MATERIAL_ID > MATERIAL.MATERIAL_ID
+Ref: ATTRIBUTE_VALUE.ATTRIBUTE_ID > ATTRIBUTE.ATTRIBUTE_ID
+Ref: PRODUCT_ATTRIBUTE_VALUE.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_ATTRIBUTE_VALUE.VALUE_ID > ATTRIBUTE_VALUE.VALUE_ID
+Ref: SEARCH_SYNONYM.CREATED_BY > MEMBER.MEMBER_ID
+Ref: PRODUCT_SEARCH_KEYWORD.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: SEARCH_LOG.MEMBER_ID > MEMBER.MEMBER_ID
+
+// 확장: 상품 구성
+Ref: PRODUCT_RELATION.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_RELATION.RELATED_PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_RELATION.CREATED_BY > MEMBER.MEMBER_ID
+Ref: PRODUCT_SET_ITEM.SET_PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_SET_ITEM.COMPONENT_PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: BRAND_SIZE_GUIDE.BRAND_ID > BRAND.BRAND_ID
+
+// 확장: 운영
+Ref: PRODUCT.SEASON_ID > SEASON.SEASON_ID
+Ref: PRODUCT_APPROVAL.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_APPROVAL.REQUESTED_BY > MEMBER.MEMBER_ID
+Ref: PRODUCT_APPROVAL.REVIEWER_ID > MEMBER.MEMBER_ID
+Ref: PRODUCT_STATUS_HISTORY.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: PRODUCT_STATUS_HISTORY.CHANGED_BY > MEMBER.MEMBER_ID
+Ref: SKU_INVENTORY.SKU_ID > PRODUCT_SKU.SKU_ID
+Ref: SKU_INVENTORY.WAREHOUSE_ID > WAREHOUSE.WAREHOUSE_ID
+Ref: STOCK_HISTORY.WAREHOUSE_ID > WAREHOUSE.WAREHOUSE_ID
+
+// =====================================================================
+// 화면 그룹 (dbdiagram에서 영역별로 묶여 보임)
+// =====================================================================
+
+TableGroup member_basic [note: '고객 - 회원 기본'] {
+  MEMBER_GRADE
+  MEMBER
+  MEMBER_SOCIAL
+  MEMBER_BODY
+  ADDRESS
+}
+
+TableGroup member_terms_noti_style [note: '고객 - 약관/알림/취향'] {
+  TERMS
+  MEMBER_TERMS_AGREEMENT
+  MEMBER_NOTIFICATION_SETTING
+  STYLE
+  MEMBER_STYLE
+}
+
+TableGroup member_security [note: '고객 - 보안'] {
+  LOGIN_HISTORY
+  MEMBER_TOKEN
+  MEMBER_SESSION
+  PASSWORD_HISTORY
+  PRIVACY_ACCESS_LOG
+}
+
+TableGroup product_classification [note: '상품 - 분류/브랜드'] {
+  BRAND
+  CATEGORY
+  SIZE_MEASURE_ITEM
+}
+
+TableGroup product_core [note: '상품 - 상품/컬러/SKU'] {
+  PRODUCT
+  PRODUCT_NOTICE
+  PRODUCT_COLOR
+  PRODUCT_IMAGE
+  PRODUCT_SKU
+  PRODUCT_SIZE_SPEC
+}
+
+TableGroup product_link_history [note: '상품 - 연결/이력'] {
+  PRODUCT_STYLE
+  MEMBER_BRAND_PREFERENCE
+  STOCK_HISTORY
+  PRICE_HISTORY
+}
+
+TableGroup product_search_filter [note: '상품 확장 - 검색/필터'] {
+  COLOR_FAMILY
+  MATERIAL
+  PRODUCT_MATERIAL
+  ATTRIBUTE
+  ATTRIBUTE_VALUE
+  PRODUCT_ATTRIBUTE_VALUE
+  SEARCH_SYNONYM
+  PRODUCT_SEARCH_KEYWORD
+  SEARCH_LOG
+}
+
+TableGroup product_composition [note: '상품 확장 - 상품 구성'] {
+  PRODUCT_RELATION
+  PRODUCT_SET_ITEM
+  BRAND_SIZE_GUIDE
+}
+
+TableGroup product_operation [note: '상품 확장 - 운영'] {
+  SEASON
+  PRODUCT_APPROVAL
+  PRODUCT_STATUS_HISTORY
+  WAREHOUSE
+  SKU_INVENTORY
+}

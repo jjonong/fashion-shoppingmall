@@ -1,2 +1,7 @@
 # Claude Code 대화 기록
 2026-*.txt
+
+# 설계서 생성 도구
+node_modules/
+tools/design-doc/.build/
+tools/design-doc/preview/

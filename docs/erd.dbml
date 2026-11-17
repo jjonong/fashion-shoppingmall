@@ -1,15 +1,21 @@
 // =====================================================================
-// 패션 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
-// 1단계 고객 15개 + 2단계 상품 30개 = 45개 테이블
+// 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
+// 벤치마킹: 오늘의집 (스토어 + 사진/집들이/노하우/질문과답변 커뮤니티)
+// 1단계 고객 15개 + 2단계 상품 30개 + 3단계 커뮤니티 19개 = 64개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
+// DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
+// 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
 // =====================================================================
 
-Project fashion_mall {
-  database_type: 'Oracle'
+Project interior_mall {
+  database_type: 'MySQL'
   Note: '''
-  패션 쇼핑몰 포트폴리오 DB (Oracle 12c 이상, PK는 IDENTITY)
-  - 멀티 브랜드 편집숍 가정
-  - 상태값은 VARCHAR2 + CHECK, Y/N은 CHAR(1) + CHECK
+  인테리어 가구몰 + 커뮤니티 포트폴리오 DB (MySQL 8.0, InnoDB, utf8mb4 / utf8mb4_0900_ai_ci)
+  - 여러 브랜드 가구/소품을 자사가 직접 판매 (입점사 정산 없음)
+  - 커뮤니티 글(사진/집들이/노하우/질문)에 상품을 태그해서 스토어로 연결
+  - 이름은 소문자 snake_case, PK는 BIGINT AUTO_INCREMENT
+  - 상태값은 VARCHAR + CHECK, Y/N은 CHAR(1) + CHECK
+  - created_at DEFAULT CURRENT_TIMESTAMP, updated_at은 ON UPDATE CURRENT_TIMESTAMP
   - 탈퇴는 soft delete + 개인정보 마스킹
   '''
 }
@@ -18,93 +24,101 @@ Project fashion_mall {
 // 1단계: 고객 - 회원 기본
 // =====================================================================
 
-Table MEMBER_GRADE [note: '회원 등급 (혜택을 DB에서 바로 변경)'] {
-  GRADE_ID number(19) [pk, increment]
-  GRADE_NAME varchar2(20) [not null, unique, note: 'WELCOME/SILVER/GOLD/VIP']
-  POINT_RATE number(5,2) [not null, default: 0, note: '적립률 %']
-  DISCOUNT_RATE number(5,2) [not null, default: 0, note: '할인율 %']
-  MIN_PURCHASE_AMOUNT number(12) [not null, default: 0, note: '승급 기준 누적 구매액']
-  FREE_SHIPPING char(1) [not null, default: 'N', note: 'Y/N']
-  SORT_ORDER number(3) [not null]
+Table member_grade [note: '회원 등급 (혜택을 DB에서 바로 변경)'] {
+  grade_id bigint [pk, increment]
+  grade_name varchar(20) [not null, unique, note: 'WELCOME/SILVER/GOLD/VIP']
+  point_rate decimal(5,2) [not null, default: 0, note: '적립률 %']
+  discount_rate decimal(5,2) [not null, default: 0, note: '할인율 %']
+  min_purchase_amount bigint [not null, default: 0, note: '승급 기준 누적 구매액']
+  free_shipping char(1) [not null, default: 'N', note: 'Y/N (일반택배에만 적용, 화물/설치배송 제외)']
+  sort_order smallint [not null]
 }
 
-Table MEMBER [note: '회원'] {
-  MEMBER_ID number(19) [pk, increment]
-  EMAIL varchar2(200) [not null, note: 'LOWER(EMAIL) 함수 기반 UNIQUE. 탈퇴 시 withdrawn_{ID}@deleted.local로 마스킹']
-  PASSWORD_HASH varchar2(100) [note: 'bcrypt 해시. 소셜 전용 가입은 NULL']
-  NAME varchar2(50) [not null, note: '탈퇴 시 탈퇴회원']
-  NICKNAME varchar2(30) [not null, unique]
-  PHONE_ENC varchar2(200) [note: '휴대폰 번호 AES-256 암호문']
-  PHONE_HASH char(64) [note: '휴대폰 번호 SHA-256 (검색/중복확인용)']
-  BIRTH_DATE date
-  GENDER char(1) [note: 'M/F']
-  CI_HASH char(64) [unique, note: '본인인증 CI 해시. 중복 가입 방지']
-  DI_HASH char(64) [note: '본인인증 DI 해시']
-  IDENTITY_VERIFIED_AT timestamp
-  ROLE varchar2(20) [not null, default: 'USER', note: 'USER/ADMIN']
-  GRADE_ID number(19) [not null]
-  STATUS varchar2(20) [not null, default: 'ACTIVE', note: 'ACTIVE/DORMANT/LOCKED/WITHDRAWN']
-  TOTAL_PURCHASE_AMOUNT number(12) [not null, default: 0, note: '등급 산정용 캐시']
-  POINT_BALANCE number(12) [not null, default: 0, note: '포인트 잔액 캐시']
-  REFERRAL_CODE varchar2(20) [unique, note: '내 추천 코드']
-  REFERRED_BY number(19) [note: '나를 추천한 회원']
-  EMAIL_VERIFIED char(1) [not null, default: 'N', note: 'Y/N']
-  LOGIN_FAIL_COUNT number(2) [not null, default: 0, note: '5회 실패 시 30분 잠금']
-  LOCKED_UNTIL timestamp
-  LAST_LOGIN_AT timestamp
-  PASSWORD_CHANGED_AT timestamp
-  WITHDRAWN_AT timestamp
-  WITHDRAW_REASON varchar2(500)
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-  UPDATED_AT timestamp
+Table member_account [note: '회원 (커뮤니티 프로필 포함)'] {
+  member_id bigint [pk, increment]
+  email varchar(200) [not null, unique, note: '대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{ID}@deleted.local로 마스킹']
+  password_hash varchar(100) [note: 'bcrypt 해시. 소셜 전용 가입은 NULL']
+  name varchar(50) [not null, note: '실명. 탈퇴 시 탈퇴회원']
+  nickname varchar(30) [not null, unique, note: '커뮤니티 표시 이름']
+  profile_image_url varchar(500)
+  introduction varchar(200) [note: '프로필 한 줄 소개']
+  phone_enc varchar(200) [note: '휴대폰 번호 AES-256 암호문']
+  phone_hash char(64) [note: '휴대폰 번호 SHA-256 (검색/중복확인용)']
+  birth_date date
+  gender char(1) [note: 'M/F']
+  ci_hash char(64) [unique, note: '본인인증 CI 해시. 중복 가입 방지']
+  di_hash char(64) [note: '본인인증 DI 해시']
+  identity_verified_at datetime
+  role varchar(20) [not null, default: 'USER', note: 'USER/ADMIN/EDITOR(커뮤니티 큐레이션)']
+  grade_id bigint [not null]
+  status varchar(20) [not null, default: 'ACTIVE', note: 'ACTIVE/DORMANT/LOCKED/SUSPENDED(커뮤니티 활동 정지)/WITHDRAWN']
+  suspended_until datetime [note: '신고 누적으로 글쓰기 정지된 기한']
+  total_purchase_amount bigint [not null, default: 0, note: '등급 산정용 캐시']
+  point_balance bigint [not null, default: 0, note: '포인트 잔액 캐시']
+  follower_count int [not null, default: 0, note: '캐시']
+  following_count int [not null, default: 0, note: '캐시']
+  post_count int [not null, default: 0, note: '공개 글 수 캐시']
+  referral_code varchar(20) [unique, note: '내 추천 코드']
+  referred_by bigint [note: '나를 추천한 회원']
+  email_verified char(1) [not null, default: 'N', note: 'Y/N']
+  login_fail_count tinyint [not null, default: 0, note: '5회 실패 시 30분 잠금']
+  locked_until datetime
+  last_login_at datetime
+  password_changed_at datetime
+  withdrawn_at datetime
+  withdraw_reason varchar(500)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
 
   indexes {
-    `LOWER(EMAIL)` [unique, name: 'UX_MEMBER_EMAIL']
-    PHONE_HASH [name: 'IX_MEMBER_PHONE_HASH']
-    GRADE_ID [name: 'IX_MEMBER_GRADE']
-    REFERRED_BY [name: 'IX_MEMBER_REFERRED_BY']
+    phone_hash [name: 'ix_member_phone_hash']
+    grade_id [name: 'ix_member_grade']
+    referred_by [name: 'ix_member_referred_by']
   }
 }
 
-Table MEMBER_SOCIAL [note: '소셜 계정 연동 (한 회원이 여러 개 연결 가능)'] {
-  SOCIAL_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [not null]
-  PROVIDER varchar2(20) [not null, note: 'KAKAO/NAVER/GOOGLE']
-  PROVIDER_USER_ID varchar2(100) [not null, note: '소셜 서비스의 회원 고유 ID']
-  CONNECTED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table member_social [note: '소셜 계정 연동 (한 회원이 여러 개 연결 가능)'] {
+  social_id bigint [pk, increment]
+  member_id bigint [not null]
+  provider varchar(20) [not null, note: 'KAKAO/NAVER/GOOGLE/APPLE']
+  provider_user_id varchar(100) [not null, note: '소셜 서비스의 회원 고유 ID']
+  connected_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (PROVIDER, PROVIDER_USER_ID) [unique, name: 'UK_MEMBER_SOCIAL']
-    MEMBER_ID [name: 'IX_MEMBER_SOCIAL_MEMBER']
+    (provider, provider_user_id) [unique, name: 'uk_member_social']
+    member_id [name: 'ix_member_social_member']
   }
 }
 
-Table MEMBER_BODY [note: '회원 체형 (사이즈 추천, 비슷한 체형 리뷰 필터)'] {
-  MEMBER_ID number(19) [pk, note: 'MEMBER와 1:1']
-  HEIGHT_CM number(3)
-  WEIGHT_KG number(3)
-  TOP_SIZE varchar2(10) [note: 'XS/S/M/L/XL/XXL']
-  BOTTOM_SIZE number(2) [note: '허리 인치']
-  SHOE_SIZE number(3) [note: 'mm']
-  UPDATED_AT timestamp
+Table member_home [note: '회원 주거 정보 (맞춤 상품 추천, 집들이 작성 시 기본값). 패션몰의 member_body를 대체'] {
+  member_id bigint [pk, note: 'member_account와 1:1']
+  housing_type varchar(20) [note: 'APARTMENT/VILLA/HOUSE/OFFICETEL/ONE_ROOM/ETC']
+  area_pyeong smallint [note: '평수']
+  room_count tinyint
+  family_type varchar(20) [note: 'SINGLE/COUPLE/WITH_KIDS/WITH_PARENTS/SHARE/ETC']
+  has_pet char(1) [note: 'Y/N']
+  move_in_planned_at date [note: '이사 예정일 (이사 시즌 기획전 타깃)']
+  updated_at datetime
 }
 
-Table ADDRESS [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)'] {
-  ADDRESS_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [not null]
-  ALIAS varchar2(30) [note: '집/회사']
-  RECEIVER_NAME varchar2(50) [not null]
-  RECEIVER_PHONE_ENC varchar2(200) [not null, note: 'AES-256 암호문']
-  ZIPCODE varchar2(10) [not null]
-  ADDRESS1 varchar2(200) [not null]
-  ADDRESS2 varchar2(200)
-  IS_DEFAULT char(1) [not null, default: 'N', note: 'Y/N']
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-  UPDATED_AT timestamp
+Table address [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)'] {
+  address_id bigint [pk, increment]
+  member_id bigint [not null]
+  alias varchar(30) [note: '집/회사/새 집']
+  receiver_name varchar(50) [not null]
+  receiver_phone_enc varchar(200) [not null, note: 'AES-256 암호문']
+  zipcode varchar(10) [not null]
+  address1 varchar(200) [not null]
+  address2 varchar(200)
+  floor_info varchar(30) [note: '가구 배송용: 층수']
+  has_elevator char(1) [note: '가구 배송용: 엘리베이터 Y/N (사다리차 필요 판단)']
+  is_default char(1) [not null, default: 'N', note: 'Y/N']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
 
   indexes {
-    MEMBER_ID [name: 'IX_ADDRESS_MEMBER']
-    `CASE WHEN IS_DEFAULT = 'Y' THEN MEMBER_ID END` [unique, name: 'UX_ADDRESS_DEFAULT', note: '회원당 기본 배송지 1개']
+    member_id [name: 'ix_address_member']
+    `CASE WHEN is_default = 'Y' THEN member_id END` [unique, name: 'ux_address_default', note: '회원당 기본 배송지 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
   }
 }
 
@@ -112,60 +126,60 @@ Table ADDRESS [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)
 // 1단계: 고객 - 약관 / 알림 / 취향
 // =====================================================================
 
-Table TERMS [note: '약관 (버전 관리)'] {
-  TERMS_ID number(19) [pk, increment]
-  TERMS_TYPE varchar2(30) [not null, note: 'SERVICE/PRIVACY/AGE14/MARKETING_SMS/MARKETING_EMAIL/MARKETING_PUSH']
-  VERSION varchar2(10) [not null]
-  TITLE varchar2(100) [not null]
-  CONTENT clob [not null]
-  IS_REQUIRED char(1) [not null, note: 'Y/N']
-  EFFECTIVE_AT timestamp [not null, note: '시행일']
+Table terms [note: '약관 (버전 관리)'] {
+  terms_id bigint [pk, increment]
+  terms_type varchar(30) [not null, note: 'SERVICE/PRIVACY/AGE14/COMMUNITY(커뮤니티 운영정책)/MARKETING_SMS/MARKETING_EMAIL/MARKETING_PUSH']
+  version varchar(10) [not null]
+  title varchar(100) [not null]
+  content mediumtext [not null]
+  is_required char(1) [not null, note: 'Y/N']
+  effective_at datetime [not null, note: '시행일']
 
   indexes {
-    (TERMS_TYPE, VERSION) [unique, name: 'UK_TERMS_TYPE_VERSION']
+    (terms_type, version) [unique, name: 'uk_terms_type_version']
   }
 }
 
-Table MEMBER_TERMS_AGREEMENT [note: '약관 동의/철회 이력'] {
-  AGREEMENT_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [not null]
-  TERMS_ID number(19) [not null]
-  AGREED char(1) [not null, note: 'Y/N']
-  AGREED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-  WITHDRAWN_AT timestamp [note: '동의 철회 시각']
+Table member_terms_agreement [note: '약관 동의/철회 이력'] {
+  agreement_id bigint [pk, increment]
+  member_id bigint [not null]
+  terms_id bigint [not null]
+  agreed char(1) [not null, note: 'Y/N']
+  agreed_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  withdrawn_at datetime [note: '동의 철회 시각']
 
   indexes {
-    MEMBER_ID [name: 'IX_MTA_MEMBER']
-    TERMS_ID [name: 'IX_MTA_TERMS']
+    member_id [name: 'ix_mta_member']
+    terms_id [name: 'ix_mta_terms']
   }
 }
 
-Table MEMBER_NOTIFICATION_SETTING [note: '알림 수신 설정. EVENT(광고성)는 마케팅 약관 동의가 있어야 발송'] {
-  MEMBER_ID number(19) [not null]
-  NOTI_TYPE varchar2(20) [not null, note: 'ORDER/DELIVERY/RESTOCK/PRICE_DROP/EVENT']
-  CHANNEL varchar2(10) [not null, note: 'PUSH/SMS/EMAIL/KAKAO']
-  ENABLED char(1) [not null, default: 'Y', note: 'Y/N']
-  UPDATED_AT timestamp
+Table member_notification_setting [note: '알림 수신 설정. EVENT(광고성)는 마케팅 약관 동의가 있어야 발송'] {
+  member_id bigint [not null]
+  noti_type varchar(20) [not null, note: 'ORDER/DELIVERY/RESTOCK/PRICE_DROP/EVENT/COMMENT/LIKE/FOLLOW/ANSWER']
+  channel varchar(10) [not null, note: 'PUSH/SMS/EMAIL/KAKAO']
+  enabled char(1) [not null, default: 'Y', note: 'Y/N']
+  updated_at datetime
 
   indexes {
-    (MEMBER_ID, NOTI_TYPE, CHANNEL) [pk]
+    (member_id, noti_type, channel) [pk]
   }
 }
 
-Table STYLE [note: '스타일 (회원 취향과 상품 스타일에서 함께 사용)'] {
-  STYLE_ID number(19) [pk, increment]
-  NAME varchar2(30) [not null, unique, note: '미니멀/스트릿/캐주얼/오피스룩/아메카지/스포티']
-  SORT_ORDER number(3) [not null]
+Table style [note: '인테리어 스타일 (회원 취향, 상품, 커뮤니티 글에서 함께 사용)'] {
+  style_id bigint [pk, increment]
+  name varchar(30) [not null, unique, note: '모던/북유럽/빈티지/내추럴/프로방스/클래식/미니멀/인더스트리얼/한국아시아/유니크']
+  sort_order smallint [not null]
 }
 
-Table MEMBER_STYLE [note: '회원 선호 스타일'] {
-  MEMBER_ID number(19) [not null]
-  STYLE_ID number(19) [not null]
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table member_style [note: '회원 선호 스타일'] {
+  member_id bigint [not null]
+  style_id bigint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (MEMBER_ID, STYLE_ID) [pk]
-    STYLE_ID [name: 'IX_MEMBER_STYLE_STYLE']
+    (member_id, style_id) [pk]
+    style_id [name: 'ix_member_style_style']
   }
 }
 
@@ -173,249 +187,278 @@ Table MEMBER_STYLE [note: '회원 선호 스타일'] {
 // 1단계: 고객 - 보안
 // =====================================================================
 
-Table LOGIN_HISTORY [note: '로그인 시도 이력 (이상 로그인 탐지, 새 기기 알림)'] {
-  LOGIN_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [note: '없는 계정으로 시도하면 NULL']
-  LOGIN_EMAIL varchar2(200) [note: '시도한 이메일']
-  LOGIN_TYPE varchar2(20) [not null, note: 'EMAIL/KAKAO/NAVER/GOOGLE']
-  RESULT varchar2(20) [not null, note: 'SUCCESS/FAIL_PASSWORD/FAIL_LOCKED/FAIL_NOT_FOUND']
-  IP_ADDRESS varchar2(45) [not null, note: 'IPv6 포함']
-  USER_AGENT varchar2(500)
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table login_history [note: '로그인 시도 이력 (이상 로그인 탐지, 새 기기 알림)'] {
+  login_id bigint [pk, increment]
+  member_id bigint [note: '없는 계정으로 시도하면 NULL']
+  login_email varchar(200) [note: '시도한 이메일']
+  login_type varchar(20) [not null, note: 'EMAIL/KAKAO/NAVER/GOOGLE/APPLE']
+  result varchar(20) [not null, note: 'SUCCESS/FAIL_PASSWORD/FAIL_LOCKED/FAIL_NOT_FOUND']
+  ip_address varchar(45) [not null, note: 'IPv6 포함']
+  user_agent varchar(500)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (MEMBER_ID, CREATED_AT) [name: 'IX_LOGIN_HISTORY_MEMBER']
-    (IP_ADDRESS, CREATED_AT) [name: 'IX_LOGIN_HISTORY_IP']
+    (member_id, created_at) [name: 'ix_login_history_member']
+    (ip_address, created_at) [name: 'ix_login_history_ip']
   }
 }
 
-Table MEMBER_TOKEN [note: '이메일 인증, 비밀번호 재설정용 1회용 토큰'] {
-  TOKEN_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [not null]
-  TOKEN_TYPE varchar2(20) [not null, note: 'EMAIL_VERIFY/PASSWORD_RESET']
-  TOKEN_HASH char(64) [not null, unique, note: 'SHA-256. 원문은 저장하지 않음']
-  EXPIRES_AT timestamp [not null]
-  USED_AT timestamp [note: '사용하면 기록, 재사용 불가']
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table member_token [note: '이메일 인증, 비밀번호 재설정용 1회용 토큰'] {
+  token_id bigint [pk, increment]
+  member_id bigint [not null]
+  token_type varchar(20) [not null, note: 'EMAIL_VERIFY/PASSWORD_RESET']
+  token_hash char(64) [not null, unique, note: 'SHA-256. 원문은 저장하지 않음']
+  expires_at datetime [not null]
+  used_at datetime [note: '사용하면 기록, 재사용 불가']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    MEMBER_ID [name: 'IX_MEMBER_TOKEN_MEMBER']
+    member_id [name: 'ix_member_token_member']
   }
 }
 
-Table MEMBER_SESSION [note: '기기별 로그인 세션 (리프레시 토큰)'] {
-  SESSION_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [not null]
-  REFRESH_TOKEN_HASH char(64) [not null, unique, note: 'SHA-256']
-  DEVICE_INFO varchar2(200)
-  IP_ADDRESS varchar2(45)
-  EXPIRES_AT timestamp [not null]
-  REVOKED_AT timestamp [note: '강제 로그아웃, 비밀번호 변경 시 전체 폐기']
-  LAST_USED_AT timestamp
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table member_session [note: '기기별 로그인 세션 (리프레시 토큰)'] {
+  session_id bigint [pk, increment]
+  member_id bigint [not null]
+  refresh_token_hash char(64) [not null, unique, note: 'SHA-256']
+  device_info varchar(200)
+  ip_address varchar(45)
+  expires_at datetime [not null]
+  revoked_at datetime [note: '강제 로그아웃, 비밀번호 변경 시 전체 폐기']
+  last_used_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (MEMBER_ID, REVOKED_AT) [name: 'IX_MEMBER_SESSION_MEMBER']
+    (member_id, revoked_at) [name: 'ix_member_session_member']
   }
 }
 
-Table PASSWORD_HISTORY [note: '비밀번호 변경 이력 (최근 3개 재사용 금지)'] {
-  HISTORY_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [not null]
-  PASSWORD_HASH varchar2(100) [not null]
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table password_history [note: '비밀번호 변경 이력 (최근 3개 재사용 금지)'] {
+  history_id bigint [pk, increment]
+  member_id bigint [not null]
+  password_hash varchar(100) [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (MEMBER_ID, CREATED_AT) [name: 'IX_PASSWORD_HISTORY_MEMBER']
+    (member_id, created_at) [name: 'ix_password_history_member']
   }
 }
 
-Table PRIVACY_ACCESS_LOG [note: '관리자 개인정보 접근 기록 (개인정보 안전성 확보조치 기준)'] {
-  LOG_ID number(19) [pk, increment]
-  ADMIN_ID number(19) [not null, note: '조회한 관리자']
-  TARGET_MEMBER_ID number(19) [not null, note: '조회 대상 회원']
-  ACTION varchar2(20) [not null, note: 'VIEW/UPDATE/EXPORT/UNMASK']
-  REASON varchar2(500) [not null]
-  IP_ADDRESS varchar2(45) [not null]
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table privacy_access_log [note: '관리자 개인정보 접근 기록 (개인정보 안전성 확보조치 기준)'] {
+  log_id bigint [pk, increment]
+  admin_id bigint [not null, note: '조회한 관리자']
+  target_member_id bigint [not null, note: '조회 대상 회원']
+  action varchar(20) [not null, note: 'VIEW/UPDATE/EXPORT/UNMASK']
+  reason varchar(500) [not null]
+  ip_address varchar(45) [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    ADMIN_ID [name: 'IX_PAL_ADMIN']
-    (TARGET_MEMBER_ID, CREATED_AT) [name: 'IX_PAL_TARGET']
-  }
-}
-
-// =====================================================================
-// 2단계: 상품 - 분류 / 브랜드
-// =====================================================================
-
-Table BRAND [note: '브랜드'] {
-  BRAND_ID number(19) [pk, increment]
-  NAME_KO varchar2(100) [not null]
-  NAME_EN varchar2(100) [not null, unique]
-  LOGO_URL varchar2(500)
-  DESCRIPTION varchar2(1000)
-  STATUS varchar2(20) [not null, default: 'ACTIVE', note: 'ACTIVE/HIDDEN']
-  LIKE_COUNT number(10) [not null, default: 0, note: '캐시']
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-  UPDATED_AT timestamp
-}
-
-Table CATEGORY [note: '카테고리 3단계 (예: 상의 > 니트 > 카디건)'] {
-  CATEGORY_ID number(19) [pk, increment]
-  PARENT_ID number(19) [note: '최상위는 NULL']
-  NAME varchar2(50) [not null]
-  DEPTH number(1) [not null, note: '1~3']
-  SORT_ORDER number(3) [not null]
-  SIZE_TYPE varchar2(10) [not null, note: 'TOP/BOTTOM/OUTER/SHOES/BAG/FREE. 실측 항목 결정']
-  IS_ACTIVE char(1) [not null, default: 'Y', note: 'Y/N']
-
-  indexes {
-    (PARENT_ID, NAME) [unique, name: 'UK_CATEGORY_PARENT_NAME']
-  }
-}
-
-Table SIZE_MEASURE_ITEM [note: '사이즈 종류별 실측 항목 마스터'] {
-  ITEM_ID number(19) [pk, increment]
-  SIZE_TYPE varchar2(10) [not null, note: 'CATEGORY.SIZE_TYPE과 같은 값']
-  ITEM_CODE varchar2(20) [not null, note: 'LENGTH/SHOULDER/CHEST/SLEEVE/WAIST/THIGH/RISE/HEM...']
-  ITEM_NAME varchar2(30) [not null, note: '총장/어깨너비/가슴단면/소매길이/허리단면...']
-  SORT_ORDER number(3) [not null]
-
-  indexes {
-    (SIZE_TYPE, ITEM_CODE) [unique, name: 'UK_SIZE_MEASURE_ITEM']
+    admin_id [name: 'ix_pal_admin']
+    (target_member_id, created_at) [name: 'ix_pal_target']
   }
 }
 
 // =====================================================================
-// 2단계: 상품 - 상품 → 컬러 → SKU
+// 2단계: 상품 - 분류 / 브랜드 / 배송
 // =====================================================================
 
-Table PRODUCT [note: '상품 (컬러/사이즈 공통 정보)'] {
-  PRODUCT_ID number(19) [pk, increment]
-  BRAND_ID number(19) [not null]
-  CATEGORY_ID number(19) [not null, note: '3단계 카테고리']
-  STYLE_CODE varchar2(30) [not null, unique, note: '품번']
-  NAME varchar2(200) [not null]
-  GENDER varchar2(10) [not null, note: 'MEN/WOMEN/UNISEX']
-  SEASON_ID number(19) [note: '시즌 마스터 (26SS/26FW). 시즌리스는 NULL']
-  PRODUCT_TYPE varchar2(10) [not null, default: 'SINGLE', note: 'SINGLE/SET. SET은 PRODUCT_SET_ITEM으로 구성']
-  SALE_TYPE varchar2(20) [not null, default: 'NORMAL', note: 'NORMAL/PRE_ORDER/LIMITED_RELEASE']
-  RELEASE_AT timestamp [note: '발매 일시. 한정 발매는 이 시각부터 구매 가능']
-  SHIP_EXPECTED_DATE date [note: '예약 판매 출고 예정일']
-  MAX_PER_ORDER number(3) [note: '주문 1건당 최대 수량. NULL이면 제한 없음']
-  MAX_PER_MEMBER number(3) [note: '회원 1인당 최대 구매 수량 (한정 발매)']
-  LIST_PRICE number(12) [not null, note: '정가']
-  SALE_PRICE number(12) [not null, note: '판매가. CHECK SALE_PRICE <= LIST_PRICE. 할인율은 계산']
-  DESCRIPTION clob
-  FIT varchar2(10) [note: 'SLIM/REGULAR/OVER']
-  THICKNESS varchar2(10) [note: 'THIN/NORMAL/THICK']
-  ELASTICITY varchar2(10) [note: 'NONE/LOW/HIGH']
-  SHEERNESS varchar2(10) [note: 'NONE/LOW/HIGH (비침)']
-  LINING char(1) [note: '안감 Y/N']
-  MODEL_HEIGHT_CM number(3)
-  MODEL_WEIGHT_KG number(3)
-  MODEL_WEAR_SIZE varchar2(10) [note: '모델 착용 사이즈']
-  STATUS varchar2(20) [not null, default: 'DRAFT', note: 'DRAFT/PENDING_REVIEW/REJECTED/APPROVED/ON_SALE/SOLD_OUT/STOPPED. 검수 승인 후 판매']
-  SALE_START_AT timestamp
-  SALE_END_AT timestamp
-  IS_FREE_SHIPPING char(1) [not null, default: 'N', note: 'Y/N']
-  VIEW_COUNT number(10) [not null, default: 0, note: '캐시']
-  LIKE_COUNT number(10) [not null, default: 0, note: '캐시']
-  REVIEW_COUNT number(10) [not null, default: 0, note: '캐시']
-  AVG_RATING number(2,1) [not null, default: 0, note: '캐시']
-  SALES_COUNT number(10) [not null, default: 0, note: '캐시']
-  CREATED_BY number(19) [not null, note: '등록 관리자']
-  UPDATED_BY number(19) [note: '수정 관리자']
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-  UPDATED_AT timestamp
+Table brand [note: '브랜드'] {
+  brand_id bigint [pk, increment]
+  name_ko varchar(100) [not null]
+  name_en varchar(100) [not null, unique]
+  logo_url varchar(500)
+  description varchar(1000)
+  status varchar(20) [not null, default: 'ACTIVE', note: 'ACTIVE/HIDDEN']
+  like_count int [not null, default: 0, note: '캐시']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+}
+
+Table category [note: '카테고리 최대 4단계 (예: 가구 > 침대 > 침대프레임 > 수납침대)'] {
+  category_id bigint [pk, increment]
+  parent_id bigint [note: '최상위는 NULL']
+  name varchar(50) [not null]
+  depth tinyint [not null, note: '1~4']
+  sort_order smallint [not null]
+  icon_url varchar(500) [note: '카테고리 아이콘 (가구/패브릭/조명/가전/주방/데코/수납/생활/반려동물)']
+  is_active char(1) [not null, default: 'Y', note: 'Y/N']
 
   indexes {
-    (CATEGORY_ID, STATUS, SALE_PRICE) [name: 'IX_PRODUCT_CATEGORY']
-    (BRAND_ID, STATUS) [name: 'IX_PRODUCT_BRAND']
-    (STATUS, SALES_COUNT) [name: 'IX_PRODUCT_BEST', note: 'SALES_COUNT DESC']
-    SEASON_ID [name: 'IX_PRODUCT_SEASON']
-    (SALE_TYPE, RELEASE_AT) [name: 'IX_PRODUCT_RELEASE', note: '발매 예정 상품 조회']
-    CREATED_BY [name: 'IX_PRODUCT_CREATED_BY']
-    UPDATED_BY [name: 'IX_PRODUCT_UPDATED_BY']
+    (parent_id, name) [unique, name: 'uk_category_parent_name']
   }
 }
 
-Table PRODUCT_NOTICE [note: '상품정보제공고시 (의류 필수 표시 항목)'] {
-  PRODUCT_ID number(19) [pk, note: 'PRODUCT와 1:1']
-  MATERIAL varchar2(200) [not null, note: '소재 혼용률']
-  COLOR_INFO varchar2(200) [not null]
-  SIZE_INFO varchar2(200) [not null]
-  MANUFACTURER varchar2(100) [not null]
-  ORIGIN varchar2(50) [not null, note: '제조국']
-  MANUFACTURED_YM varchar2(7) [not null, note: '제조연월 YYYY-MM']
-  WASHING_CARE varchar2(500) [not null, note: '세탁 방법 및 취급 시 주의사항']
-  QUALITY_ASSURANCE varchar2(500) [not null, note: '품질보증기준']
-  AS_CONTACT varchar2(100) [not null, note: 'A/S 책임자와 전화번호']
+Table shipping_policy [note: '배송 정책. 가구는 배송 방식과 비용이 상품마다 크게 다름'] {
+  policy_id bigint [pk, increment]
+  name varchar(100) [not null, note: '예: 대형가구 설치배송(수도권)']
+  delivery_type varchar(20) [not null, note: 'PARCEL(일반택배)/FREIGHT(화물택배)/DIRECT_INSTALL(업체 직접 설치배송)']
+  shipping_fee bigint [not null, default: 0, note: '기본 배송비']
+  free_threshold bigint [note: '이 금액 이상 무료배송. NULL이면 조건 없음']
+  jeju_extra_fee bigint [not null, default: 0, note: '제주 추가 배송비']
+  island_extra_fee bigint [not null, default: 0, note: '도서산간 추가 배송비']
+  return_fee bigint [not null, note: '반품 배송비 (편도)']
+  exchange_fee bigint [not null, note: '교환 배송비 (왕복)']
+  lead_days smallint [not null, note: '결제 후 출고까지 소요일. 주문제작 가구는 길다']
+  same_day_cutoff varchar(5) [note: '오늘출발 마감 시각 HH24:MI. NULL이면 오늘출발 아님']
+  is_bundle_allowed char(1) [not null, default: 'Y', note: '다른 상품과 묶음배송 가능 여부']
+  is_active char(1) [not null, default: 'Y']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Table PRODUCT_COLOR [note: '상품 컬러 (컬러마다 이미지가 다름)'] {
-  COLOR_ID number(19) [pk, increment]
-  PRODUCT_ID number(19) [not null]
-  COLOR_CODE varchar2(10) [not null, note: 'BK/WH/NV. SKU 코드에 사용']
-  COLOR_NAME varchar2(50) [not null, note: '예: 멜란지 그레이']
-  COLOR_HEX char(7) [note: '#B5B5B5']
-  COLOR_FAMILY_ID number(19) [not null, note: '컬러 계열 (필터용). 멜란지 그레이 → GRAY']
-  SORT_ORDER number(3) [not null]
+// =====================================================================
+// 2단계: 상품 - 상품 → 옵션 → SKU
+// =====================================================================
+
+Table product [note: '상품 (옵션 공통 정보)'] {
+  product_id bigint [pk, increment]
+  brand_id bigint [not null]
+  category_id bigint [not null, note: '최하위 카테고리']
+  shipping_policy_id bigint [not null]
+  model_code varchar(30) [not null, unique, note: '모델명/품번']
+  name varchar(200) [not null]
+  product_type varchar(10) [not null, default: 'SINGLE', note: 'SINGLE/SET. SET은 product_set_item으로 구성 (예: 식탁 + 의자 4개)']
+  sale_type varchar(20) [not null, default: 'NORMAL', note: 'NORMAL/PRE_ORDER/MADE_TO_ORDER(주문제작)']
+  ship_expected_date date [note: '예약 판매 출고 예정일']
+  max_per_order smallint [note: '주문 1건당 최대 수량. NULL이면 제한 없음']
+  list_price bigint [not null, note: '정가']
+  sale_price bigint [not null, note: '판매가. CHECK sale_price <= list_price. 할인율은 계산']
+  description mediumtext [note: '상세페이지 본문 (HTML)']
+  width_mm int [note: '대표 사이즈 가로 (옵션별 사이즈는 SKU)']
+  depth_mm int [note: '세로(깊이)']
+  height_mm int [note: '높이']
+  weight_kg decimal(6,1)
+  assembly_type varchar(20) [not null, default: 'NONE', note: 'NONE(완제품)/SELF(자가조립)/INSTALL(설치 기사 조립)']
+  status varchar(20) [not null, default: 'DRAFT', note: 'DRAFT/PENDING_REVIEW/REJECTED/APPROVED/ON_SALE/SOLD_OUT/STOPPED. 검수 승인 후 판매']
+  sale_start_at datetime
+  sale_end_at datetime
+  view_count int [not null, default: 0, note: '캐시']
+  scrap_count int [not null, default: 0, note: '캐시. 오늘의집처럼 찜 = 스크랩']
+  review_count int [not null, default: 0, note: '캐시']
+  avg_rating decimal(2,1) [not null, default: 0, note: '캐시']
+  sales_count int [not null, default: 0, note: '캐시']
+  tagged_post_count int [not null, default: 0, note: '캐시. 이 상품이 태그된 커뮤니티 글 수 (상세페이지 "이 상품이 쓰인 사진")']
+  created_by bigint [not null, note: '등록 관리자']
+  updated_by bigint [note: '수정 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
 
   indexes {
-    (PRODUCT_ID, COLOR_CODE) [unique, name: 'UK_PRODUCT_COLOR_CODE']
-    (PRODUCT_ID, COLOR_NAME) [unique, name: 'UK_PRODUCT_COLOR_NAME']
-    COLOR_FAMILY_ID [name: 'IX_PRODUCT_COLOR_FAMILY']
+    (category_id, status, sale_price) [name: 'ix_product_category']
+    (brand_id, status) [name: 'ix_product_brand']
+    (status, sales_count) [name: 'ix_product_best', note: 'sales_count DESC']
+    shipping_policy_id [name: 'ix_product_shipping']
+    created_by [name: 'ix_product_created_by']
+    updated_by [name: 'ix_product_updated_by']
   }
 }
 
-Table PRODUCT_IMAGE [note: '상품 이미지 (컬러별 + 공통)'] {
-  IMAGE_ID number(19) [pk, increment]
-  PRODUCT_ID number(19) [not null]
-  COLOR_ID number(19) [note: 'NULL이면 컬러 공통 이미지']
-  IMAGE_TYPE varchar2(20) [not null, note: 'THUMBNAIL/MAIN/DETAIL/MODEL']
-  IMAGE_URL varchar2(500) [not null]
-  SORT_ORDER number(3) [not null]
+Table product_notice [note: '상품정보제공고시 (가구 필수 표시 항목)'] {
+  product_id bigint [pk, note: 'product와 1:1']
+  kc_cert_info varchar(200) [not null, note: 'KC 인증 정보 (해당 없으면 "해당 없음")']
+  color_info varchar(200) [not null]
+  components varchar(500) [not null, note: '구성품']
+  material varchar(200) [not null, note: '주요 소재 (법정 표기 문구)']
+  manufacturer varchar(100) [not null, note: '제조자/수입자']
+  origin varchar(50) [not null, note: '제조국 (구성품별로 다르면 모두 표기)']
+  size_info varchar(200) [not null]
+  delivery_install_fee varchar(300) [not null, note: '배송·설치비용']
+  quality_assurance varchar(500) [not null, note: '품질보증기준']
+  as_contact varchar(100) [not null, note: 'A/S 책임자와 전화번호']
+}
+
+Table product_option_group [note: '옵션 그룹 (색상, 사이즈, 매트리스 포함 여부 등). 가구는 옵션 축이 상품마다 다름'] {
+  option_group_id bigint [pk, increment]
+  product_id bigint [not null]
+  name varchar(50) [not null, note: '예: 색상 / 사이즈 / 구성']
+  sort_order smallint [not null]
 
   indexes {
-    (PRODUCT_ID, COLOR_ID) [name: 'IX_PRODUCT_IMAGE_PRODUCT']
-    COLOR_ID [name: 'IX_PRODUCT_IMAGE_COLOR']
+    (product_id, name) [unique, name: 'uk_option_group_name']
   }
 }
 
-Table PRODUCT_SKU [note: 'SKU = 컬러 x 사이즈. 재고, 장바구니, 주문의 기준 단위'] {
-  SKU_ID number(19) [pk, increment]
-  PRODUCT_ID number(19) [not null]
-  COLOR_ID number(19) [not null]
-  SIZE_NAME varchar2(10) [not null, note: 'S/M/L, 28/30, 250, FREE']
-  SIZE_ORDER number(3) [not null, note: '사이즈 정렬 순서']
-  SKU_CODE varchar2(50) [not null, unique, note: '품번-컬러코드-사이즈']
-  BARCODE varchar2(30) [unique, note: '바코드 (EAN-13 등). 입출고 스캔용']
-  EXTRA_PRICE number(12) [not null, default: 0, note: '옵션 추가금']
-  STOCK number(10) [not null, default: 0, note: '판매 가능 재고 (주문 시 차감 대상). CHECK STOCK >= 0. 창고별 실물 재고는 SKU_INVENTORY']
-  SAFETY_STOCK number(10) [not null, default: 0, note: '품절 임박 기준']
-  STATUS varchar2(20) [not null, default: 'ON_SALE', note: 'ON_SALE/SOLD_OUT/STOPPED']
-  VERSION number(10) [not null, default: 0, note: '낙관적 락']
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-  UPDATED_AT timestamp
+Table product_option_value [note: '옵션 값 (화이트 오크 / Q(퀸) / 매트리스 포함)'] {
+  option_value_id bigint [pk, increment]
+  option_group_id bigint [not null]
+  name varchar(50) [not null]
+  color_family_id bigint [note: '색상 옵션이면 컬러 계열 (필터용)']
+  sort_order smallint [not null]
 
   indexes {
-    (PRODUCT_ID, COLOR_ID, SIZE_NAME) [unique, name: 'UK_PRODUCT_SKU_OPTION']
-    COLOR_ID [name: 'IX_PRODUCT_SKU_COLOR']
+    (option_group_id, name) [unique, name: 'uk_option_value_name']
+    color_family_id [name: 'ix_option_value_color_family']
   }
 }
 
-Table PRODUCT_SIZE_SPEC [note: '실측 사이즈표 (회원 체형과 비교해 사이즈 추천)'] {
-  SPEC_ID number(19) [pk, increment]
-  PRODUCT_ID number(19) [not null]
-  SIZE_NAME varchar2(10) [not null]
-  ITEM_ID number(19) [not null, note: '실측 항목']
-  VALUE_CM number(5,1) [not null]
+Table product_sku [note: 'SKU = 옵션 값 조합. 재고, 장바구니, 주문의 기준 단위. 옵션이 없는 상품도 SKU 1개'] {
+  sku_id bigint [pk, increment]
+  product_id bigint [not null]
+  option_key varchar(200) [not null, note: '옵션 값 ID를 오름차순으로 이은 문자열 (예: 12-35). 옵션 없으면 DEFAULT. 같은 조합 중복 방지']
+  sku_code varchar(50) [not null, unique, note: '모델명-옵션코드']
+  barcode varchar(30) [unique, note: '입출고 스캔용']
+  extra_price bigint [not null, default: 0, note: '옵션 추가금 (퀸 +50,000)']
+  width_mm int [note: '옵션별 실제 사이즈 (침대 SS/Q/K)']
+  depth_mm int
+  height_mm int
+  stock int [not null, default: 0, note: '판매 가능 재고 (주문 시 차감). CHECK stock >= 0. 창고별 실물은 sku_inventory']
+  safety_stock int [not null, default: 0, note: '품절 임박 기준']
+  status varchar(20) [not null, default: 'ON_SALE', note: 'ON_SALE/SOLD_OUT/STOPPED']
+  version int [not null, default: 0, note: '낙관적 락']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
 
   indexes {
-    (PRODUCT_ID, SIZE_NAME, ITEM_ID) [unique, name: 'UK_PRODUCT_SIZE_SPEC']
-    ITEM_ID [name: 'IX_PRODUCT_SIZE_SPEC_ITEM']
+    (product_id, option_key) [unique, name: 'uk_product_sku_option_key']
+  }
+}
+
+Table product_sku_option [note: 'SKU가 어떤 옵션 값의 조합인지 (그룹당 값 1개)'] {
+  sku_id bigint [not null]
+  option_group_id bigint [not null]
+  option_value_id bigint [not null]
+
+  indexes {
+    (sku_id, option_group_id) [pk]
+    option_value_id [name: 'ix_sku_option_value']
+  }
+}
+
+Table product_image [note: '상품 이미지 (공통 + 옵션 값별)'] {
+  image_id bigint [pk, increment]
+  product_id bigint [not null]
+  option_value_id bigint [note: 'NULL이면 공통 이미지. 색상을 고르면 해당 이미지로 교체']
+  image_type varchar(20) [not null, note: 'THUMBNAIL/MAIN/DETAIL/SIZE_GUIDE(치수도)']
+  image_url varchar(500) [not null]
+  sort_order smallint [not null]
+
+  indexes {
+    (product_id, option_value_id) [name: 'ix_product_image_product']
+    option_value_id [name: 'ix_product_image_option']
+  }
+}
+
+Table product_qna [note: '상품 문의 (구매 전에도 작성 가능)'] {
+  qna_id bigint [pk, increment]
+  product_id bigint [not null]
+  sku_id bigint [note: '특정 옵션에 대한 문의면 지정']
+  member_id bigint [not null]
+  qna_type varchar(20) [not null, note: 'PRODUCT/SIZE/SHIPPING/INSTALL/RETURN/ETC']
+  content varchar(2000) [not null]
+  is_secret char(1) [not null, default: 'N', note: '비밀글이면 작성자와 관리자만 열람']
+  answer_content varchar(2000)
+  answered_by bigint [note: '답변 관리자']
+  answered_at datetime
+  status varchar(20) [not null, default: 'WAITING', note: 'WAITING/ANSWERED/HIDDEN']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+
+  indexes {
+    (product_id, created_at) [name: 'ix_product_qna_product']
+    (status, created_at) [name: 'ix_product_qna_status', note: '미답변 문의 목록']
+    member_id [name: 'ix_product_qna_member']
+    sku_id [name: 'ix_product_qna_sku']
+    answered_by [name: 'ix_product_qna_answered_by']
   }
 }
 
@@ -423,279 +466,552 @@ Table PRODUCT_SIZE_SPEC [note: '실측 사이즈표 (회원 체형과 비교해 
 // 2단계: 상품 - 연결 / 이력
 // =====================================================================
 
-Table PRODUCT_STYLE [note: '상품 스타일 태그 (1단계 STYLE 재사용)'] {
-  PRODUCT_ID number(19) [not null]
-  STYLE_ID number(19) [not null]
+Table product_style [note: '상품 인테리어 스타일 태그 (1단계 style 재사용)'] {
+  product_id bigint [not null]
+  style_id bigint [not null]
 
   indexes {
-    (PRODUCT_ID, STYLE_ID) [pk]
-    STYLE_ID [name: 'IX_PRODUCT_STYLE_STYLE']
+    (product_id, style_id) [pk]
+    style_id [name: 'ix_product_style_style']
   }
 }
 
-Table MEMBER_BRAND_PREFERENCE [note: '회원 선호 브랜드'] {
-  MEMBER_ID number(19) [not null]
-  BRAND_ID number(19) [not null]
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table member_brand_preference [note: '회원 선호(팔로우) 브랜드'] {
+  member_id bigint [not null]
+  brand_id bigint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (MEMBER_ID, BRAND_ID) [pk]
-    BRAND_ID [name: 'IX_MBP_BRAND']
+    (member_id, brand_id) [pk]
+    brand_id [name: 'ix_mbp_brand']
   }
 }
 
-Table STOCK_HISTORY [note: '재고 원장. SKU.STOCK 변경과 같은 트랜잭션에서 기록'] {
-  STOCK_HISTORY_ID number(19) [pk, increment]
-  SKU_ID number(19) [not null]
-  WAREHOUSE_ID number(19) [note: '실물 이동이 있는 경우 창고. 판매 가능 재고만 바뀌면 NULL']
-  CHANGE_TYPE varchar2(20) [not null, note: 'INBOUND/ORDER/CANCEL/RETURN/EXCHANGE/ADJUST/MOVE']
-  QUANTITY number(10) [not null, note: '+입고 / -출고']
-  STOCK_AFTER number(10) [not null, note: '변경 후 재고']
-  REF_TYPE varchar2(20) [note: 'ORDER/CLAIM']
-  REF_ID number(19) [note: '주문/클레임 ID (다음 단계 테이블)']
-  MEMO varchar2(500)
-  CREATED_BY number(19) [note: '관리자. 시스템 처리는 NULL']
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table stock_history [note: '재고 원장. SKU.stock 변경과 같은 트랜잭션에서 기록'] {
+  stock_history_id bigint [pk, increment]
+  sku_id bigint [not null]
+  warehouse_id bigint [note: '실물 이동이 있는 경우 창고. 판매 가능 재고만 바뀌면 NULL']
+  change_type varchar(20) [not null, note: 'INBOUND/ORDER/CANCEL/RETURN/EXCHANGE/ADJUST/MOVE']
+  quantity int [not null, note: '+입고 / -출고']
+  stock_after int [not null, note: '변경 후 재고']
+  ref_type varchar(20) [note: 'ORDER/CLAIM']
+  ref_id bigint [note: '주문/클레임 ID (다음 단계 테이블)']
+  memo varchar(500)
+  created_by bigint [note: '관리자. 시스템 처리는 NULL']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (SKU_ID, CREATED_AT) [name: 'IX_STOCK_HISTORY_SKU']
-    WAREHOUSE_ID [name: 'IX_STOCK_HISTORY_WAREHOUSE']
-    CREATED_BY [name: 'IX_STOCK_HISTORY_CREATED_BY']
+    (sku_id, created_at) [name: 'ix_stock_history_sku']
+    warehouse_id [name: 'ix_stock_history_warehouse']
+    created_by [name: 'ix_stock_history_created_by']
   }
 }
 
-Table PRICE_HISTORY [note: '가격 변경 이력 (가격 인하 알림 근거)'] {
-  PRICE_HISTORY_ID number(19) [pk, increment]
-  PRODUCT_ID number(19) [not null]
-  LIST_PRICE number(12) [not null]
-  SALE_PRICE number(12) [not null]
-  CHANGED_BY number(19) [not null, note: '관리자']
-  CHANGED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table price_history [note: '가격 변경 이력 (가격 인하 알림 근거)'] {
+  price_history_id bigint [pk, increment]
+  product_id bigint [not null]
+  list_price bigint [not null]
+  sale_price bigint [not null]
+  changed_by bigint [not null, note: '관리자']
+  changed_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (PRODUCT_ID, CHANGED_AT) [name: 'IX_PRICE_HISTORY_PRODUCT']
-    CHANGED_BY [name: 'IX_PRICE_HISTORY_CHANGED_BY']
-  }
-}
-
-// =====================================================================
-// 2단계 확장: 검색 / 필터
-// =====================================================================
-
-Table COLOR_FAMILY [note: '컬러 계열 마스터. 컬러 필터 칩으로 노출'] {
-  COLOR_FAMILY_ID number(19) [pk, increment]
-  FAMILY_CODE varchar2(20) [not null, unique, note: 'BLACK/WHITE/GRAY/NAVY/BLUE/BEIGE/BROWN/KHAKI/GREEN/RED/PINK/YELLOW/PURPLE/MULTI']
-  NAME_KO varchar2(30) [not null, note: '블랙/화이트/그레이...']
-  REPRESENT_HEX char(7) [not null, note: '필터 칩 표시 색']
-  SORT_ORDER number(3) [not null]
-}
-
-Table MATERIAL [note: '소재 마스터'] {
-  MATERIAL_ID number(19) [pk, increment]
-  MATERIAL_CODE varchar2(20) [not null, unique, note: 'COTTON/WOOL/CASHMERE/LINEN/POLYESTER/NYLON/RAYON/LEATHER/DOWN...']
-  NAME_KO varchar2(30) [not null, note: '면/울/캐시미어/린넨...']
-  SORT_ORDER number(3) [not null]
-}
-
-Table PRODUCT_MATERIAL [note: '상품 소재 혼용률 (구조화). PRODUCT_NOTICE.MATERIAL은 법정 표기 문구로 유지'] {
-  PRODUCT_ID number(19) [not null]
-  PART varchar2(20) [not null, note: 'SHELL(겉감)/LINING(안감)/FILLING(충전재)/RIB(배색)']
-  MATERIAL_ID number(19) [not null]
-  RATIO number(5,2) [not null, note: '혼용률 %. CHECK 0 < RATIO <= 100. 부위별 합계 100은 애플리케이션에서 검증']
-
-  indexes {
-    (PRODUCT_ID, PART, MATERIAL_ID) [pk]
-    (MATERIAL_ID, RATIO) [name: 'IX_PRODUCT_MATERIAL_FILTER', note: '울 50% 이상 같은 필터']
-  }
-}
-
-Table ATTRIBUTE [note: '필터 속성 정의 (넥라인/기장/소매기장/패턴/여밈/굽높이...)'] {
-  ATTRIBUTE_ID number(19) [pk, increment]
-  ATTRIBUTE_CODE varchar2(30) [not null, unique, note: 'NECKLINE/LENGTH/SLEEVE_LENGTH/PATTERN/CLOSURE/HEEL_HEIGHT']
-  NAME_KO varchar2(30) [not null]
-  SIZE_TYPE varchar2(10) [note: '적용 카테고리 종류 (TOP/BOTTOM/...). NULL이면 전체']
-  IS_FILTERABLE char(1) [not null, default: 'Y', note: '검색 필터 노출 여부']
-  IS_MULTI_SELECT char(1) [not null, default: 'N', note: '상품 하나에 값 여러 개 허용 여부']
-  SORT_ORDER number(3) [not null]
-}
-
-Table ATTRIBUTE_VALUE [note: '속성 값 (넥라인 → 라운드/브이넥/터틀넥...)'] {
-  VALUE_ID number(19) [pk, increment]
-  ATTRIBUTE_ID number(19) [not null]
-  VALUE_CODE varchar2(30) [not null, note: 'ROUND/V_NECK/TURTLE...']
-  NAME_KO varchar2(30) [not null]
-  SORT_ORDER number(3) [not null]
-
-  indexes {
-    (ATTRIBUTE_ID, VALUE_CODE) [unique, name: 'UK_ATTRIBUTE_VALUE']
-  }
-}
-
-Table PRODUCT_ATTRIBUTE_VALUE [note: '상품별 속성 값'] {
-  PRODUCT_ID number(19) [not null]
-  VALUE_ID number(19) [not null]
-
-  indexes {
-    (PRODUCT_ID, VALUE_ID) [pk]
-    VALUE_ID [name: 'IX_PAV_VALUE', note: '속성 값으로 상품 찾기']
-  }
-}
-
-Table SEARCH_SYNONYM [note: '검색 동의어 (가디건 → 카디건, 맨투맨 → 스웨트셔츠)'] {
-  SYNONYM_ID number(19) [pk, increment]
-  TERM varchar2(50) [not null, unique, note: '사용자가 입력하는 단어']
-  STANDARD_TERM varchar2(50) [not null, note: '표준 검색어']
-  IS_ACTIVE char(1) [not null, default: 'Y']
-  CREATED_BY number(19) [not null]
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-
-  indexes {
-    CREATED_BY [name: 'IX_SEARCH_SYNONYM_CREATED_BY']
-  }
-}
-
-Table PRODUCT_SEARCH_KEYWORD [note: 'MD가 지정한 상품 검색 키워드 (상품명에 없는 단어로도 검색)'] {
-  PRODUCT_ID number(19) [not null]
-  KEYWORD varchar2(50) [not null, note: '예: 하객룩, 교복 위 카디건']
-
-  indexes {
-    (PRODUCT_ID, KEYWORD) [pk]
-    KEYWORD [name: 'IX_PSK_KEYWORD']
-  }
-}
-
-Table SEARCH_LOG [note: '검색 로그 (인기 검색어, 결과 없는 검색어 분석)'] {
-  SEARCH_LOG_ID number(19) [pk, increment]
-  MEMBER_ID number(19) [note: '비회원은 NULL']
-  KEYWORD varchar2(100) [not null, note: '입력 원문']
-  NORMALIZED_KEYWORD varchar2(100) [not null, note: '동의어/공백 정리 후']
-  RESULT_COUNT number(10) [not null, note: '0이면 동의어 추가 후보']
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-
-  indexes {
-    (NORMALIZED_KEYWORD, CREATED_AT) [name: 'IX_SEARCH_LOG_KEYWORD']
-    (CREATED_AT) [name: 'IX_SEARCH_LOG_CREATED']
-    MEMBER_ID [name: 'IX_SEARCH_LOG_MEMBER']
+    (product_id, changed_at) [name: 'ix_price_history_product']
+    changed_by [name: 'ix_price_history_changed_by']
   }
 }
 
 // =====================================================================
-// 2단계 확장: 상품 구성
+// 2단계: 상품 - 검색 / 필터
 // =====================================================================
 
-Table PRODUCT_RELATION [note: '연관 상품 (코디 추천, 같은 상품 다른 핏 등)'] {
-  PRODUCT_ID number(19) [not null]
-  RELATED_PRODUCT_ID number(19) [not null, note: 'CHECK PRODUCT_ID <> RELATED_PRODUCT_ID']
-  RELATION_TYPE varchar2(20) [not null, note: 'COORDI(코디)/OTHER_FIT(다른 핏)/SAME_SERIES(같은 라인)/SIMILAR(비슷한 상품)']
-  SORT_ORDER number(3) [not null]
-  CREATED_BY number(19) [not null]
-  CREATED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table color_family [note: '컬러 계열 마스터. 상품 필터 칩으로 노출'] {
+  color_family_id bigint [pk, increment]
+  family_code varchar(20) [not null, unique, note: 'WHITE/IVORY/BEIGE/BROWN/NATURAL_WOOD/GRAY/BLACK/NAVY/GREEN/PINK/MULTI']
+  name_ko varchar(30) [not null]
+  represent_hex char(7) [not null, note: '필터 칩 표시 색']
+  sort_order smallint [not null]
+}
+
+Table material [note: '소재 마스터'] {
+  material_id bigint [pk, increment]
+  material_code varchar(20) [not null, unique, note: 'SOLID_WOOD(원목)/MDF/PB/STEEL/GLASS/MARBLE/FABRIC/LEATHER/RATTAN/PLASTIC...']
+  name_ko varchar(30) [not null]
+  sort_order smallint [not null]
+}
+
+Table product_material [note: '상품 소재 (필터용). 법정 표기 문구는 product_notice.material'] {
+  product_id bigint [not null]
+  material_id bigint [not null]
+  part varchar(20) [not null, default: 'MAIN', note: 'MAIN/FRAME/TOP(상판)/LEG(다리)/UPHOLSTERY(커버)']
 
   indexes {
-    (PRODUCT_ID, RELATION_TYPE, RELATED_PRODUCT_ID) [pk]
-    RELATED_PRODUCT_ID [name: 'IX_PRODUCT_RELATION_RELATED']
-    CREATED_BY [name: 'IX_PRODUCT_RELATION_CREATED_BY']
+    (product_id, material_id, part) [pk]
+    material_id [name: 'ix_product_material_filter']
   }
 }
 
-Table PRODUCT_SET_ITEM [note: '세트 상품 구성품 (셋업, 묶음). 세트는 자체 SKU 없이 구성품 SKU를 각각 선택해 주문'] {
-  SET_PRODUCT_ID number(19) [not null, note: 'PRODUCT_TYPE = SET인 상품']
-  COMPONENT_PRODUCT_ID number(19) [not null, note: 'PRODUCT_TYPE = SINGLE인 상품']
-  QUANTITY number(3) [not null, default: 1]
-  SORT_ORDER number(3) [not null]
+Table attribute [note: '카테고리별 필터 속성 (침대 사이즈, 소파 인원, 수납 여부, 전구 색온도...)'] {
+  attribute_id bigint [pk, increment]
+  category_id bigint [note: '적용 카테고리 (하위 카테고리 포함). NULL이면 전체']
+  attribute_code varchar(30) [not null, unique, note: 'BED_SIZE/SOFA_SEATS/HAS_STORAGE/LIGHT_COLOR_TEMP...']
+  name_ko varchar(30) [not null]
+  is_filterable char(1) [not null, default: 'Y', note: '검색 필터 노출 여부']
+  is_multi_select char(1) [not null, default: 'N', note: '상품 하나에 값 여러 개 허용 여부']
+  sort_order smallint [not null]
 
   indexes {
-    (SET_PRODUCT_ID, COMPONENT_PRODUCT_ID) [pk]
-    COMPONENT_PRODUCT_ID [name: 'IX_PRODUCT_SET_ITEM_COMPONENT']
+    category_id [name: 'ix_attribute_category']
   }
 }
 
-Table BRAND_SIZE_GUIDE [note: '브랜드별 사이즈 가이드 (회원 체형으로 사이즈 추천)'] {
-  GUIDE_ID number(19) [pk, increment]
-  BRAND_ID number(19) [not null]
-  SIZE_TYPE varchar2(10) [not null, note: 'TOP/BOTTOM/OUTER/SHOES']
-  GENDER varchar2(10) [not null, note: 'MEN/WOMEN/UNISEX']
-  SIZE_NAME varchar2(10) [not null, note: 'S/M/L, 28/30, 250']
-  SIZE_ORDER number(3) [not null]
-  KR_SIZE varchar2(10) [note: '국내 호칭 (90/95/100)']
-  INTL_SIZE varchar2(10) [note: '해외 호칭 (US 8, EU 42)']
-  HEIGHT_MIN_CM number(3)
-  HEIGHT_MAX_CM number(3)
-  WEIGHT_MIN_KG number(3)
-  WEIGHT_MAX_KG number(3)
+Table attribute_value [note: '속성 값 (침대 사이즈 → SS/Q/K/LK)'] {
+  value_id bigint [pk, increment]
+  attribute_id bigint [not null]
+  value_code varchar(30) [not null]
+  name_ko varchar(30) [not null]
+  sort_order smallint [not null]
 
   indexes {
-    (BRAND_ID, SIZE_TYPE, GENDER, SIZE_NAME) [unique, name: 'UK_BRAND_SIZE_GUIDE']
+    (attribute_id, value_code) [unique, name: 'uk_attribute_value']
+  }
+}
+
+Table product_attribute_value [note: '상품별 속성 값'] {
+  product_id bigint [not null]
+  value_id bigint [not null]
+
+  indexes {
+    (product_id, value_id) [pk]
+    value_id [name: 'ix_pav_value', note: '속성 값으로 상품 찾기']
+  }
+}
+
+Table search_synonym [note: '검색 동의어 (쇼파 → 소파, 행거 → 옷걸이, 러그 → 카페트). 스토어와 커뮤니티 검색 공용'] {
+  synonym_id bigint [pk, increment]
+  term varchar(50) [not null, unique, note: '사용자가 입력하는 단어']
+  standard_term varchar(50) [not null, note: '표준 검색어']
+  is_active char(1) [not null, default: 'Y']
+  created_by bigint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    created_by [name: 'ix_search_synonym_created_by']
+  }
+}
+
+Table product_search_keyword [note: 'MD가 지정한 상품 검색 키워드 (신혼가구, 원룸 꾸미기)'] {
+  product_id bigint [not null]
+  keyword varchar(50) [not null]
+
+  indexes {
+    (product_id, keyword) [pk]
+    keyword [name: 'ix_psk_keyword']
+  }
+}
+
+Table search_log [note: '검색 로그 (인기 검색어, 결과 없는 검색어 분석)'] {
+  search_log_id bigint [pk, increment]
+  member_id bigint [note: '비회원은 NULL']
+  search_target varchar(20) [not null, note: 'ALL/STORE/COMMUNITY']
+  keyword varchar(100) [not null, note: '입력 원문']
+  normalized_keyword varchar(100) [not null, note: '동의어/공백 정리 후']
+  result_count int [not null, note: '0이면 동의어 추가 후보']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (normalized_keyword, created_at) [name: 'ix_search_log_keyword']
+    (created_at) [name: 'ix_search_log_created']
+    member_id [name: 'ix_search_log_member']
   }
 }
 
 // =====================================================================
-// 2단계 확장: 운영
+// 2단계: 상품 - 구성
 // =====================================================================
 
-Table SEASON [note: '시즌 마스터 (표기 통일: 26FW)'] {
-  SEASON_ID number(19) [pk, increment]
-  SEASON_CODE varchar2(10) [not null, unique, note: '26SS/26FW']
-  SEASON_YEAR number(4) [not null]
-  TERM varchar2(5) [not null, note: 'SS/FW']
-  NAME_KO varchar2(30) [not null, note: '2026 가을/겨울']
-  START_DATE date [not null]
-  END_DATE date [not null, note: '시즌오프 기준']
-}
-
-Table PRODUCT_APPROVAL [note: '상품 검수 요청/결과 (등록자와 승인자 분리)'] {
-  APPROVAL_ID number(19) [pk, increment]
-  PRODUCT_ID number(19) [not null]
-  REQUESTED_BY number(19) [not null, note: '등록 MD']
-  REQUESTED_AT timestamp [not null, default: `SYSTIMESTAMP`]
-  REVIEWER_ID number(19) [note: '검수자. CHECK REVIEWER_ID <> REQUESTED_BY']
-  RESULT varchar2(20) [not null, default: 'PENDING', note: 'PENDING/APPROVED/REJECTED']
-  REJECT_REASON varchar2(1000) [note: '반려 사유 (이미지 불량, 고시정보 누락 등)']
-  REVIEWED_AT timestamp
+Table product_relation [note: '연관 상품'] {
+  product_id bigint [not null]
+  related_product_id bigint [not null, note: 'CHECK product_id <> related_product_id']
+  relation_type varchar(20) [not null, note: 'SAME_SERIES(같은 시리즈)/ADDON(추가 구매: 침대 → 매트리스)/SIMILAR(비슷한 상품)']
+  sort_order smallint [not null]
+  created_by bigint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   indexes {
-    (PRODUCT_ID, REQUESTED_AT) [name: 'IX_PRODUCT_APPROVAL_PRODUCT']
-    (RESULT, REQUESTED_AT) [name: 'IX_PRODUCT_APPROVAL_QUEUE', note: '검수 대기 목록']
-    REQUESTED_BY [name: 'IX_PRODUCT_APPROVAL_REQUESTED_BY']
-    REVIEWER_ID [name: 'IX_PRODUCT_APPROVAL_REVIEWER']
+    (product_id, relation_type, related_product_id) [pk]
+    related_product_id [name: 'ix_product_relation_related']
+    created_by [name: 'ix_product_relation_created_by']
   }
 }
 
-Table PRODUCT_STATUS_HISTORY [note: '상품 상태 변경 이력 (판매중지 사유 추적)'] {
-  HISTORY_ID number(19) [pk, increment]
-  PRODUCT_ID number(19) [not null]
-  FROM_STATUS varchar2(20) [note: '최초 등록은 NULL']
-  TO_STATUS varchar2(20) [not null]
-  REASON varchar2(500)
-  CHANGED_BY number(19) [note: '관리자. 자동 품절 처리 등 시스템 변경은 NULL']
-  CHANGED_AT timestamp [not null, default: `SYSTIMESTAMP`]
+Table product_set_item [note: '세트 상품 구성품 (식탁 세트 = 식탁 1 + 의자 4). 세트는 자체 SKU 없이 구성품 SKU를 각각 선택'] {
+  set_product_id bigint [not null, note: 'product_type = SET인 상품']
+  component_product_id bigint [not null, note: 'product_type = SINGLE인 상품']
+  quantity smallint [not null, default: 1]
+  sort_order smallint [not null]
 
   indexes {
-    (PRODUCT_ID, CHANGED_AT) [name: 'IX_PSH_PRODUCT']
-    CHANGED_BY [name: 'IX_PSH_CHANGED_BY']
+    (set_product_id, component_product_id) [pk]
+    component_product_id [name: 'ix_product_set_item_component']
   }
 }
 
-Table WAREHOUSE [note: '창고'] {
-  WAREHOUSE_ID number(19) [pk, increment]
-  WAREHOUSE_CODE varchar2(20) [not null, unique]
-  NAME varchar2(50) [not null]
-  ZIPCODE varchar2(10) [not null]
-  ADDRESS1 varchar2(200) [not null]
-  ADDRESS2 varchar2(200)
-  IS_ACTIVE char(1) [not null, default: 'Y']
-}
+// =====================================================================
+// 2단계: 상품 - 운영
+// =====================================================================
 
-Table SKU_INVENTORY [note: '창고별 실물 재고와 적재 위치'] {
-  SKU_ID number(19) [not null]
-  WAREHOUSE_ID number(19) [not null]
-  QUANTITY number(10) [not null, default: 0, note: '실물 수량. CHECK >= 0']
-  LOCATION_CODE varchar2(20) [note: '적재 위치 (A-03-2: 구역-선반-칸)']
-  UPDATED_AT timestamp
+Table product_approval [note: '상품 검수 요청/결과 (등록자와 승인자 분리)'] {
+  approval_id bigint [pk, increment]
+  product_id bigint [not null]
+  requested_by bigint [not null, note: '등록 MD']
+  requested_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  reviewer_id bigint [note: '검수자. CHECK reviewer_id <> requested_by']
+  result varchar(20) [not null, default: 'PENDING', note: 'PENDING/APPROVED/REJECTED']
+  reject_reason varchar(1000) [note: '반려 사유 (KC 인증 누락, 치수도 없음 등)']
+  reviewed_at datetime
 
   indexes {
-    (SKU_ID, WAREHOUSE_ID) [pk]
-    WAREHOUSE_ID [name: 'IX_SKU_INVENTORY_WAREHOUSE']
+    (product_id, requested_at) [name: 'ix_product_approval_product']
+    (result, requested_at) [name: 'ix_product_approval_queue', note: '검수 대기 목록']
+    requested_by [name: 'ix_product_approval_requested_by']
+    reviewer_id [name: 'ix_product_approval_reviewer']
+  }
+}
+
+Table product_status_history [note: '상품 상태 변경 이력 (판매중지 사유 추적)'] {
+  history_id bigint [pk, increment]
+  product_id bigint [not null]
+  from_status varchar(20) [note: '최초 등록은 NULL']
+  to_status varchar(20) [not null]
+  reason varchar(500)
+  changed_by bigint [note: '관리자. 자동 품절 처리 등 시스템 변경은 NULL']
+  changed_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (product_id, changed_at) [name: 'ix_psh_product']
+    changed_by [name: 'ix_psh_changed_by']
+  }
+}
+
+Table warehouse [note: '창고 (대형가구 물류센터, 소품 센터 분리 가능)'] {
+  warehouse_id bigint [pk, increment]
+  warehouse_code varchar(20) [not null, unique]
+  name varchar(50) [not null]
+  zipcode varchar(10) [not null]
+  address1 varchar(200) [not null]
+  address2 varchar(200)
+  is_active char(1) [not null, default: 'Y']
+}
+
+Table sku_inventory [note: '창고별 실물 재고와 적재 위치'] {
+  sku_id bigint [not null]
+  warehouse_id bigint [not null]
+  quantity int [not null, default: 0, note: '실물 수량. CHECK >= 0']
+  location_code varchar(20) [note: '적재 위치 (A-03-2: 구역-선반-칸)']
+  updated_at datetime
+
+  indexes {
+    (sku_id, warehouse_id) [pk]
+    warehouse_id [name: 'ix_sku_inventory_warehouse']
+  }
+}
+
+// =====================================================================
+// 3단계: 커뮤니티 - 글 (공통 post + 유형별 상세)
+// =====================================================================
+
+Table post [note: '커뮤니티 글 공통. 유형별 추가 정보는 *_DETAIL 테이블 (슈퍼타입/서브타입)'] {
+  post_id bigint [pk, increment]
+  member_id bigint [not null, note: '작성자']
+  post_type varchar(20) [not null, note: 'PHOTO(집사진)/HOUSEWARMING(집들이)/KNOWHOW(노하우)/QUESTION(질문과답변)']
+  title varchar(200) [note: 'PHOTO는 NULL 허용, 나머지는 필수 (CHECK)']
+  cover_image_id bigint [note: '목록 썸네일로 쓸 이미지']
+  status varchar(20) [not null, default: 'DRAFT', note: 'DRAFT(임시저장)/PUBLISHED/HIDDEN(작성자 숨김)/BLINDED(신고 누적·관리자 블라인드)/DELETED']
+  published_at datetime [note: '최초 발행 시각. 피드 정렬 기준']
+  is_featured char(1) [not null, default: 'N', note: '에디터 추천 (메인 노출)']
+  featured_at datetime
+  allow_comment char(1) [not null, default: 'Y']
+  view_count int [not null, default: 0, note: '캐시']
+  like_count int [not null, default: 0, note: '캐시']
+  scrap_count int [not null, default: 0, note: '캐시']
+  comment_count int [not null, default: 0, note: '캐시']
+  report_count int [not null, default: 0, note: '캐시. 기준 이상이면 자동 BLINDED']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+  deleted_at datetime
+
+  indexes {
+    (post_type, status, published_at) [name: 'ix_post_feed', note: '유형별 최신 피드']
+    (post_type, status, like_count) [name: 'ix_post_popular', note: '인기순']
+    (member_id, status, created_at) [name: 'ix_post_member', note: '내 글 / 프로필']
+    (is_featured, featured_at) [name: 'ix_post_featured']
+    cover_image_id [name: 'ix_post_cover_image']
+  }
+}
+
+Table post_image [note: '글에 올린 사진. 상품 태그의 기준'] {
+  image_id bigint [pk, increment]
+  post_id bigint [not null]
+  image_url varchar(500) [not null]
+  width_px int [not null, note: '피드 레이아웃(메이슨리)용 원본 크기']
+  height_px int [not null]
+  space_type varchar(20) [note: 'LIVING/BEDROOM/KITCHEN/BATHROOM/KIDS/DRESSROOM/STUDY/ENTRANCE/BALCONY/ETC. 공간별 사진 필터']
+  caption varchar(1000) [note: 'PHOTO 글은 사진마다 설명']
+  sort_order smallint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (post_id, sort_order) [unique, name: 'uk_post_image_order']
+    (space_type, post_id) [name: 'ix_post_image_space']
+  }
+}
+
+Table post_block [note: '본문 블록 (집들이/노하우 같은 긴 글 에디터). 글 = 블록을 sort_order 순서로 이어 붙인 것'] {
+  block_id bigint [pk, increment]
+  post_id bigint [not null]
+  sort_order smallint [not null]
+  block_type varchar(20) [not null, note: 'HEADING/TEXT/IMAGE/QUOTE/DIVIDER/PRODUCT(상품 카드)']
+  text_content text [note: 'HEADING/TEXT/QUOTE 본문']
+  image_id bigint [note: 'IMAGE 블록이면 post_image']
+  product_id bigint [note: 'product 블록이면 상품. CHECK 유형별 필수 컬럼']
+
+  indexes {
+    (post_id, sort_order) [unique, name: 'uk_post_block_order']
+    image_id [name: 'ix_post_block_image']
+    product_id [name: 'ix_post_block_product']
+  }
+}
+
+Table post_product_tag [note: '사진 위 상품 태그 (사진 속 가구를 눌러 바로 구매). 오늘의집 핵심 기능'] {
+  tag_id bigint [pk, increment]
+  image_id bigint [not null]
+  product_id bigint [note: '스토어 상품. 판매하지 않는 제품이면 NULL']
+  external_name varchar(200) [note: '스토어에 없는 제품 직접 입력 (예: 이케아 빌리 책장). CHECK product_id 또는 external_name 중 하나 필수']
+  pos_x decimal(5,2) [not null, note: '사진 가로 위치 % (0~100). 해상도와 무관']
+  pos_y decimal(5,2) [not null, note: '사진 세로 위치 % (0~100)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    image_id [name: 'ix_ppt_image']
+    product_id [name: 'ix_ppt_product', note: '상품 상세의 "이 상품이 쓰인 사진"']
+  }
+}
+
+Table housewarming_detail [note: '집들이 상세 (post와 1:1). 목록 필터 조건'] {
+  post_id bigint [pk, note: 'post_type = HOUSEWARMING']
+  housing_type varchar(20) [not null, note: 'APARTMENT/VILLA/HOUSE/OFFICETEL/ONE_ROOM/ETC']
+  area_pyeong smallint [not null]
+  room_count tinyint
+  family_type varchar(20) [note: 'SINGLE/COUPLE/WITH_KIDS/WITH_PARENTS/SHARE/ETC']
+  region varchar(30) [note: '시/도 단위까지만 (개인정보 보호)']
+  work_type varchar(20) [not null, note: 'SELF(셀프)/PARTIAL(부분 시공)/PRO(전문가 시공)']
+  work_scope varchar(200) [note: '도배, 바닥, 조명, 욕실 리모델링 등']
+  work_period_weeks smallint
+  budget_manwon int [note: '예산 (만원)']
+  has_pet char(1) [note: 'Y/N']
+
+  indexes {
+    (housing_type, area_pyeong) [name: 'ix_hw_housing_area']
+    (work_type, budget_manwon) [name: 'ix_hw_work_budget']
+  }
+}
+
+Table knowhow_detail [note: '노하우 상세 (post와 1:1)'] {
+  post_id bigint [pk, note: 'post_type = KNOWHOW']
+  topic varchar(20) [not null, note: 'DECORATING/STORAGE/CLEANING/DIY/REMODELING/PLANTS/LIFE_TIP']
+  difficulty varchar(10) [note: 'EASY/NORMAL/HARD']
+  duration_min int [note: '소요 시간 (분)']
+
+  indexes {
+    topic [name: 'ix_knowhow_topic']
+  }
+}
+
+Table question_detail [note: '질문과답변 상세 (post와 1:1). 답변은 댓글로 달고 하나를 채택'] {
+  post_id bigint [pk, note: 'post_type = QUESTION']
+  topic varchar(20) [not null, note: 'FURNITURE/REMODELING/STORAGE/LIGHTING/PLANTS/ETC']
+  accepted_comment_id bigint [unique, note: '채택된 답변 댓글. 질문 작성자만 채택']
+  accepted_at datetime
+}
+
+// =====================================================================
+// 3단계: 커뮤니티 - 분류 / 반응
+// =====================================================================
+
+Table post_style [note: '글의 인테리어 스타일 (1단계 style 재사용 → 같은 기준으로 글과 상품 추천)'] {
+  post_id bigint [not null]
+  style_id bigint [not null]
+
+  indexes {
+    (post_id, style_id) [pk]
+    style_id [name: 'ix_post_style_style']
+  }
+}
+
+Table hashtag [note: '해시태그'] {
+  hashtag_id bigint [pk, increment]
+  name varchar(50) [not null, unique, note: '# 제외, 소문자/공백 제거해서 저장']
+  post_count int [not null, default: 0, note: '캐시. 인기 태그']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table post_hashtag [note: '글-해시태그 연결'] {
+  post_id bigint [not null]
+  hashtag_id bigint [not null]
+
+  indexes {
+    (post_id, hashtag_id) [pk]
+    hashtag_id [name: 'ix_post_hashtag_tag']
+  }
+}
+
+Table post_comment [note: '댓글 + 대댓글 (1단계 깊이)'] {
+  comment_id bigint [pk, increment]
+  post_id bigint [not null]
+  member_id bigint [not null]
+  parent_id bigint [note: '대댓글이면 원댓글. 대댓글의 대댓글은 원댓글에 붙임']
+  mention_member_id bigint [note: '@닉네임 멘션 대상']
+  content varchar(1000) [not null]
+  status varchar(20) [not null, default: 'ACTIVE', note: 'ACTIVE/DELETED/BLINDED. 대댓글이 있으면 "삭제된 댓글입니다"로 표시']
+  like_count int [not null, default: 0, note: '캐시']
+  report_count int [not null, default: 0, note: '캐시']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+
+  indexes {
+    (post_id, parent_id, created_at) [name: 'ix_comment_post']
+    (member_id, created_at) [name: 'ix_comment_member']
+    parent_id [name: 'ix_comment_parent']
+    mention_member_id [name: 'ix_comment_mention']
+  }
+}
+
+Table post_like [note: '글 좋아요'] {
+  member_id bigint [not null]
+  post_id bigint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (member_id, post_id) [pk]
+    post_id [name: 'ix_post_like_post']
+  }
+}
+
+Table comment_like [note: '댓글 좋아요'] {
+  member_id bigint [not null]
+  comment_id bigint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (member_id, comment_id) [pk]
+    comment_id [name: 'ix_comment_like_comment']
+  }
+}
+
+Table scrap_folder [note: '스크랩북 폴더 (예: 거실 아이디어, 신혼집 위시리스트)'] {
+  folder_id bigint [pk, increment]
+  member_id bigint [not null]
+  name varchar(50) [not null]
+  description varchar(300)
+  is_public char(1) [not null, default: 'Y', note: '다른 사람에게 공개']
+  sort_order smallint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (member_id, name) [unique, name: 'uk_scrap_folder_name']
+  }
+}
+
+Table scrap [note: '스크랩 = 글 저장 + 상품 찜. 대상은 post 또는 product 중 하나 (CHECK)'] {
+  scrap_id bigint [pk, increment]
+  member_id bigint [not null]
+  folder_id bigint [note: 'NULL이면 기본 폴더 (모두 보기)']
+  post_id bigint
+  product_id bigint
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (member_id, post_id) [unique, name: 'uk_scrap_post', note: '같은 글 중복 스크랩 방지. MySQL UNIQUE는 NULL 행을 중복으로 보지 않아 상품 스크랩 행과 충돌하지 않음']
+    (member_id, product_id) [unique, name: 'uk_scrap_product', note: '같은 상품 중복 찜 방지']
+    (member_id, folder_id, created_at) [name: 'ix_scrap_member']
+    folder_id [name: 'ix_scrap_folder']
+    post_id [name: 'ix_scrap_post']
+    product_id [name: 'ix_scrap_product']
+  }
+}
+
+// =====================================================================
+// 3단계: 커뮤니티 - 관계 / 운영
+// =====================================================================
+
+Table follow [note: '팔로우 (팔로잉 피드)'] {
+  follower_id bigint [not null, note: '팔로우하는 사람']
+  followee_id bigint [not null, note: '팔로우 받는 사람. CHECK follower_id <> followee_id']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (follower_id, followee_id) [pk]
+    followee_id [name: 'ix_follow_followee', note: '팔로워 목록']
+  }
+}
+
+Table member_block [note: '회원 차단 (차단한 사람의 글/댓글 숨김, 댓글·멘션 금지)'] {
+  blocker_id bigint [not null]
+  blocked_id bigint [not null, note: 'CHECK blocker_id <> blocked_id']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (blocker_id, blocked_id) [pk]
+    blocked_id [name: 'ix_member_block_blocked']
+  }
+}
+
+Table report [note: '신고 (글/댓글/회원). 대상 컬럼 중 정확히 하나만 채움 (CHECK)'] {
+  report_id bigint [pk, increment]
+  reporter_id bigint [not null]
+  post_id bigint
+  comment_id bigint
+  target_member_id bigint
+  reason_type varchar(20) [not null, note: 'SPAM/ADVERTISING/ABUSE/ADULT/COPYRIGHT/PRIVACY/ETC']
+  detail varchar(1000)
+  status varchar(20) [not null, default: 'RECEIVED', note: 'RECEIVED/ACCEPTED/REJECTED']
+  handled_by bigint [note: '처리 관리자']
+  handled_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (reporter_id, post_id) [unique, name: 'uk_report_post', note: '같은 글 중복 신고 방지 (NULL 행은 중복 아님)']
+    (reporter_id, comment_id) [unique, name: 'uk_report_comment']
+    (status, created_at) [name: 'ix_report_queue', note: '처리 대기 목록']
+    reporter_id [name: 'ix_report_reporter']
+    post_id [name: 'ix_report_post']
+    comment_id [name: 'ix_report_comment']
+    target_member_id [name: 'ix_report_target_member']
+    handled_by [name: 'ix_report_handled_by']
+  }
+}
+
+Table notification [note: '알림함 (앱 내 알림 목록). 발송 여부는 member_notification_setting 기준'] {
+  notification_id bigint [pk, increment]
+  member_id bigint [not null, note: '받는 사람']
+  actor_id bigint [note: '행동한 사람 (좋아요/댓글/팔로우한 회원). 시스템 알림은 NULL']
+  noti_type varchar(20) [not null, note: 'COMMENT/REPLY/MENTION/LIKE/FOLLOW/ANSWER_ACCEPTED/RESTOCK/PRICE_DROP/ORDER/DELIVERY/NOTICE']
+  post_id bigint
+  comment_id bigint
+  product_id bigint
+  message varchar(300) [not null]
+  link_url varchar(500)
+  is_read char(1) [not null, default: 'N']
+  read_at datetime
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (member_id, is_read, created_at) [name: 'ix_notification_member', note: '안 읽은 알림 수, 최신순 목록']
+    actor_id [name: 'ix_notification_actor']
+    post_id [name: 'ix_notification_post']
+    comment_id [name: 'ix_notification_comment']
+    product_id [name: 'ix_notification_product']
   }
 }
 
@@ -704,150 +1020,229 @@ Table SKU_INVENTORY [note: '창고별 실물 재고와 적재 위치'] {
 // =====================================================================
 
 // 고객
-Ref: MEMBER.GRADE_ID > MEMBER_GRADE.GRADE_ID
-Ref: MEMBER.REFERRED_BY > MEMBER.MEMBER_ID
-Ref: MEMBER_SOCIAL.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_BODY.MEMBER_ID - MEMBER.MEMBER_ID
-Ref: ADDRESS.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_TERMS_AGREEMENT.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_TERMS_AGREEMENT.TERMS_ID > TERMS.TERMS_ID
-Ref: MEMBER_NOTIFICATION_SETTING.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_STYLE.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_STYLE.STYLE_ID > STYLE.STYLE_ID
-Ref: LOGIN_HISTORY.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_TOKEN.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_SESSION.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: PASSWORD_HISTORY.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: PRIVACY_ACCESS_LOG.ADMIN_ID > MEMBER.MEMBER_ID
-Ref: PRIVACY_ACCESS_LOG.TARGET_MEMBER_ID > MEMBER.MEMBER_ID
+Ref: member_account.grade_id > member_grade.grade_id
+Ref: member_account.referred_by > member_account.member_id
+Ref: member_social.member_id > member_account.member_id
+Ref: member_home.member_id - member_account.member_id
+Ref: address.member_id > member_account.member_id
+Ref: member_terms_agreement.member_id > member_account.member_id
+Ref: member_terms_agreement.terms_id > terms.terms_id
+Ref: member_notification_setting.member_id > member_account.member_id
+Ref: member_style.member_id > member_account.member_id
+Ref: member_style.style_id > style.style_id
+Ref: login_history.member_id > member_account.member_id
+Ref: member_token.member_id > member_account.member_id
+Ref: member_session.member_id > member_account.member_id
+Ref: password_history.member_id > member_account.member_id
+Ref: privacy_access_log.admin_id > member_account.member_id
+Ref: privacy_access_log.target_member_id > member_account.member_id
 
 // 상품
-Ref: CATEGORY.PARENT_ID > CATEGORY.CATEGORY_ID
-Ref: PRODUCT.BRAND_ID > BRAND.BRAND_ID
-Ref: PRODUCT.CATEGORY_ID > CATEGORY.CATEGORY_ID
-Ref: PRODUCT_NOTICE.PRODUCT_ID - PRODUCT.PRODUCT_ID
-Ref: PRODUCT_COLOR.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_IMAGE.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_IMAGE.COLOR_ID > PRODUCT_COLOR.COLOR_ID
-Ref: PRODUCT_SKU.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_SKU.COLOR_ID > PRODUCT_COLOR.COLOR_ID
-Ref: PRODUCT_SIZE_SPEC.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_SIZE_SPEC.ITEM_ID > SIZE_MEASURE_ITEM.ITEM_ID
-Ref: STOCK_HISTORY.SKU_ID > PRODUCT_SKU.SKU_ID
-Ref: PRICE_HISTORY.PRODUCT_ID > PRODUCT.PRODUCT_ID
+Ref: category.parent_id > category.category_id
+Ref: product.brand_id > brand.brand_id
+Ref: product.category_id > category.category_id
+Ref: product.shipping_policy_id > shipping_policy.policy_id
+Ref: product_notice.product_id - product.product_id
+Ref: product_option_group.product_id > product.product_id
+Ref: product_option_value.option_group_id > product_option_group.option_group_id
+Ref: product_option_value.color_family_id > color_family.color_family_id
+Ref: product_sku.product_id > product.product_id
+Ref: product_sku_option.sku_id > product_sku.sku_id
+Ref: product_sku_option.option_group_id > product_option_group.option_group_id
+Ref: product_sku_option.option_value_id > product_option_value.option_value_id
+Ref: product_image.product_id > product.product_id
+Ref: product_image.option_value_id > product_option_value.option_value_id
+Ref: product_qna.product_id > product.product_id
+Ref: product_qna.sku_id > product_sku.sku_id
+Ref: product_qna.member_id > member_account.member_id
+Ref: product_qna.answered_by > member_account.member_id
+Ref: stock_history.sku_id > product_sku.sku_id
+Ref: price_history.product_id > product.product_id
 
 // 고객 ↔ 상품
-Ref: PRODUCT_STYLE.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_STYLE.STYLE_ID > STYLE.STYLE_ID
-Ref: MEMBER_BRAND_PREFERENCE.MEMBER_ID > MEMBER.MEMBER_ID
-Ref: MEMBER_BRAND_PREFERENCE.BRAND_ID > BRAND.BRAND_ID
-Ref: PRODUCT.CREATED_BY > MEMBER.MEMBER_ID
-Ref: PRODUCT.UPDATED_BY > MEMBER.MEMBER_ID
-Ref: STOCK_HISTORY.CREATED_BY > MEMBER.MEMBER_ID
-Ref: PRICE_HISTORY.CHANGED_BY > MEMBER.MEMBER_ID
+Ref: product_style.product_id > product.product_id
+Ref: product_style.style_id > style.style_id
+Ref: member_brand_preference.member_id > member_account.member_id
+Ref: member_brand_preference.brand_id > brand.brand_id
+Ref: product.created_by > member_account.member_id
+Ref: product.updated_by > member_account.member_id
+Ref: stock_history.created_by > member_account.member_id
+Ref: price_history.changed_by > member_account.member_id
 
-// 확장: 검색 / 필터
-Ref: PRODUCT_COLOR.COLOR_FAMILY_ID > COLOR_FAMILY.COLOR_FAMILY_ID
-Ref: PRODUCT_MATERIAL.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_MATERIAL.MATERIAL_ID > MATERIAL.MATERIAL_ID
-Ref: ATTRIBUTE_VALUE.ATTRIBUTE_ID > ATTRIBUTE.ATTRIBUTE_ID
-Ref: PRODUCT_ATTRIBUTE_VALUE.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_ATTRIBUTE_VALUE.VALUE_ID > ATTRIBUTE_VALUE.VALUE_ID
-Ref: SEARCH_SYNONYM.CREATED_BY > MEMBER.MEMBER_ID
-Ref: PRODUCT_SEARCH_KEYWORD.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: SEARCH_LOG.MEMBER_ID > MEMBER.MEMBER_ID
+// 상품 검색 / 필터
+Ref: product_material.product_id > product.product_id
+Ref: product_material.material_id > material.material_id
+Ref: attribute.category_id > category.category_id
+Ref: attribute_value.attribute_id > attribute.attribute_id
+Ref: product_attribute_value.product_id > product.product_id
+Ref: product_attribute_value.value_id > attribute_value.value_id
+Ref: search_synonym.created_by > member_account.member_id
+Ref: product_search_keyword.product_id > product.product_id
+Ref: search_log.member_id > member_account.member_id
 
-// 확장: 상품 구성
-Ref: PRODUCT_RELATION.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_RELATION.RELATED_PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_RELATION.CREATED_BY > MEMBER.MEMBER_ID
-Ref: PRODUCT_SET_ITEM.SET_PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_SET_ITEM.COMPONENT_PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: BRAND_SIZE_GUIDE.BRAND_ID > BRAND.BRAND_ID
+// 상품 구성
+Ref: product_relation.product_id > product.product_id
+Ref: product_relation.related_product_id > product.product_id
+Ref: product_relation.created_by > member_account.member_id
+Ref: product_set_item.set_product_id > product.product_id
+Ref: product_set_item.component_product_id > product.product_id
 
-// 확장: 운영
-Ref: PRODUCT.SEASON_ID > SEASON.SEASON_ID
-Ref: PRODUCT_APPROVAL.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_APPROVAL.REQUESTED_BY > MEMBER.MEMBER_ID
-Ref: PRODUCT_APPROVAL.REVIEWER_ID > MEMBER.MEMBER_ID
-Ref: PRODUCT_STATUS_HISTORY.PRODUCT_ID > PRODUCT.PRODUCT_ID
-Ref: PRODUCT_STATUS_HISTORY.CHANGED_BY > MEMBER.MEMBER_ID
-Ref: SKU_INVENTORY.SKU_ID > PRODUCT_SKU.SKU_ID
-Ref: SKU_INVENTORY.WAREHOUSE_ID > WAREHOUSE.WAREHOUSE_ID
-Ref: STOCK_HISTORY.WAREHOUSE_ID > WAREHOUSE.WAREHOUSE_ID
+// 상품 운영
+Ref: product_approval.product_id > product.product_id
+Ref: product_approval.requested_by > member_account.member_id
+Ref: product_approval.reviewer_id > member_account.member_id
+Ref: product_status_history.product_id > product.product_id
+Ref: product_status_history.changed_by > member_account.member_id
+Ref: sku_inventory.sku_id > product_sku.sku_id
+Ref: sku_inventory.warehouse_id > warehouse.warehouse_id
+Ref: stock_history.warehouse_id > warehouse.warehouse_id
+
+// 커뮤니티 - 글
+Ref: post.member_id > member_account.member_id
+Ref: post.cover_image_id > post_image.image_id
+Ref: post_image.post_id > post.post_id
+Ref: post_block.post_id > post.post_id
+Ref: post_block.image_id > post_image.image_id
+Ref: post_block.product_id > product.product_id
+Ref: post_product_tag.image_id > post_image.image_id
+Ref: post_product_tag.product_id > product.product_id
+Ref: housewarming_detail.post_id - post.post_id
+Ref: knowhow_detail.post_id - post.post_id
+Ref: question_detail.post_id - post.post_id
+Ref: question_detail.accepted_comment_id - post_comment.comment_id
+
+// 커뮤니티 - 분류 / 반응
+Ref: post_style.post_id > post.post_id
+Ref: post_style.style_id > style.style_id
+Ref: post_hashtag.post_id > post.post_id
+Ref: post_hashtag.hashtag_id > hashtag.hashtag_id
+Ref: post_comment.post_id > post.post_id
+Ref: post_comment.member_id > member_account.member_id
+Ref: post_comment.parent_id > post_comment.comment_id
+Ref: post_comment.mention_member_id > member_account.member_id
+Ref: post_like.member_id > member_account.member_id
+Ref: post_like.post_id > post.post_id
+Ref: comment_like.member_id > member_account.member_id
+Ref: comment_like.comment_id > post_comment.comment_id
+Ref: scrap_folder.member_id > member_account.member_id
+Ref: scrap.member_id > member_account.member_id
+Ref: scrap.folder_id > scrap_folder.folder_id
+Ref: scrap.post_id > post.post_id
+Ref: scrap.product_id > product.product_id
+
+// 커뮤니티 - 관계 / 운영
+Ref: follow.follower_id > member_account.member_id
+Ref: follow.followee_id > member_account.member_id
+Ref: member_block.blocker_id > member_account.member_id
+Ref: member_block.blocked_id > member_account.member_id
+Ref: report.reporter_id > member_account.member_id
+Ref: report.post_id > post.post_id
+Ref: report.comment_id > post_comment.comment_id
+Ref: report.target_member_id > member_account.member_id
+Ref: report.handled_by > member_account.member_id
+Ref: notification.member_id > member_account.member_id
+Ref: notification.actor_id > member_account.member_id
+Ref: notification.post_id > post.post_id
+Ref: notification.comment_id > post_comment.comment_id
+Ref: notification.product_id > product.product_id
 
 // =====================================================================
 // 화면 그룹 (dbdiagram에서 영역별로 묶여 보임)
 // =====================================================================
 
 TableGroup member_basic [note: '고객 - 회원 기본'] {
-  MEMBER_GRADE
-  MEMBER
-  MEMBER_SOCIAL
-  MEMBER_BODY
-  ADDRESS
+  member_grade
+  member_account
+  member_social
+  member_home
+  address
 }
 
 TableGroup member_terms_noti_style [note: '고객 - 약관/알림/취향'] {
-  TERMS
-  MEMBER_TERMS_AGREEMENT
-  MEMBER_NOTIFICATION_SETTING
-  STYLE
-  MEMBER_STYLE
+  terms
+  member_terms_agreement
+  member_notification_setting
+  style
+  member_style
 }
 
 TableGroup member_security [note: '고객 - 보안'] {
-  LOGIN_HISTORY
-  MEMBER_TOKEN
-  MEMBER_SESSION
-  PASSWORD_HISTORY
-  PRIVACY_ACCESS_LOG
+  login_history
+  member_token
+  member_session
+  password_history
+  privacy_access_log
 }
 
-TableGroup product_classification [note: '상품 - 분류/브랜드'] {
-  BRAND
-  CATEGORY
-  SIZE_MEASURE_ITEM
+TableGroup product_classification [note: '상품 - 분류/브랜드/배송'] {
+  brand
+  category
+  shipping_policy
 }
 
-TableGroup product_core [note: '상품 - 상품/컬러/SKU'] {
-  PRODUCT
-  PRODUCT_NOTICE
-  PRODUCT_COLOR
-  PRODUCT_IMAGE
-  PRODUCT_SKU
-  PRODUCT_SIZE_SPEC
+TableGroup product_core [note: '상품 - 상품/옵션/SKU/문의'] {
+  product
+  product_notice
+  product_option_group
+  product_option_value
+  product_sku
+  product_sku_option
+  product_image
+  product_qna
 }
 
 TableGroup product_link_history [note: '상품 - 연결/이력'] {
-  PRODUCT_STYLE
-  MEMBER_BRAND_PREFERENCE
-  STOCK_HISTORY
-  PRICE_HISTORY
+  product_style
+  member_brand_preference
+  stock_history
+  price_history
 }
 
-TableGroup product_search_filter [note: '상품 확장 - 검색/필터'] {
-  COLOR_FAMILY
-  MATERIAL
-  PRODUCT_MATERIAL
-  ATTRIBUTE
-  ATTRIBUTE_VALUE
-  PRODUCT_ATTRIBUTE_VALUE
-  SEARCH_SYNONYM
-  PRODUCT_SEARCH_KEYWORD
-  SEARCH_LOG
+TableGroup product_search_filter [note: '상품 - 검색/필터'] {
+  color_family
+  material
+  product_material
+  attribute
+  attribute_value
+  product_attribute_value
+  search_synonym
+  product_search_keyword
+  search_log
 }
 
-TableGroup product_composition [note: '상품 확장 - 상품 구성'] {
-  PRODUCT_RELATION
-  PRODUCT_SET_ITEM
-  BRAND_SIZE_GUIDE
+TableGroup product_composition_operation [note: '상품 - 구성/운영'] {
+  product_relation
+  product_set_item
+  product_approval
+  product_status_history
+  warehouse
+  sku_inventory
 }
 
-TableGroup product_operation [note: '상품 확장 - 운영'] {
-  SEASON
-  PRODUCT_APPROVAL
-  PRODUCT_STATUS_HISTORY
-  WAREHOUSE
-  SKU_INVENTORY
+TableGroup community_post [note: '커뮤니티 - 글 (사진/집들이/노하우/질문)'] {
+  post
+  post_image
+  post_block
+  post_product_tag
+  housewarming_detail
+  knowhow_detail
+  question_detail
+}
+
+TableGroup community_reaction [note: '커뮤니티 - 분류/반응/스크랩'] {
+  post_style
+  hashtag
+  post_hashtag
+  post_comment
+  post_like
+  comment_like
+  scrap_folder
+  scrap
+}
+
+TableGroup community_operation [note: '커뮤니티 - 팔로우/차단/신고/알림'] {
+  follow
+  member_block
+  report
+  notification
 }

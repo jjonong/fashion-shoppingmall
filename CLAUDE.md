@@ -1,0 +1,87 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 프로젝트 상태
+
+**인테리어 가구몰 + 커뮤니티** 포트폴리오 프로젝트 (오늘의집 벤치마킹: 스토어 + 사진/집들이/노하우/질문과답변). 현재는 **DB 설계 단계**로, 애플리케이션 코드·빌드·테스트 명령은 아직 없다. 모든 산출물은 `docs/`에 있다.
+
+- 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`. (Oracle에서 전환함. Oracle 버전은 `docs/archive_oracle/`)
+- 판매 방식: 여러 브랜드 상품을 **자사가 직접 판매** (입점 판매자·정산 없음). 사용자가 확정한 사항이므로 오픈마켓 구조로 바꾸지 않는다.
+- 단계: 1단계 고객(15) + 2단계 상품(30) + 3단계 커뮤니티(19) = **64개 테이블**.
+- **다음 단계(장바구니·주문·결제, 구매 리뷰, 쿠폰·포인트)는 대기 중.** 사용자가 요청하기 전에는 테이블을 추가하지 않는다. `stock_history.ref_id`는 다음 단계의 주문/클레임 테이블을 가리킬 예정.
+- 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
+
+## 설계 문서와 동기화
+
+| 파일 | 역할 |
+|---|---|
+| `docs/erd.dbml` | **기준 원본(source of truth)**. 64개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 11개. https://dbdiagram.io/d 에 붙여넣어 확인 |
+| `docs/DB_설계서.pdf` | `erd.dbml`에서 생성한 설계서 (표지, 전체 구조, 설계 원칙, 흐름도, 영역별 ERD, 테이블 명세, FK 목록). **모든 페이지 A4 세로** (사용자 요청, 가로 페이지 섞지 않음). 직접 수정 불가, 설계가 바뀌면 `tools/design-doc`에서 `npm run pdf`로 다시 생성 |
+| `docs/archive_fashion/` | 이전 패션몰 설계 (Oracle). 참고용, 갱신하지 않음 |
+| `docs/archive_oracle/` | 인테리어몰 Oracle 버전 (MySQL 전환 직전). 참고용, 갱신하지 않음 |
+
+테이블/컬럼을 바꿀 때는 `erd.dbml`을 고치고, 상단 주석의 테이블 개수와 하단 `Ref`/`TableGroup` 섹션도 함께 맞춘 뒤 PDF를 다시 만든다.
+
+## 설계서 생성 도구 (`tools/design-doc/`)
+
+```
+cd tools/design-doc
+npm install            # 최초 1회 (PUPPETEER_SKIP_DOWNLOAD=true 권장: 브라우저는 로컬 Chrome 사용)
+npm run check          # docs/erd.dbml 문법 검증 (dbdiagram.io와 같은 파서) → OK tables= refs= groups=
+npm run pdf            # 검증 후 docs/DB_설계서.pdf 재생성
+node build.js <in.dbml> <out.pdf> <미리보기폴더>   # 도식별 PNG 미리보기까지 생성
+```
+
+- `build.js`: 표지·설명·흐름도(Mermaid)·영역별 ERD(Graphviz, 키 컬럼만)·테이블 명세·FK 목록을 HTML로 만든 뒤 Chrome으로 PDF 출력. Chrome 경로가 다르면 `CHROME_PATH` 환경변수.
+- 테이블 명세·ERD·FK 목록은 DBML에서 자동 생성된다. **표지·설계 원칙·흐름도·목업 설명은 `build.js`에 직접 쓴 문장**이므로, 테이블/컬럼 이름이나 설계 규칙이 바뀌면 `build.js`의 해당 문장도 함께 고친다.
+- 영역별 설명(`groupDesc`)과 단계 구분은 `TableGroup` 이름 접두사(`member_`, `product_`, `community_`)를 기준으로 한다. 새 영역을 추가하면 이 규칙을 따른다.
+- 스타일은 `style.css`. 모든 페이지 A4 세로 (가로 페이지 금지).
+
+## 설계 규칙 (DBML 전반에 일관되게 적용됨)
+
+- **이름**: 테이블·컬럼·인덱스 모두 **소문자 snake_case** (OS마다 테이블명 대소문자 처리가 달라서). 인덱스 이름 접두사 `uk_`(unique), `ux_`(함수 기반 unique), `ix_`(일반). PK 제약 이름은 MySQL에서 항상 `PRIMARY`.
+- **예약어 회피**: `member`는 MySQL 8.0.17+ 예약어라 회원 테이블은 **`member_account`** (PK는 `member_id`, 다른 테이블의 FK 컬럼도 `member_id`). 댓글은 `post_comment`. 새 이름을 만들 때 MySQL 예약어인지 확인한다.
+- **PK**: `bigint` AUTO_INCREMENT(`increment`). 1:1 확장 테이블(`member_home`, `product_notice`, `*_detail`)은 부모 PK를 그대로 PK로 사용. 매핑 테이블은 복합 PK.
+- **타입**: ID·금액 `bigint`, 카운트 `int`, 작은 수 `smallint`/`tinyint`, 비율·평점·치수 소수 `decimal(p,s)`, 문자열 `varchar(n)`(글자 수), 본문 `text`(상세페이지·약관은 `mediumtext`), 시각 `datetime`(TIMESTAMP의 2038년 제한·시간대 변환 회피), 치수는 mm 정수.
+- **상태값**: `varchar` + CHECK 제약 (허용 값은 컬럼 `note`에 `A/B/C` 형식, 값은 대문자). **Y/N**은 `char(1)` + CHECK.
+- **시간**: `created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP`, `updated_at`은 DDL에서 `ON UPDATE CURRENT_TIMESTAMP` (DBML로는 표현 불가).
+- **FK 컬럼에는 인덱스**를 둔다 (`created_by`, `reviewer_id`, `handled_by` 등 관리자 참조 포함).
+- **UNIQUE 처리 (MySQL 특성)**:
+  - 이메일: 대소문자 무시 콜레이션이라 일반 `UNIQUE(email)`로 대소문자 중복 방지.
+  - 회원당 기본 배송지 1개: 함수 기반 인덱스 `ux_address_default ((CASE WHEN is_default='Y' THEN member_id END))`.
+  - nullable 대상 중복 방지(스크랩, 신고): MySQL UNIQUE는 NULL이 포함된 행을 중복으로 보지 않으므로 일반 복합 UNIQUE `(member_id, post_id)`로 충분.
+- **CHECK + FK 주의 (DDL 작성 시)**: MySQL은 `ON DELETE CASCADE`/`SET NULL` 같은 참조 동작이 있는 FK 컬럼을 CHECK에서 쓸 수 없다. CHECK에 들어가는 FK(예: `follow`, `member_block`, `product_relation`, `product_approval`, `scrap`, `report`)는 참조 동작 없이 만든다.
+- **다형 참조**: 대상이 여러 종류인 테이블은 `target_type + target_id` 대신 대상별 nullable FK 컬럼을 둔다. `scrap`, `report`는 CHECK로 정확히 하나만 채우고, `notification`은 관련 대상(글+댓글 등)을 함께 채울 수 있다.
+- **개인정보**: 휴대폰 번호는 `_enc`(AES-256) + `_hash`(SHA-256) 쌍. CI/DI·토큰은 해시만 저장. 탈퇴는 soft delete + 마스킹(`withdrawn_{ID}@deleted.local`, 이름 `탈퇴회원`), 커뮤니티 글은 숨김·댓글은 "탈퇴한 회원" 표시. 관리자 조회는 `privacy_access_log`에 기록.
+- **캐시 컬럼**: 좋아요·스크랩·댓글·팔로워·리뷰 수, 평점 등은 note에 `캐시`로 표시하고 원본과 같은 트랜잭션에서 갱신.
+- **이력 테이블 패턴**: `price_history`, `stock_history`, `product_status_history`, `password_history`, `member_terms_agreement`. 시스템 변경이면 `changed_by`/`created_by`는 NULL.
+
+## 핵심 도메인 구조
+
+### 상품
+- **옵션 구조**: `product` → `product_option_group`(색상/사이즈/구성, 상품마다 다름) → `product_option_value` → `product_sku`(값 조합). 조합은 `product_sku_option`(SKU당 그룹별 값 1개), 중복은 `option_key`(값 ID 오름차순 연결) + `UK(product_id, option_key)`. 옵션 없는 상품도 SKU 1개(`DEFAULT`). **SKU가 재고·장바구니·주문의 기준 단위**.
+- **가구 특화**: 치수(상품 대표 + SKU별), `assembly_type`(완제품/자가조립/기사 설치), `sale_type`(일반/예약/주문제작), `shipping_policy`(일반택배/화물/설치배송, 지역 추가비, 출고 소요일, 오늘출발 마감), 배송지 층수·엘리베이터.
+- **재고 이중 구조**: `product_sku.stock` = 판매 가능 재고(조건부 UPDATE로 차감, 낙관적 락 `version`), `sku_inventory` = 창고별 실물 재고. 모든 변경은 `stock_history`에 기록.
+- **상품 상태 흐름**: `DRAFT → PENDING_REVIEW → REJECTED/APPROVED → ON_SALE/SOLD_OUT/STOPPED`. 검수(`product_approval`)는 등록자 ≠ 검수자(CHECK).
+- **세트 상품**: `product_type='SET'`은 자체 SKU 없이 `product_set_item` 구성품 SKU를 각각 선택.
+- **필터**: 컬러 계열(옵션 값 단위), 소재(부위별), 카테고리별 속성(`attribute`, 데이터로 추가). 동의어·검색 로그는 스토어/커뮤니티 공용.
+
+### 커뮤니티 (글쓰기 중심)
+- **슈퍼타입/서브타입**: 공통 `post`(`post_type` = PHOTO/HOUSEWARMING/KNOWHOW/QUESTION) + 1:1 상세(`housewarming_detail`, `knowhow_detail`, `question_detail`). 댓글·좋아요·스크랩·신고·해시태그는 모두 `post`에 연결.
+- **블록 에디터**: 본문은 `post_block`(HEADING/TEXT/IMAGE/QUOTE/DIVIDER/PRODUCT)을 `sort_order` 순으로 저장. 이미지는 `post_image`(공간 유형, 원본 크기).
+- **상품 태그**: `post_product_tag`는 사진 위 % 좌표 + 스토어 상품 또는 외부 제품명(둘 중 하나). 상품 상세의 "이 상품이 쓰인 사진" 근거.
+- **글 상태**: `DRAFT → PUBLISHED → HIDDEN/BLINDED/DELETED`. 신고 누적은 `report_count` 캐시로 자동 BLINDED.
+- **질문 채택**: `question_detail.accepted_comment_id`(답변 = 댓글).
+- **스크랩 = 글 저장 + 상품 찜** (`scrap`, 폴더는 `scrap_folder`).
+
+### 공유 마스터
+- `style`(인테리어 스타일)은 `member_style`, `product_style`, `post_style`이 함께 사용.
+- 회원 주거 정보 `member_home`은 맞춤 추천과 집들이 작성 기본값에 사용.
+- 마케팅 수신: `member_notification_setting`의 EVENT(광고성) 알림은 마케팅 약관 동의가 있어야 발송. `notification`은 앱 내 알림함.
+
+## 저장소 메모
+
+- 루트의 `2026-*.txt`는 Claude Code 대화 기록 export이며 `.gitignore`로 제외된다. 커밋하지 않는다.
+- 커밋 메시지와 문서는 한국어로 작성한다.
+- 수정된 내용은 자동으로 커밋하고 푸시한다.
