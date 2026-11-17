@@ -1,0 +1,195 @@
+---
+title: 패션 쇼핑몰 ERD - 2단계 상품 (13개 테이블)
+---
+erDiagram
+
+    %% ================= 1단계에서 참조하는 테이블 (요약) =================
+    MEMBER {
+        NUMBER MEMBER_ID PK "1단계 고객"
+        VARCHAR2 ROLE "ADMIN은 상품 등록/수정 주체"
+    }
+    STYLE {
+        NUMBER STYLE_ID PK "1단계 고객"
+        VARCHAR2 NAME UK
+    }
+
+    %% ================= 분류 / 브랜드 =================
+    BRAND {
+        NUMBER BRAND_ID PK
+        VARCHAR2 NAME_KO
+        VARCHAR2 NAME_EN UK
+        VARCHAR2 LOGO_URL
+        VARCHAR2 DESCRIPTION
+        VARCHAR2 STATUS "ACTIVE/HIDDEN"
+        NUMBER LIKE_COUNT "캐시"
+        TIMESTAMP CREATED_AT
+        TIMESTAMP UPDATED_AT
+    }
+
+    CATEGORY {
+        NUMBER CATEGORY_ID PK
+        NUMBER PARENT_ID FK "자기참조, 최상위는 NULL"
+        VARCHAR2 NAME "UK(PARENT_ID, NAME)"
+        NUMBER DEPTH "1~3, 예: 상의 > 니트 > 카디건"
+        NUMBER SORT_ORDER
+        VARCHAR2 SIZE_TYPE "TOP/BOTTOM/OUTER/SHOES/BAG/FREE"
+        CHAR IS_ACTIVE "Y/N"
+    }
+
+    SIZE_MEASURE_ITEM {
+        NUMBER ITEM_ID PK
+        VARCHAR2 SIZE_TYPE UK "CATEGORY.SIZE_TYPE과 같은 값"
+        VARCHAR2 ITEM_CODE UK "UK(SIZE_TYPE, ITEM_CODE)"
+        VARCHAR2 ITEM_NAME "총장/어깨너비/가슴단면/허리단면/밑위..."
+        NUMBER SORT_ORDER
+    }
+
+    %% ================= 상품 =================
+    PRODUCT {
+        NUMBER PRODUCT_ID PK
+        NUMBER BRAND_ID FK
+        NUMBER CATEGORY_ID FK "3단계 카테고리"
+        VARCHAR2 STYLE_CODE UK "품번"
+        VARCHAR2 NAME
+        VARCHAR2 GENDER "MEN/WOMEN/UNISEX"
+        VARCHAR2 SEASON "26SS/26FW"
+        NUMBER LIST_PRICE "정가"
+        NUMBER SALE_PRICE "판매가, CHECK <= 정가"
+        CLOB DESCRIPTION
+        VARCHAR2 FIT "SLIM/REGULAR/OVER"
+        VARCHAR2 THICKNESS "THIN/NORMAL/THICK"
+        VARCHAR2 ELASTICITY "NONE/LOW/HIGH"
+        VARCHAR2 SHEERNESS "NONE/LOW/HIGH"
+        CHAR LINING "Y/N"
+        NUMBER MODEL_HEIGHT_CM
+        NUMBER MODEL_WEIGHT_KG
+        VARCHAR2 MODEL_WEAR_SIZE "모델 착용 사이즈"
+        VARCHAR2 STATUS "DRAFT/ON_SALE/SOLD_OUT/STOPPED"
+        TIMESTAMP SALE_START_AT
+        TIMESTAMP SALE_END_AT
+        CHAR IS_FREE_SHIPPING "Y/N"
+        NUMBER VIEW_COUNT "캐시"
+        NUMBER LIKE_COUNT "캐시"
+        NUMBER REVIEW_COUNT "캐시"
+        NUMBER AVG_RATING "캐시"
+        NUMBER SALES_COUNT "캐시"
+        NUMBER CREATED_BY FK "관리자"
+        NUMBER UPDATED_BY FK "관리자"
+        TIMESTAMP CREATED_AT
+        TIMESTAMP UPDATED_AT
+    }
+
+    PRODUCT_NOTICE {
+        NUMBER PRODUCT_ID PK, FK "1:1, 상품정보제공고시"
+        VARCHAR2 MATERIAL "소재 혼용률"
+        VARCHAR2 COLOR_INFO
+        VARCHAR2 SIZE_INFO
+        VARCHAR2 MANUFACTURER
+        VARCHAR2 ORIGIN "제조국"
+        VARCHAR2 MANUFACTURED_YM "제조연월"
+        VARCHAR2 WASHING_CARE "세탁 방법"
+        VARCHAR2 QUALITY_ASSURANCE "품질보증기준"
+        VARCHAR2 AS_CONTACT "A/S 책임자 연락처"
+    }
+
+    PRODUCT_COLOR {
+        NUMBER COLOR_ID PK
+        NUMBER PRODUCT_ID FK
+        VARCHAR2 COLOR_CODE "BK/WH/NV, UK(PRODUCT_ID, COLOR_CODE)"
+        VARCHAR2 COLOR_NAME "멜란지 그레이, UK(PRODUCT_ID, COLOR_NAME)"
+        VARCHAR2 COLOR_HEX "#B5B5B5"
+        NUMBER SORT_ORDER
+    }
+
+    PRODUCT_IMAGE {
+        NUMBER IMAGE_ID PK
+        NUMBER PRODUCT_ID FK
+        NUMBER COLOR_ID FK "NULL이면 컬러 공통"
+        VARCHAR2 IMAGE_TYPE "THUMBNAIL/MAIN/DETAIL/MODEL"
+        VARCHAR2 IMAGE_URL
+        NUMBER SORT_ORDER
+    }
+
+    PRODUCT_SKU {
+        NUMBER SKU_ID PK "장바구니/주문/재입고알림의 기준"
+        NUMBER PRODUCT_ID FK
+        NUMBER COLOR_ID FK "UK(PRODUCT_ID, COLOR_ID, SIZE_NAME)"
+        VARCHAR2 SIZE_NAME "S/M/L, 28/30, 250, FREE"
+        NUMBER SIZE_ORDER "사이즈 정렬 순서"
+        VARCHAR2 SKU_CODE UK "품번-컬러코드-사이즈"
+        NUMBER EXTRA_PRICE "옵션 추가금"
+        NUMBER STOCK "CHECK >= 0"
+        NUMBER SAFETY_STOCK "품절 임박 기준"
+        VARCHAR2 STATUS "ON_SALE/SOLD_OUT/STOPPED"
+        NUMBER VERSION "낙관적 락"
+        TIMESTAMP CREATED_AT
+        TIMESTAMP UPDATED_AT
+    }
+
+    PRODUCT_SIZE_SPEC {
+        NUMBER SPEC_ID PK
+        NUMBER PRODUCT_ID FK
+        VARCHAR2 SIZE_NAME "UK(PRODUCT_ID, SIZE_NAME, ITEM_ID)"
+        NUMBER ITEM_ID FK "실측 항목"
+        NUMBER VALUE_CM "NUMBER(5,1)"
+    }
+
+    %% ================= 연결 / 이력 =================
+    PRODUCT_STYLE {
+        NUMBER PRODUCT_ID PK, FK
+        NUMBER STYLE_ID PK, FK
+    }
+
+    MEMBER_BRAND_PREFERENCE {
+        NUMBER MEMBER_ID PK, FK
+        NUMBER BRAND_ID PK, FK
+        TIMESTAMP CREATED_AT
+    }
+
+    STOCK_HISTORY {
+        NUMBER STOCK_HISTORY_ID PK
+        NUMBER SKU_ID FK
+        VARCHAR2 CHANGE_TYPE "INBOUND/ORDER/CANCEL/RETURN/EXCHANGE/ADJUST"
+        NUMBER QUANTITY "+입고 / -출고"
+        NUMBER STOCK_AFTER "변경 후 재고"
+        VARCHAR2 REF_TYPE "ORDER/CLAIM/NULL"
+        NUMBER REF_ID "주문/클레임 ID"
+        VARCHAR2 MEMO
+        NUMBER CREATED_BY FK "관리자, 시스템 처리는 NULL"
+        TIMESTAMP CREATED_AT
+    }
+
+    PRICE_HISTORY {
+        NUMBER PRICE_HISTORY_ID PK
+        NUMBER PRODUCT_ID FK
+        NUMBER LIST_PRICE
+        NUMBER SALE_PRICE "가격 인하 알림 근거"
+        NUMBER CHANGED_BY FK "관리자"
+        TIMESTAMP CHANGED_AT
+    }
+
+    %% ================= 관계 =================
+    BRAND ||--o{ PRODUCT : "브랜드"
+    CATEGORY |o--o{ CATEGORY : "하위 카테고리"
+    CATEGORY ||--o{ PRODUCT : "분류"
+    SIZE_MEASURE_ITEM ||--o{ PRODUCT_SIZE_SPEC : "실측 항목"
+
+    PRODUCT ||--o| PRODUCT_NOTICE : "고시정보"
+    PRODUCT ||--|{ PRODUCT_COLOR : "컬러"
+    PRODUCT ||--o{ PRODUCT_IMAGE : "이미지"
+    PRODUCT_COLOR |o--o{ PRODUCT_IMAGE : "컬러별 이미지"
+    PRODUCT ||--|{ PRODUCT_SKU : "SKU"
+    PRODUCT_COLOR ||--|{ PRODUCT_SKU : "사이즈별 재고"
+    PRODUCT ||--o{ PRODUCT_SIZE_SPEC : "실측표"
+
+    PRODUCT ||--o{ PRODUCT_STYLE : "스타일 태그"
+    STYLE ||--o{ PRODUCT_STYLE : "스타일"
+    MEMBER ||--o{ MEMBER_BRAND_PREFERENCE : "선호 브랜드"
+    BRAND ||--o{ MEMBER_BRAND_PREFERENCE : "선호됨"
+
+    PRODUCT_SKU ||--o{ STOCK_HISTORY : "재고 원장"
+    PRODUCT ||--o{ PRICE_HISTORY : "가격 이력"
+
+    MEMBER |o--o{ PRODUCT : "등록/수정 관리자"
+    MEMBER |o--o{ STOCK_HISTORY : "처리 관리자"
+    MEMBER |o--o{ PRICE_HISTORY : "변경 관리자"
