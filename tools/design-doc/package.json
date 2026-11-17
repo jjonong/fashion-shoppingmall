@@ -5,7 +5,9 @@
   "description": "docs/erd.dbml 검증과 DB 설계서 PDF 생성",
   "scripts": {
     "check": "node check.js",
-    "pdf": "node check.js && node build.js"
+    "pdf": "node check.js && node build.js",
+    "summary": "node check.js && node summary.js",
+    "all": "node check.js && node build.js && node summary.js"
   },
   "dependencies": {
     "@dbml/core": "12.0.0",

@@ -19,6 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|
 | `docs/erd.dbml` | **기준 원본(source of truth)**. 60개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 12개. https://dbdiagram.io/d 에 붙여넣어 확인 |
 | `docs/DB_설계서.pdf` | `erd.dbml`에서 생성한 설계서 (표지, 전체 구조, 설계 원칙, 흐름도, 영역별 ERD, 테이블 명세, FK 목록). **모든 페이지 A4 세로** (사용자 요청, 가로 페이지 섞지 않음). 직접 수정 불가, 설계가 바뀌면 `tools/design-doc`에서 `npm run pdf`로 다시 생성 |
+| `docs/고객_설계_요약.pdf` | 1단계 고객 요약본 (약 8쪽: 한눈에 보기·핵심 결정, 고객 전체 ERD, 테이블 요약표, 설계 과정, 보안, 생명주기, 정책·향후 검토). 전체 설계서가 길어서 사용자가 요청한 별도 문서. `npm run summary`로 생성 |
 | `docs/archive_fashion/` | 이전 패션몰 설계 (Oracle). 참고용, 갱신하지 않음 |
 | `docs/archive_oracle/` | 인테리어몰 Oracle 버전 (MySQL 전환 직전). 참고용, 갱신하지 않음 |
 
@@ -31,11 +32,14 @@ cd tools/design-doc
 npm install            # 최초 1회 (PUPPETEER_SKIP_DOWNLOAD=true 권장: 브라우저는 로컬 Chrome 사용)
 npm run check          # docs/erd.dbml 문법 검증 (dbdiagram.io와 같은 파서) → OK tables= refs= groups=
 npm run pdf            # 검증 후 docs/DB_설계서.pdf 재생성
-node build.js <in.dbml> <out.pdf> <미리보기폴더>   # 도식별 PNG 미리보기까지 생성
+npm run summary        # 검증 후 docs/고객_설계_요약.pdf 재생성
+npm run all            # 둘 다
+node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미리보기까지 생성 (summary.js도 같은 인자)
 ```
 
-- `build.js`: 표지·설명·흐름도(Mermaid)·영역별 ERD(Graphviz, 키 컬럼만)·테이블 명세·FK 목록을 HTML로 만든 뒤 Chrome으로 PDF 출력. Chrome 경로가 다르면 `CHROME_PATH` 환경변수.
-- 테이블 명세·ERD·FK 목록은 DBML에서 자동 생성된다. **표지·설계 원칙·흐름도·목업 설명은 `build.js`에 직접 쓴 문장**이므로, 테이블/컬럼 이름이나 설계 규칙이 바뀌면 `build.js`의 해당 문장도 함께 고친다.
+- 파일 구성: `lib.js`(DBML 로드, Graphviz ERD, Mermaid 초기화, Chrome PDF 출력 공통), `diagrams.js`(Mermaid 흐름도·상태도 원본, 두 문서 공용), `build.js`(전체 설계서), `summary.js`(고객 요약본), `style.css`. Chrome 경로가 다르면 `CHROME_PATH` 환경변수.
+- 테이블 명세·ERD·FK 목록·요약표는 DBML에서 자동 생성된다. **표지·설계 원칙·핵심 결정·정책 설명은 `build.js`/`summary.js`에 직접 쓴 문장**이고 흐름도는 `diagrams.js`에 있으므로, 테이블/컬럼 이름이나 설계 규칙이 바뀌면 해당 문장도 함께 고치고 두 PDF를 모두 다시 만든다(`npm run all`).
+- 요약본 ERD는 `member_account`를 가운데 두는 허브형 배치(`erSvg`의 `leftOf` 옵션)를 쓴다. 다른 영역 요약본을 추가할 때도 `summary.js`의 구성을 따른다.
 - 영역별 설명(`groupDesc`)과 단계 구분은 `TableGroup` 이름 접두사(`member_`, `product_`, `community_`)를 기준으로 한다. 새 영역을 추가하면 이 규칙을 따른다.
 - 스타일은 `style.css`. 모든 페이지 A4 세로 (가로 페이지 금지).
 

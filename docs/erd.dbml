@@ -92,7 +92,7 @@ Table member_social [note: '소셜 계정 연동 (한 회원이 여러 개 연�
   }
 }
 
-Table member_home [note: '회원 주거 정보 (맞춤 상품 추천, 집들이 작성 시 기본값). 패션몰의 member_body를 대체'] {
+Table member_home [note: '회원 주거 정보 (맞춤 상품 추천, 집들이 작성 시 기본값)'] {
   member_id bigint [pk, note: 'member_account와 1:1']
   housing_type varchar(20) [note: 'APARTMENT/VILLA/HOUSE/OFFICETEL/ONE_ROOM/ETC']
   area_pyeong smallint [note: '평수']

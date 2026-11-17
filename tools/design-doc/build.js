@@ -5,62 +5,14 @@
 // Chrome 경로가 다르면 환경변수 CHROME_PATH로 지정
 const fs = require('fs');
 const path = require('path');
-const { Parser } = require('@dbml/core');
-const puppeteer = require('puppeteer-core');
+const { ROOT, esc, noteOf, mm, fig, load, initViz, erSvg, head, mermaidInit, renderPdf } = require('./lib');
 
-const ROOT = path.resolve(__dirname, '..', '..');
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const outPdf = process.argv[3] || path.join(ROOT, 'docs', 'DB_설계서.pdf');
 const previewDir = process.argv[4];
-const CHROME = process.env.CHROME_PATH || [
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/usr/bin/google-chrome',
-].find((p) => fs.existsSync(p));
-if (!CHROME) { console.error('Chrome/Edge를 찾지 못했습니다. CHROME_PATH 환경변수로 경로를 지정하세요.'); process.exit(1); }
-const db = new Parser().parse(fs.readFileSync(src, 'utf8'), 'dbmlv2');
-const S = db.schemas[0];
+const ctx = load(src);
+const { S, tableMap, groups, groupOf, refs, fk, compositePk } = ctx;
 
-const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const noteOf = (n) => (n && typeof n === 'object' ? n.value : n) || '';
-const tableMap = Object.fromEntries(S.tables.map((t) => [t.name, t]));
-const groups = S.tableGroups;
-const groupOf = {};
-groups.forEach((g) => g.tables.forEach((t) => (groupOf[t.name] = g.name)));
-
-// ---------- 관계 정규화 ----------
-const refs = S.refs.map((r) => {
-  const [a, b] = r.endpoints;
-  let child = a, parent = b;
-  if (a.relation === '1' && b.relation === '*') { child = b; parent = a; }
-  return {
-    child: child.tableName, ccol: child.fieldNames[0],
-    parent: parent.tableName, pcol: parent.fieldNames[0],
-    oneToOne: a.relation === '1' && b.relation === '1',
-  };
-});
-const fk = {};
-refs.forEach((r) => (fk[`${r.child}.${r.ccol}`] = `${r.parent}.${r.pcol}`));
-const fieldOf = (t, c) => tableMap[t].fields.find((f) => f.name === c);
-const compositePk = (t) => ((t.indexes || []).find((i) => i.pk)?.columns || []).map((c) => c.value);
-
-// ---------- ERD 공통 ----------
-const baseType = (f) => f.type.type_name.replace(/\(.*\)/, '').toUpperCase();
-function keyFields(t) {
-  const cpk = compositePk(t);
-  return t.fields.filter((f) => f.pk || cpk.includes(f.name) || f.unique || fk[`${t.name}.${f.name}`]);
-}
-function keyMark(t, f) {
-  const cpk = compositePk(t);
-  const k = [];
-  if (f.pk || cpk.includes(f.name)) k.push('PK');
-  if (fk[`${t.name}.${f.name}`]) k.push('FK');
-  if (f.unique) k.push('UK');
-  return k.join(', ');
-}
-// 관리자·처리자 감사 컬럼 → member_account 관계선은 ERD에서 생략 (명세 표에는 FK로 표시)
-const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 'handled_by', 'reviewer_id', 'requested_by']);
 // ---------- 전체 구조도 (HTML 카드 + 영역 간 연결 표) ----------
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 function overview() {
@@ -119,9 +71,6 @@ function tableHtml(t, no) {
 }
 
 // ---------- 조립 ----------
-const mm = (code, cls = '') => `<pre class="mermaid ${cls}">${esc(code)}</pre>`;
-const fig = (title, body, caption = '') =>
-  `<figure class="fig"><figcaption><b>${title}</b>${caption ? ' — ' + caption : ''}</figcaption>${body}</figure>`;
 
 const groupDesc = {
   member_basic: '회원 계정, 커뮤니티 프로필, 주거 정보, 배송지. 거의 모든 영역이 member_account를 작성자·관리자로 참조한다.',
@@ -138,178 +87,18 @@ const groupDesc = {
   community_operation: '신고와 앱 내 알림함.',
 };
 
-// ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
-let VIZ = null;
-function erDot(g) {
-  const inner = new Set(g.tables.map((x) => x.name));
-  const rels = refs.filter((r) => inner.has(r.child) && !(r.parent === 'member_account' && AUDIT.has(r.ccol) && !g.name.startsWith('member')));
-  const ext = [...new Set(rels.filter((r) => !inner.has(r.parent)).map((r) => r.parent))];
-  const F = 'Malgun Gothic';
-  let dot = `digraph G {
-  graph [rankdir=LR, nodesep=0.28, ranksep=0.75, splines=spline, bgcolor="transparent", fontname="${F}", pad=0.1];
-  node [shape=plain, fontname="${F}", fontsize=10];
-  edge [color="#7d8a96", penwidth=1.1, arrowsize=0.75, dir=both];\n`;
-  const row = (port, name, type, key, opts = {}) =>
-    `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="9.5">${opts.b ? '<B>' + name + '</B>' : name}</FONT></TD>` +
-    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#5d6d7e">${type}</FONT></TD>` +
-    `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#B8860B' : '#2f6496'}"><B>${key}</B></FONT></TD></TR>`;
-  for (const name of inner) {
-    const t = tableMap[name];
-    const kf = keyFields(t);
-    const others = t.fields.length - kf.length;
-    let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#FBF6E9' : 'white' })).join('');
-    if (others > 0) rows += `<TR><TD COLSPAN="3" ALIGN="LEFT" BGCOLOR="#F5F8FB"><FONT POINT-SIZE="8" COLOR="#8795A1">+ ${others} columns</FONT></TD></TR>`;
-    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
-      <TR><TD COLSPAN="3" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${name}&nbsp;&nbsp;&nbsp;</B></FONT></TD></TR>${rows}</TABLE>>];\n`;
-  }
-  for (const name of ext) {
-    const t = tableMap[name];
-    const pk = t.fields.filter((f) => f.pk || compositePk(t).includes(f.name));
-    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#a3afba">
-      <TR><TD COLSPAN="3" BGCOLOR="#a3afba"><FONT COLOR="white" POINT-SIZE="10"><B>&nbsp;${name}&nbsp;&nbsp;&nbsp;</B></FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#F5F7F9' })).join('')}</TABLE>>];\n`;
-  }
-  for (const r of rels) {
-    const f = fieldOf(r.child, r.ccol);
-    const nullable = !f.not_null && !f.pk && !compositePk(tableMap[r.child]).includes(r.ccol);
-    const tail = nullable ? 'teeodot' : 'teetee';
-    const head = r.oneToOne ? 'teeodot' : 'crowodot';
-    dot += `  ${r.parent}:${r.pcol}_o:e -> ${r.child}:${r.ccol}_i:w [arrowtail=${tail}, arrowhead=${head}];\n`;
-  }
-  return { dot: dot + '}\n', ext };
-}
-
+// ---------- 영역별 ERD (Graphviz, lib.erSvg) ----------
 function erSection(g) {
-  const { dot, ext } = erDot(g);
-  // 세로 A4 본문(약 510pt x 600pt)에 맞춰, 좌→우 / 위→아래 배치 중 더 크게 들어가는 쪽을 선택
-  const W = 510, H = 600;
-  let best = null;
-  for (const dir of ['LR', 'TB']) {
-    const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');
-    const w0 = parseFloat(s.match(/width="([\d.]+)pt"/)[1]);
-    const h0 = parseFloat(s.match(/height="([\d.]+)pt"/)[1]);
-    const k0 = Math.min(1.15, W / w0, H / h0);
-    if (!best || k0 > best.k) best = { svg: s, w: w0, h: h0, k: k0 };
-  }
-  let { svg, w, h, k } = best;
-  svg = svg.replace(/width="[\d.]+pt"/, `width="${(w * k).toFixed(1)}pt"`).replace(/height="[\d.]+pt"/, `height="${(h * k).toFixed(1)}pt"`);
+  const { svg, ext } = erSvg(ctx, g.tables.map((x) => x.name), { hideAudit: !g.name.startsWith('member') });
   return `<section class="erd-page">
     <h3>ERD · ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
     <p class="gdesc">${groupDesc[g.name] || ''}</p>
-    ${fig('ERD', `<div class="gv">${svg}</div>`, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 7장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
+    ${fig('ERD', svg, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 7장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
   </section>`;
 }
 const erOf = (prefix) => groups.filter((g) => g.name.startsWith(prefix)).map(erSection).join('');
 
-const D = {
-  login: `flowchart TD
-  A["로그인 시도"] --> B{"계정 존재?"}
-  B -- 없음 --> F1["FAIL_NOT_FOUND"]
-  B -- 있음 --> C{"locked_until<br/>지났나?"}
-  C -- 잠김 --> F2["FAIL_LOCKED"]
-  C -- 지남 --> D{"비밀번호<br/>bcrypt 일치?"}
-  D -- 불일치 --> E["login_fail_count + 1<br/>5회면 30분 잠금"] --> F3["FAIL_PASSWORD"]
-  D -- 일치 --> G["실패 횟수 초기화<br/>member_session 발급"] --> OK["SUCCESS"]
-  F1 & F2 & F3 & OK -.-> H[("login_history")]
-  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
-  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
-  class F1,F2,F3 bad
-  class OK good`,
-  mstatus: `stateDiagram-v2
-  direction LR
-  [*] --> ACTIVE: 가입
-  ACTIVE --> DORMANT: 1년 미접속 배치 (11개월에 안내)
-  DORMANT --> ACTIVE: 로그인 + 본인 확인
-  ACTIVE --> SUSPENDED: 신고 승인 · 관리자 제재
-  SUSPENDED --> ACTIVE: 기한 만료 배치
-  ACTIVE --> WITHDRAWN: 탈퇴
-  DORMANT --> WITHDRAWN: 탈퇴
-  WITHDRAWN --> [*]`,
-  withdraw: `flowchart TB
-  W(["탈퇴 요청"]) --> M["member_account 마스킹<br/>email → withdrawn_ID 마스킹 주소<br/>(도메인 deleted.local)<br/>name → 탈퇴회원 · nickname → deleted_ID<br/>PHONE · BIRTH · CI · DI → NULL"]
-  W --> X["행 삭제<br/>member_home · address<br/>member_social · member_session"]
-  W --> C["커뮤니티<br/>글 → HIDDEN<br/>댓글 작성자 → 탈퇴한 회원"]
-  W --> K["기록 유지<br/>status = WITHDRAWN<br/>withdrawn_at · 사유"]`,
-  option: `flowchart LR
-  P["<b>product</b><br/>원목 수납 침대 프레임"]
-  P --> G1["<b>OPTION_GROUP</b><br/>색상"]
-  P --> G2["<b>OPTION_GROUP</b><br/>사이즈"]
-  G1 --> V1(["화이트오크 · 11"])
-  G1 --> V2(["월넛 · 12"])
-  G2 --> V3(["SS · 21"])
-  G2 --> V4(["Q · 22 · +50,000원"])
-  V1 & V3 -.-> S1["<b>SKU</b> 11-21<br/>재고 8"]
-  V1 & V4 -.-> S2["<b>SKU</b> 11-22<br/>재고 3"]
-  V2 & V3 -.-> S3["<b>SKU</b> 12-21<br/>재고 0 · 품절"]
-  V2 & V4 -.-> S4["<b>SKU</b> 12-22<br/>재고 5"]
-  classDef sku fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
-  classDef val fill:#F4F6F8,stroke:#8795A1,color:#1d2733
-  class S1,S2,S3,S4 sku
-  class V1,V2,V3,V4 val`,
-  stock: `flowchart LR
-  IN(["입고"]) --> INV["<b>sku_inventory</b><br/>창고별 실물 재고<br/>적재 위치 A-03-2"]
-  INV -->|"검수 통과분 반영"| STK["<b>product_sku.stock</b><br/>판매 가능 재고"]
-  ORD(["주문"]) -->|"WHERE stock >= :qty<br/>0건이면 품절"| STK
-  CAN(["취소 · 반품"]) --> STK
-  STK -.->|"같은 트랜잭션"| HIS[("<b>stock_history</b><br/>재고 원장")]
-  INV -.-> HIS
-  classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
-  class INV,STK main`,
-  pstatus: `stateDiagram-v2
-  direction LR
-  [*] --> DRAFT
-  DRAFT --> PENDING_REVIEW: 검수 요청
-  PENDING_REVIEW --> REJECTED: 반려
-  REJECTED --> PENDING_REVIEW: 수정 후 재요청
-  PENDING_REVIEW --> APPROVED: 승인 (검수자 ≠ 등록자)
-  APPROVED --> ON_SALE: 판매 시작
-  ON_SALE --> SOLD_OUT: 전 SKU 품절
-  SOLD_OUT --> ON_SALE: 재입고
-  ON_SALE --> STOPPED: 판매 중지
-  STOPPED --> ON_SALE: 재개`,
-  post: `flowchart LR
-  post(("<b>post</b><br/>공통"))
-  subgraph TYPES["유형별 상세 (1:1)"]
-    direction TB
-    PH["PHOTO 집사진<br/>(상세 없음)"]
-    HW["housewarming_detail<br/>평수 · 주거형태 · 시공 · 예산"]
-    KH["magazine_detail<br/>운영자 작성 · 주제 · 부제"]
-  end
-  subgraph BODY["본문"]
-    direction TB
-    IMG["post_image<br/>사진 · 공간 유형"]
-    BLK["post_block<br/>블록 에디터"]
-    TAG["post_product_tag<br/>사진 속 상품 위치"]
-  end
-  subgraph REACT["반응 · 분류 (모든 유형 공통)"]
-    direction TB
-    RX["<b>반응</b><br/>post_comment · post_like<br/>scrap"]
-    CL["<b>분류 · 운영</b><br/>post_style · report"]
-  end
-  post --- PH & HW & KH
-  post --- IMG & BLK
-  IMG --- TAG
-  post --- RX & CL
-  TAG ==>|"구매 연결"| PROD["<b>product</b><br/>스토어 상품"]
-  BLK ==>|"상품 카드"| PROD
-  classDef store fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
-  classDef core fill:#3C9A63,stroke:#2b7049,color:#ffffff
-  class PROD store
-  class post core
-  style TYPES fill:#F6FBF8,stroke:#3C9A63
-  style BODY fill:#F6FBF8,stroke:#3C9A63
-  style REACT fill:#F6FBF8,stroke:#3C9A63`,
-  poststatus: `stateDiagram-v2
-  direction LR
-  [*] --> DRAFT: 작성 시작
-  DRAFT --> DRAFT: 자동 임시저장
-  DRAFT --> PUBLISHED: 발행 (published_at 기록)
-  PUBLISHED --> HIDDEN: 작성자 숨김
-  HIDDEN --> PUBLISHED: 다시 공개
-  PUBLISHED --> BLINDED: 신고 누적 · 관리자
-  BLINDED --> PUBLISHED: 신고 기각
-  PUBLISHED --> DELETED: 삭제
-  HIDDEN --> DELETED: 삭제`,
-};
+const D = require('./diagrams');
 
 const blockMock = `
 <div class="mock-wrap">
@@ -375,11 +164,7 @@ const specHtml = groups.map((g, gi) => `
 const relRows = refs.map((r) => `<tr><td>${r.child}.${r.ccol}</td><td class="c">${r.oneToOne ? '1 : 1' : 'N : 1'}</td><td>${r.parent}.${r.pcol}</td></tr>`).join('');
 const stageCount = (p) => groups.filter((g) => g.name.startsWith(p)).reduce((a, g) => a + g.tables.length, 0);
 
-const makeHtml = () => `<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<title>인테리어 가구몰 DB 설계서</title>
-<style>${fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8')}</style>
-<script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
-</head><body>
+const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
 
 <section class="cover">
   <div class="band">
@@ -511,55 +296,10 @@ ${erOf('community')}
   <table class="rel"><thead><tr><th>FK 컬럼 (자식)</th><th>관계</th><th>참조 (부모)</th></tr></thead><tbody>${relRows}</tbody></table>
 </section>
 
-<script>
-  mermaid.initialize({
-    startOnLoad: false, securityLevel: 'loose', theme: 'base',
-    themeVariables: {
-      fontFamily: 'Malgun Gothic, sans-serif', fontSize: '13px',
-      primaryColor: '#EEF4FA', primaryBorderColor: '#4A7FB5', primaryTextColor: '#1d2733',
-      lineColor: '#6B7B8C', secondaryColor: '#F4F6F8', tertiaryColor: '#FFFFFF',
-      attributeBackgroundColorOdd: '#FFFFFF', attributeBackgroundColorEven: '#F5F8FB'
-    },
-    flowchart: { useMaxWidth: true, curve: 'basis', htmlLabels: true },
-    state: { useMaxWidth: true }
-  });
-  mermaid.run({ querySelector: '.mermaid' }).then(() => { window.__done = true; })
-    .catch((e) => { window.__err = String(e); window.__done = true; });
-</script>
+${mermaidInit}
 </body></html>`;
 
 (async () => {
-  VIZ = await require('@viz-js/viz').instance();
-  const html = makeHtml();
-  // 중간 산출물 HTML은 .build/ (git 제외). mermaid는 ../node_modules 에서 읽음
-  fs.mkdirSync(path.join(__dirname, '.build'), { recursive: true });
-  const htmlPath = path.join(__dirname, '.build', 'design.html');
-  fs.writeFileSync(htmlPath, html, 'utf8');
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true });
-  const page = await browser.newPage();
-  page.on('console', (m) => { if (m.type() === 'error') console.log('console:', m.text()); });
-  await page.goto('file:///' + htmlPath.replace(/\\/g, '/'), { waitUntil: 'load' });
-  await page.waitForFunction('window.__done === true', { timeout: 120000 });
-  const err = await page.evaluate('window.__err');
-  if (err) console.log('MERMAID ERROR:', err);
-  const failed = await page.evaluate(() => [...document.querySelectorAll('.mermaid')].filter((e) => !e.querySelector('svg')).length);
-  console.log('diagrams=', await page.evaluate(() => document.querySelectorAll('.mermaid svg').length), 'failed=', failed);
-  await page.pdf({
-    path: outPdf, format: 'A4', printBackground: true,
-    preferCSSPageSize: true,
-    displayHeaderFooter: true, headerTemplate: '<div></div>',
-    footerTemplate: '<div style="width:100%;font-size:7.5px;color:#8795A1;font-family:Malgun Gothic;padding:0 12mm;display:flex;justify-content:space-between"><span>인테리어 가구몰 DB 설계서</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>',
-  });
-  if (previewDir) {
-    // 미리보기: A4 본문 폭(약 703px)으로 표지·목차와 도식만 PNG로 캡처
-    fs.mkdirSync(previewDir, { recursive: true });
-    await page.emulateMediaType('print');
-    await page.setViewport({ width: 703, height: 1000, deviceScaleFactor: 1 });
-    await new Promise((r) => setTimeout(r, 500));
-    let n = 0;
-    for (const el of await page.$$('.cover, .toc, .fig')) await el.screenshot({ path: path.join(previewDir, `fig${String(n++).padStart(2, '0')}.png`) });
-    console.log('previews', n);
-  }
-  await browser.close();
-  console.log('PDF', outPdf);
+  await initViz();
+  await renderPdf({ html: makeHtml(), name: 'design', outPdf, footer: '인테리어 가구몰 DB 설계서', previewDir });
 })();

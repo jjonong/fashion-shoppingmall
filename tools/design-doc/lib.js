@@ -1,0 +1,187 @@
+// 설계서 생성 공통 모듈: DBML 로드, Graphviz ERD, Mermaid/PDF 출력
+// build.js(전체 설계서)와 summary.js(영역 요약본)가 함께 쓴다.
+const fs = require('fs');
+const path = require('path');
+const { Parser } = require('@dbml/core');
+const puppeteer = require('puppeteer-core');
+
+const ROOT = path.resolve(__dirname, '..', '..');
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const noteOf = (n) => (n && typeof n === 'object' ? n.value : n) || '';
+const mm = (code, cls = '') => `<pre class="mermaid ${cls}">${esc(code)}</pre>`;
+const fig = (title, body, caption = '') =>
+  `<figure class="fig"><figcaption><b>${title}</b>${caption ? ' — ' + caption : ''}</figcaption>${body}</figure>`;
+
+function findChrome() {
+  const p = process.env.CHROME_PATH || [
+    'C:/Program Files/Google/Chrome/Application/chrome.exe',
+    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/usr/bin/google-chrome',
+  ].find((x) => fs.existsSync(x));
+  if (!p) { console.error('Chrome/Edge를 찾지 못했습니다. CHROME_PATH 환경변수로 경로를 지정하세요.'); process.exit(1); }
+  return p;
+}
+
+// ---------- DBML 로드 + 관계 정규화 ----------
+function load(src) {
+  const S = new Parser().parse(fs.readFileSync(src, 'utf8'), 'dbmlv2').schemas[0];
+  const tableMap = Object.fromEntries(S.tables.map((t) => [t.name, t]));
+  const groups = S.tableGroups;
+  const groupOf = {};
+  groups.forEach((g) => g.tables.forEach((t) => (groupOf[t.name] = g.name)));
+  const refs = S.refs.map((r) => {
+    const [a, b] = r.endpoints;
+    let child = a, parent = b;
+    if (a.relation === '1' && b.relation === '*') { child = b; parent = a; }
+    return {
+      child: child.tableName, ccol: child.fieldNames[0],
+      parent: parent.tableName, pcol: parent.fieldNames[0],
+      oneToOne: a.relation === '1' && b.relation === '1',
+    };
+  });
+  const fk = {};
+  refs.forEach((r) => (fk[`${r.child}.${r.ccol}`] = `${r.parent}.${r.pcol}`));
+  const fieldOf = (t, c) => tableMap[t].fields.find((f) => f.name === c);
+  const compositePk = (t) => ((t.indexes || []).find((i) => i.pk)?.columns || []).map((c) => c.value);
+  const baseType = (f) => f.type.type_name.replace(/\(.*\)/, '').toUpperCase();
+  const keyFields = (t) => {
+    const cpk = compositePk(t);
+    return t.fields.filter((f) => f.pk || cpk.includes(f.name) || f.unique || fk[`${t.name}.${f.name}`]);
+  };
+  const keyMark = (t, f) => {
+    const k = [];
+    if (f.pk || compositePk(t).includes(f.name)) k.push('PK');
+    if (fk[`${t.name}.${f.name}`]) k.push('FK');
+    if (f.unique) k.push('UK');
+    return k.join(', ');
+  };
+  return { S, tableMap, groups, groupOf, refs, fk, fieldOf, compositePk, baseType, keyFields, keyMark };
+}
+
+// 관리자·처리자 감사 컬럼 → member_account 관계선은 상품/커뮤니티 ERD에서 생략 (명세 표에는 FK로 표시)
+const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 'handled_by', 'reviewer_id', 'requested_by']);
+
+// ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
+// tables: 그릴 테이블 이름 배열. 이 테이블들이 참조하는 다른 테이블은 회색(PK만)으로 함께 그린다.
+// leftOf: { hub, tables } — hub 테이블을 참조하는 자식 중 tables에 든 것은 hub 왼쪽에 배치 (허브형 배치)
+function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
+  const { tableMap, refs, fieldOf, compositePk, baseType, keyFields, keyMark } = ctx;
+  const inner = new Set(tables);
+  const rels = refs.filter((r) => inner.has(r.child) && !(hideAudit && r.parent === 'member_account' && AUDIT.has(r.ccol)));
+  const ext = [...new Set(rels.filter((r) => !inner.has(r.parent)).map((r) => r.parent))];
+  const F = 'Malgun Gothic';
+  let dot = `digraph G {
+  graph [rankdir=LR, nodesep=0.28, ranksep=0.75, splines=spline, bgcolor="transparent", fontname="${F}", pad=0.1];
+  node [shape=plain, fontname="${F}", fontsize=10];
+  edge [color="#7d8a96", penwidth=1.1, arrowsize=0.75, dir=both];\n`;
+  const row = (port, name, type, key, opts = {}) =>
+    `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="9.5">${opts.b ? '<B>' + name + '</B>' : name}</FONT></TD>` +
+    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#5d6d7e">${type}</FONT></TD>` +
+    `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#B8860B' : '#2f6496'}"><B>${key}</B></FONT></TD></TR>`;
+  for (const name of inner) {
+    const t = tableMap[name];
+    const kf = keyFields(t);
+    const others = t.fields.length - kf.length;
+    let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#FBF6E9' : 'white' })).join('');
+    if (others > 0) rows += `<TR><TD COLSPAN="3" ALIGN="LEFT" BGCOLOR="#F5F8FB"><FONT POINT-SIZE="8" COLOR="#8795A1">+ ${others} columns</FONT></TD></TR>`;
+    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
+      <TR><TD COLSPAN="3" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${name}&nbsp;&nbsp;&nbsp;</B></FONT></TD></TR>${rows}</TABLE>>];\n`;
+  }
+  for (const name of ext) {
+    const t = tableMap[name];
+    const pk = t.fields.filter((f) => f.pk || compositePk(t).includes(f.name));
+    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#a3afba">
+      <TR><TD COLSPAN="3" BGCOLOR="#a3afba"><FONT COLOR="white" POINT-SIZE="10"><B>&nbsp;${name}&nbsp;&nbsp;&nbsp;</B></FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#F5F7F9' })).join('')}</TABLE>>];\n`;
+  }
+  for (const r of rels) {
+    const f = fieldOf(r.child, r.ccol);
+    const nullable = !f.not_null && !f.pk && !compositePk(tableMap[r.child]).includes(r.ccol);
+    const tail = nullable ? 'teeodot' : 'teetee';
+    const head = r.oneToOne ? 'teeodot' : 'crowodot';
+    if (leftOf && r.parent === leftOf.hub && leftOf.tables.includes(r.child)) {
+      // 방향을 뒤집어 자식을 hub 왼쪽 열에 둔다 (끝 모양은 그대로: 자식 쪽 까마귀발, 부모 쪽 세로줄)
+      dot += `  ${r.child}:${r.ccol}_o:e -> ${r.parent}:${r.pcol}_i:w [arrowtail=${head}, arrowhead=${tail}];\n`;
+    } else {
+      dot += `  ${r.parent}:${r.pcol}_o:e -> ${r.child}:${r.ccol}_i:w [arrowtail=${tail}, arrowhead=${head}];\n`;
+    }
+  }
+  return { dot: dot + '}\n', ext };
+}
+
+// ERD SVG: 좌→우 / 위→아래 배치 중 W x H(pt) 영역에 더 크게 들어가는 쪽을 골라 크기를 맞춘다 (최대 1.15배 확대)
+let VIZ = null;
+async function initViz() { VIZ = await require('@viz-js/viz').instance(); }
+function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null } = {}) {
+  const { dot, ext } = erDot(ctx, tables, { hideAudit, leftOf });
+  let best = null;
+  for (const dir of leftOf ? ['LR'] : ['LR', 'TB']) {
+    const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');
+    const w0 = parseFloat(s.match(/width="([\d.]+)pt"/)[1]);
+    const h0 = parseFloat(s.match(/height="([\d.]+)pt"/)[1]);
+    const k0 = Math.min(1.15, W / w0, H / h0);
+    if (!best || k0 > best.k) best = { svg: s, w: w0, h: h0, k: k0 };
+  }
+  const { w, h, k } = best;
+  const svg = best.svg.replace(/width="[\d.]+pt"/, `width="${(w * k).toFixed(1)}pt"`).replace(/height="[\d.]+pt"/, `height="${(h * k).toFixed(1)}pt"`);
+  return { svg: `<div class="gv">${svg}</div>`, ext };
+}
+
+// ---------- HTML 머리말 / Mermaid 초기화 ----------
+const head = (title) => `<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>${esc(title)}</title>
+<style>${fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8')}</style>
+<script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
+</head><body>`;
+
+const mermaidInit = `<script>
+  mermaid.initialize({
+    startOnLoad: false, securityLevel: 'loose', theme: 'base',
+    themeVariables: {
+      fontFamily: 'Malgun Gothic, sans-serif', fontSize: '13px',
+      primaryColor: '#EEF4FA', primaryBorderColor: '#4A7FB5', primaryTextColor: '#1d2733',
+      lineColor: '#6B7B8C', secondaryColor: '#F4F6F8', tertiaryColor: '#FFFFFF'
+    },
+    flowchart: { useMaxWidth: true, curve: 'basis', htmlLabels: true },
+    state: { useMaxWidth: true }
+  });
+  mermaid.run({ querySelector: '.mermaid' }).then(() => { window.__done = true; })
+    .catch((e) => { window.__err = String(e); window.__done = true; });
+</script>`;
+
+// ---------- HTML → PDF ----------
+// name: 중간 HTML 파일 이름 (.build/<name>.html), footer: 페이지 하단 왼쪽 문구
+async function renderPdf({ html, name, outPdf, footer, previewDir }) {
+  fs.mkdirSync(path.join(__dirname, '.build'), { recursive: true });
+  const htmlPath = path.join(__dirname, '.build', `${name}.html`);
+  fs.writeFileSync(htmlPath, html, 'utf8');
+  const browser = await puppeteer.launch({ executablePath: findChrome(), headless: true });
+  const page = await browser.newPage();
+  page.on('console', (m) => { if (m.type() === 'error') console.log('console:', m.text()); });
+  await page.goto('file:///' + htmlPath.replace(/\\/g, '/'), { waitUntil: 'load' });
+  await page.waitForFunction('window.__done === true', { timeout: 120000 });
+  const err = await page.evaluate('window.__err');
+  if (err) console.log('MERMAID ERROR:', err);
+  const failed = await page.evaluate(() => [...document.querySelectorAll('.mermaid')].filter((e) => !e.querySelector('svg')).length);
+  console.log('diagrams=', await page.evaluate(() => document.querySelectorAll('.mermaid svg').length), 'failed=', failed);
+  await page.pdf({
+    path: outPdf, format: 'A4', printBackground: true, preferCSSPageSize: true,
+    displayHeaderFooter: true, headerTemplate: '<div></div>',
+    footerTemplate: `<div style="width:100%;font-size:7.5px;color:#8795A1;font-family:Malgun Gothic;padding:0 12mm;display:flex;justify-content:space-between"><span>${esc(footer)}</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>`,
+  });
+  if (previewDir) {
+    // 미리보기: A4 본문 폭(약 703px)으로 표지·목차와 도식만 PNG로 캡처
+    fs.mkdirSync(previewDir, { recursive: true });
+    await page.emulateMediaType('print');
+    await page.setViewport({ width: 703, height: 1000, deviceScaleFactor: 1 });
+    await new Promise((r) => setTimeout(r, 500));
+    let n = 0;
+    for (const el of await page.$$('.cover, .toc, .fig, .sum-sheet, table.sum-tables, table.process')) await el.screenshot({ path: path.join(previewDir, `fig${String(n++).padStart(2, '0')}.png`) });
+    console.log('previews', n);
+  }
+  await browser.close();
+  if (failed) process.exitCode = 1;
+  console.log('PDF', outPdf);
+}
+
+module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, head, mermaidInit, renderPdf };

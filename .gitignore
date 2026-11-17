@@ -4,4 +4,4 @@
 # 설계서 생성 도구
 node_modules/
 tools/design-doc/.build/
-tools/design-doc/preview/
+tools/design-doc/preview*/

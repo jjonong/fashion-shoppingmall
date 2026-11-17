@@ -118,3 +118,25 @@ table.rel td { font-family: Consolas, monospace; font-size: 8pt; padding: 2px 6p
 table.rel td.c { text-align: center; white-space: nowrap; }
 .gv { text-align: center; }
 .gv svg { max-width: 100%; }
+
+/* ---------- 영역 요약본 (summary.js) ---------- */
+.sum-head { background: linear-gradient(135deg, #1f3b57 0%, #2f6496 70%, #3A78B5 130%); color: #fff; border-radius: 10px; padding: 22px 26px 18px; margin-bottom: 12px; }
+.sum-head .eyebrow { font-size: 8pt; letter-spacing: 2.5px; opacity: .8; }
+.sum-head h1 { font-size: 22pt; margin: 6px 0 4px; }
+.sum-head p { margin: 0; font-size: 9pt; opacity: .9; }
+.sum-sheet .cover-stats { margin-bottom: 12px; }
+.sum-sheet .cover-stats b { font-size: 18pt; }
+.sum-groups { flex-wrap: wrap; gap: 8px; }
+.sum-groups .ov-col { flex: 1 1 calc(50% - 8px); }
+.sum-groups .small { margin: 0 0 4px; }
+table.decisions td:first-child { width: 34%; font-weight: bold; white-space: normal; }
+table.process { font-size: 8.4pt; }
+table.process td:first-child { width: 15%; white-space: nowrap; font-weight: bold; }
+table.process td:nth-child(2) { width: 30%; }
+table.sum-tables { font-size: 8.2pt; }
+table.sum-tables th:first-child, table.sum-tables td.num { width: 22px; text-align: center; color: #8795A1; }
+table.sum-tables tr.grp td { background: #EEF4FA; font-weight: bold; color: #1f3b57; }
+table.sum-tables tr { page-break-inside: avoid; }
+td.mono { font-family: Consolas, monospace; }
+td.b { font-weight: bold; white-space: nowrap; }
+td.sm { font-size: 7.4pt; line-height: 1.5; }
