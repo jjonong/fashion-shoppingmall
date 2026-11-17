@@ -45,26 +45,39 @@ module.exports = {
   class S1,S2,S3,S4 sku
   class V1,V2,V3,V4 val`,
   stock: `flowchart LR
-  IN(["입고"]) --> INV["<b>sku_inventory</b><br/>창고별 실물 재고<br/>적재 위치 A-03-2"]
-  INV -->|"검수 통과분 반영"| STK["<b>product_sku.stock</b><br/>판매 가능 재고"]
+  IN(["입고"]) --> STK["<b>product_sku.stock</b><br/>판매 가능 재고"]
   ORD(["주문"]) -->|"WHERE stock >= :qty<br/>0건이면 품절"| STK
   CAN(["취소 · 반품"]) --> STK
   STK -.->|"같은 트랜잭션"| HIS[("<b>stock_history</b><br/>재고 원장")]
-  INV -.-> HIS
+  STK -->|"0 → 양수"| RS["<b>restock_request</b><br/>WAITING 신청자"]
+  RS --> NT["재입고 알림 발송<br/>NOTIFIED"]
   classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
-  class INV,STK main`,
+  class STK main`,
   pstatus: `stateDiagram-v2
   direction LR
-  [*] --> DRAFT
-  DRAFT --> PENDING_REVIEW: 검수 요청
-  PENDING_REVIEW --> REJECTED: 반려
-  REJECTED --> PENDING_REVIEW: 수정 후 재요청
-  PENDING_REVIEW --> APPROVED: 승인 (검수자 ≠ 등록자)
-  APPROVED --> ON_SALE: 판매 시작
-  ON_SALE --> SOLD_OUT: 전 SKU 품절
-  SOLD_OUT --> ON_SALE: 재입고
+  [*] --> DRAFT: 등록
+  DRAFT --> ON_SALE: 판매 시작
+  ON_SALE --> SOLD_OUT: 전 SKU 재고 0 (자동)
+  SOLD_OUT --> ON_SALE: 재입고 (자동)
   ON_SALE --> STOPPED: 판매 중지
+  SOLD_OUT --> STOPPED: 판매 중지
   STOPPED --> ON_SALE: 재개`,
+  shipfee: `flowchart TB
+  A(["배송지 zipcode"]) --> B["<b>delivery_zone_zipcode</b><br/>가장 좁은 범위의 권역"]
+  B --> C{"<b>shipping_policy_zone</b><br/>is_available?"}
+  C -- N --> X["배송 불가 안내<br/>(설치배송 제주 · 도서산간 등)"]
+  C -- "Y 또는 행 없음" --> D["기본 배송비<br/>free_threshold 이상이면 0"]
+  D --> E["권역 extra_fee 추가"]
+  E --> F{"엘리베이터 있음?<br/>address.has_elevator"}
+  F -- 있음 --> T["합계"]
+  F -- 없음 --> G{"floor_no ≥<br/>ladder_floor_from?"}
+  G -- 예 --> L["사다리차<br/>ladder_fee 추가"] --> T
+  G -- 아니오 --> S["계단 운반비 추가<br/>stair_fee_per_floor × (floor_no − 1)"] --> T
+  T --> R["출고 예정 = lead_days<br/>+ 권역 extra_lead_days"]
+  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  class X bad
+  class T,R good`,
   post: `flowchart LR
   post(("<b>post</b><br/>공통"))
   subgraph TYPES["유형별 상세 (1:1)"]

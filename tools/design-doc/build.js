@@ -77,11 +77,12 @@ const groupDesc = {
   member_terms_noti_style: '약관 버전과 동의 이력, 알림 수신 설정, 인테리어 스타일 취향.',
   member_security: '로그인 이력, 1회용 토큰, 기기별 세션, 비밀번호 이력, 관리자 개인정보 접근 기록.',
   member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어.',
-  product_classification: '브랜드, 4단계 카테고리, 가구 배송 정책.',
+  product_classification: '브랜드와 4단계 카테고리.',
   product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조와 이미지, 고시정보, 상품 문의.',
-  product_link_history: '스타일·선호 브랜드 연결, 재고 원장, 가격 이력.',
-  product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어·키워드·로그.',
-  product_composition_operation: '연관·세트 상품, 상품 검수와 상태 이력, 창고별 실물 재고.',
+  product_delivery: '가구 배송 정책, 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, SKU 포장 박스.',
+  product_link_history: '스타일·선호 브랜드 연결, 재고 원장, 가격 이력, 재입고 알림 신청.',
+  product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어.',
+  product_composition_operation: '연관·세트 상품, 상품 상태 이력.',
   community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
   community_reaction: '스타일 분류, 댓글, 좋아요, 스크랩(글 저장 + 상품 찜).',
   community_operation: '신고와 앱 내 알림함.',
@@ -179,7 +180,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
   </div>
   <div class="stage-cards">
     <div class="sc s1"><b>1단계 고객</b><span>${stageCount('member')}개</span><p>회원 · 프로필 · 주거정보 · 약관 · 보안 · 상태</p></div>
-    <div class="sc s2"><b>2단계 상품</b><span>${stageCount('product')}개</span><p>옵션 · SKU · 배송 · 재고 · 검색 · 운영</p></div>
+    <div class="sc s2"><b>2단계 상품</b><span>${stageCount('product')}개</span><p>옵션 · SKU · 가구 배송 · 재고 · 필터</p></div>
     <div class="sc s3"><b>3단계 커뮤니티</b><span>${stageCount('community')}개</span><p>고객 집사진 · 집들이 · 브랜드 매거진</p></div>
   </div>
   <div class="points">
@@ -203,7 +204,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>개요와 전체 구조</li>
     <li>공통 설계 원칙</li>
     <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
-    <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · ERD</li>
+    <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · ERD</li>
     <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
@@ -261,9 +262,13 @@ ${erOf('member')}
 <section class="page">
   <h2>4. 2단계 상품</h2>
   ${fig('옵션 → SKU 구조 (예시)', mm(D.option), '옵션 축이 상품마다 다른 가구에 맞춘 구조. 조합 중복은 option_key(값 ID 오름차순) UNIQUE로 방지')}
-  ${fig('재고 이중 구조', mm(D.stock), '판매 가능 재고와 창고 실물 재고를 분리하고 모든 변경을 원장에 기록')}
-  ${fig('상품 상태 흐름', mm(D.pstatus), 'product_status_history에 사유와 함께 기록')}
-  <div class="callout"><b>배송 정책</b> — shipping_policy: 일반택배 / 화물택배 / 업체 직접 설치배송, 기본 · 무료조건 · 제주 · 도서산간 · 반품 · 교환 비용, 출고 소요일, 오늘출발 마감 시각. 상품에는 조립 방식(완제품 / 자가조립 / 기사 설치)과 판매 방식(일반 / 예약 / 주문제작)을 둔다.</div>
+  ${fig('재고 흐름과 재입고 알림', mm(D.stock), '모든 변경을 원장에 기록하고, 재고가 0에서 양수가 되면 재입고 알림 신청자에게 발송. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않음')}
+  ${fig('상품 상태 흐름', mm(D.pstatus), '품절 기준은 SKU 재고 하나로 통일 — 시스템 변경은 changed_by NULL로 product_status_history에 기록')}
+</section>
+<section class="page">
+  ${fig('가구 배송비 계산 흐름', mm(D.shipfee), '배송지(1단계 address)의 우편번호 · 층수 · 엘리베이터와 상품 배송 정책으로 배송 가능 여부 · 비용 · 출고 예정일을 계산')}
+  <div class="callout"><b>가구 배송</b> — shipping_policy: 일반택배 / 화물택배 / 업체 직접 설치배송, 기본 · 무료조건 · 반품 · 교환 비용, 사다리차 · 계단 운반비, 출고 소요일, 오늘출발 마감 시각. 지역 차이는 delivery_zone(권역)과 shipping_policy_zone(권역별 가능 여부 · 추가비 · 추가 소요일)으로 처리한다. sku_package는 SKU 하나가 여러 박스로 나가는 가구의 박스별 크기 · 무게를 저장해 화물 운임과 배송 차량 판단에 쓴다. 상품에는 조립 방식(완제품 / 자가조립 / 기사 설치)과 판매 방식(일반 / 예약 / 주문제작)을 둔다.</div>
+  <div class="callout"><b>자사몰 규모에 맞춘 축소</b> — 창고별 실물 재고(warehouse · sku_inventory), 등록자 · 검수자 분리 승인(product_approval), 검색 로그 · MD 키워드는 두지 않았다. 재고는 판매 가능 재고 하나로 관리하고, 검색은 동의어 사전과 MySQL FULLTEXT(ngram) 인덱스로 처리한다.</div>
 </section>
 ${erOf('product')}
 
