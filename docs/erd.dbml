@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 1단계 고객 20개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 + 4단계 주문 16개 = 82개 테이블
+// 1단계 고객 20개 + 2단계 상품 38개 + 3단계 커뮤니티 12개 + 4단계 주문 18개 = 88개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -125,7 +125,7 @@ Table member_room [note: '회원이 저장한 방 치수. "우리 집 안방에 
   }
 }
 
-Table address [note: '배송지 (회원당 여러 개, 기본 배송지는 1개). 가구 반입 경로(현관문·엘리베이터·사다리차)를 저장해 sku_package 박스가 현관문 → 엘리베이터(또는 사다리차·계단) → member_room.door_width_mm를 통과하는지 앱에서 계산 (결과는 저장하지 않음). 치수가 NULL이면 "반입 확인 필요" 안내'] {
+Table address [note: '배송지 (회원당 여러 개, 기본 배송지는 1개). 반입 판단은 화물·설치배송 상품만 하고, 고객은 주거형태(building_type)만 고르면 됨 → carry_default_spec 기본값으로 추정. 현관문·엘리베이터·사다리차 치수는 "우리 집이 다를 때"만 입력하는 선택값'] {
   address_id bigint [pk, increment]
   member_id bigint [not null]
   alias varchar(30) [note: '집/회사/새 집']
@@ -135,11 +135,12 @@ Table address [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)
   address1 varchar(200) [not null]
   address2 varchar(200)
   floor_no smallint [note: '가구 배송용: 층수 (지하는 음수). 사다리차·계단 운반비 계산에 사용']
-  has_elevator char(1) [note: '가구 배송용: 엘리베이터 Y/N (사다리차 필요 판단)']
-  entrance_door_width_mm int [note: '반입 경로: 현관문 유효 폭 (mm)']
-  elevator_door_width_mm int [note: '반입 경로: 엘리베이터 문 폭. has_elevator = Y일 때 입력']
-  elevator_inner_depth_mm int [note: '반입 경로: 엘리베이터 내부 깊이 (긴 박스는 대각선으로 세워 넣으므로 높이와 함께 판단)']
-  elevator_inner_height_mm int [note: '반입 경로: 엘리베이터 내부 높이']
+  building_type varchar(20) [note: 'APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC. 주소 검색 API의 건물 용도로 미리 채우고 고객이 확인 → carry_default_spec 기본값']
+  has_elevator char(1) [note: '가구 배송용: 엘리베이터 Y/N (사다리차 필요 판단). NULL이면 carry_default_spec.has_elevator_default']
+  entrance_door_width_mm int [note: '선택 입력: 현관문 유효 폭 (mm). NULL이면 기본값']
+  elevator_door_width_mm int [note: '선택 입력: 엘리베이터 문 폭. NULL이면 기본값']
+  elevator_inner_depth_mm int [note: '선택 입력: 엘리베이터 내부 깊이 (긴 박스는 대각선으로 세워 넣으므로 높이와 함께 판단)']
+  elevator_inner_height_mm int [note: '선택 입력: 엘리베이터 내부 높이']
   ladder_truck_available char(1) [note: 'Y/N 사다리차 진입 가능 여부 (골목·전선 등). NULL이면 모름. N인데 사다리차가 필요하면 배송 상담']
   delivery_request varchar(200) [note: '배송 요청사항 (예: 부재 시 문 앞, 설치 전 연락 주세요). 주문 시 기본값으로 복사']
   entrance_password_enc varchar(200) [note: '공동현관 비밀번호 AES-256 암호문. 배송 기사 전달용, 화면에는 마스킹 표시']
@@ -429,6 +430,10 @@ Table product [note: '상품 (옵션 공통 정보)'] {
   height_mm int [note: '높이']
   weight_kg decimal(6,1)
   assembly_type varchar(20) [not null, default: 'NONE', note: 'NONE(완제품)/SELF(자가조립)/INSTALL(설치 기사 조립)']
+  assembly_difficulty varchar(10) [note: 'EASY/NORMAL/HARD. CHECK: assembly_* 컬럼은 assembly_type = SELF·INSTALL일 때만. HARD이거나 필요 인원 2명 이상이면 장바구니 진단에서 조립 서비스 우선 제안']
+  assembly_minutes smallint [note: '예상 조립 시간 (분)']
+  assembly_people tinyint [note: '필요 인원 (예: 옷장 2명)']
+  assembly_tools varchar(200) [note: '필요 공구와 동봉 여부 (예: 십자드라이버(미동봉), 육각렌치(동봉))']
   status varchar(20) [not null, default: 'DRAFT', note: 'DRAFT/ON_SALE/SOLD_OUT/STOPPED. 품절 기준은 SKU 재고: 판매 중인 SKU가 모두 stock = 0이면 시스템이 SOLD_OUT, 재입고되면 ON_SALE (changed_by NULL)']
   sale_start_at datetime
   sale_end_at datetime
@@ -1198,6 +1203,7 @@ Table order_address [note: '주문 배송지 스냅샷 (orders와 1:1). 주문 �
   address1 varchar(200) [not null]
   address2 varchar(200)
   zone_id bigint [not null, note: '우편번호로 찾은 배송 권역 (배송비·설치 슬롯 기준)']
+  building_type varchar(20) [note: '주거형태 스냅샷 (반입 기본값 근거)']
   floor_no smallint
   has_elevator char(1)
   entrance_door_width_mm int
@@ -1376,6 +1382,10 @@ Table shipment [note: '배송 묶음. 같은 배송 정책이고 is_bundle_allow
   installer_name varchar(50) [note: '배정된 설치 기사']
   installer_phone_enc varchar(200) [note: 'AES-256 암호문']
   shipped_at datetime
+  carry_check_status varchar(20) [not null, default: 'NOT_REQUIRED', note: 'NOT_REQUIRED(택배·소형)/OK(통과)/NEEDS_CHECK(기본값으로만 판단·여유 50mm 미만 → 출고 전 기사 확인)/CONSULT(반입 불가 → 상담). 판단 대상은 FREIGHT·DIRECT_INSTALL 묶음만']
+  carry_method varchar(10) [note: 'ELEVATOR/STAIRS/LADDER 확정된 반입 방법. NOT_REQUIRED면 NULL. 사다리차가 새로 필요해지면 비용을 사전 안내(추가 결제는 상담)']
+  carry_checked_at datetime [note: '기사 확인 시각']
+  carry_check_memo varchar(300) [note: '기사 확인 결과 (예: 엘리베이터 대형, 사다리차 불필요). 현장 반입 실패 시 회사 판단 오류면 무료 반품, 고객 입력 오류면 반품 배송비 고객 부담']
   escrow_registered_at datetime [note: '에스크로 결제(payment.is_escrow = Y)면 출고 시 PG에 송장을 등록한 시각. 등록해야 에스크로 정산·구매 확정이 진행됨']
   delivered_at datetime [note: '배송·설치 완료. 이후 7일이 지나면 order_item 자동 구매 확정']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
@@ -1453,6 +1463,103 @@ Table order_item_addon [note: '주문 상품의 부가 서비스 (주문 시점 
   indexes {
     (order_item_id, service_id) [unique, name: 'uk_order_item_addon']
     service_id [name: 'ix_order_item_addon_service']
+  }
+}
+
+// =====================================================================
+// 2단계: 상품 - 반입 기본값 / 조립식 (부품, 조립 설명서)
+// =====================================================================
+
+Table carry_default_spec [note: '주거형태별 반입 기본값. 고객이 현관문·엘리베이터 치수를 입력하지 않으면 이 값으로 반입 여부를 추정 (관리자가 데이터로 조정). 기본값으로만 통과하면 shipment.carry_check_status = NEEDS_CHECK → 출고 전 기사 확인'] {
+  building_type varchar(20) [pk, note: 'APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC (address.building_type과 같은 코드)']
+  has_elevator_default char(1) [not null, note: 'Y/N 이 유형의 일반적인 엘리베이터 유무 (빌라·주택은 N)']
+  entrance_door_width_mm int [not null, note: '표준 현관문 유효 폭']
+  elevator_door_width_mm int [note: '표준 엘리베이터 문 폭']
+  elevator_inner_depth_mm int [note: '표준 엘리베이터 내부 깊이']
+  elevator_inner_height_mm int [note: '표준 엘리베이터 내부 높이']
+  note varchar(300) [note: '근거·주의 (예: 2000년 이전 아파트는 엘리베이터가 작을 수 있음)']
+  updated_at datetime
+}
+
+Table product_part [note: '조립식 상품 부품 목록 (설명서 표기 기준). 누락·파손 부품 요청과 단품 구매의 기준'] {
+  part_id bigint [pk, increment]
+  product_id bigint [not null]
+  sku_id bigint [note: '옵션마다 다른 부품이면 그 SKU (예: 색상별 판재). NULL이면 모든 옵션 공통']
+  part_code varchar(30) [not null, note: '설명서 표기 (예: A, B, 볼트 M6×30)']
+  name varchar(100) [not null, note: '예: 측판(좌), 선반, 캠볼트']
+  quantity smallint [not null, note: '상품 1개에 들어가는 수량']
+  image_url varchar(500)
+  is_orderable char(1) [not null, default: 'Y', note: 'Y/N 단품 구매·요청 가능']
+  unit_price bigint [not null, default: 0, note: '추가 구매(PURCHASE) 단가']
+  sort_order smallint [not null]
+
+  indexes {
+    (product_id, part_code) [unique, name: 'uk_product_part']
+    sku_id [name: 'ix_product_part_sku']
+  }
+}
+
+Table assembly_step [note: '단계별 조립 설명서. 단계 순서대로 이미지·영상·설명을 보여 주고, 각 단계에서 쓰는 부품은 assembly_step_part'] {
+  step_id bigint [pk, increment]
+  product_id bigint [not null]
+  step_no smallint [not null, note: '1부터']
+  title varchar(100) [not null, note: '예: 측판과 바닥판 연결']
+  description text
+  image_url varchar(500)
+  video_url varchar(500)
+
+  indexes {
+    (product_id, step_no) [unique, name: 'uk_assembly_step']
+  }
+}
+
+Table assembly_step_part [note: '조립 단계에서 쓰는 부품 (설명서 화면의 부품 표시, 부품 요청 시 "몇 단계에서 쓰는 부품" 안내)'] {
+  step_id bigint [not null]
+  part_id bigint [not null]
+  quantity smallint [not null, default: 1]
+
+  indexes {
+    (step_id, part_id) [pk]
+    part_id [name: 'ix_asp_part']
+  }
+}
+
+// =====================================================================
+// 4단계: 주문 - 부품 요청 (누락·파손·추가 구매)
+// =====================================================================
+
+Table part_request [note: '조립식 상품 부품 요청. 누락(MISSING)·파손(DAMAGED)은 구매 확정 후 30일까지 무료 발송, 추가 구매(PURCHASE)는 is_orderable 부품만 유료 (결제 흐름은 다음 단계에서 정교화)'] {
+  request_id bigint [pk, increment]
+  member_id bigint [not null]
+  order_item_id bigint [not null, note: '부품이 필요한 구매 상품']
+  request_type varchar(20) [not null, note: 'MISSING/DAMAGED/PURCHASE']
+  status varchar(20) [not null, default: 'REQUESTED', note: 'REQUESTED/APPROVED/SHIPPED/REJECTED']
+  photo_url varchar(500) [note: '파손 사진 (DAMAGED는 필수, 앱 검증)']
+  amount bigint [not null, default: 0, note: 'PURCHASE만 SUM(part.unit_price × 수량), MISSING·DAMAGED는 0']
+  carrier_code varchar(20)
+  tracking_no varchar(50)
+  reject_reason varchar(500)
+  handled_by bigint [note: '처리 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  handled_at datetime
+  shipped_at datetime
+
+  indexes {
+    (member_id, created_at) [name: 'ix_part_request_member']
+    order_item_id [name: 'ix_part_request_item']
+    (status, created_at) [name: 'ix_part_request_status', note: '처리 대기 목록']
+    handled_by [name: 'ix_part_request_handled_by']
+  }
+}
+
+Table part_request_item [note: '요청한 부품과 수량'] {
+  request_id bigint [not null]
+  part_id bigint [not null]
+  quantity smallint [not null, note: 'CHECK quantity >= 1']
+
+  indexes {
+    (request_id, part_id) [pk]
+    part_id [name: 'ix_pri_part']
   }
 }
 
@@ -1642,6 +1749,20 @@ Ref: cart_item_addon.service_id > addon_service.service_id
 Ref: order_item_addon.order_item_id > order_item.order_item_id
 Ref: order_item_addon.service_id > addon_service.service_id
 
+// 상품 - 조립식
+Ref: product_part.product_id > product.product_id
+Ref: product_part.sku_id > product_sku.sku_id
+Ref: assembly_step.product_id > product.product_id
+Ref: assembly_step_part.step_id > assembly_step.step_id
+Ref: assembly_step_part.part_id > product_part.part_id
+
+// 주문 - 부품 요청
+Ref: part_request.member_id > member_account.member_id
+Ref: part_request.order_item_id > order_item.order_item_id
+Ref: part_request.handled_by > member_account.member_id
+Ref: part_request_item.request_id > part_request.request_id
+Ref: part_request_item.part_id > product_part.part_id
+
 // =====================================================================
 // 화면 그룹 (dbdiagram에서 영역별로 묶여 보임)
 // =====================================================================
@@ -1700,7 +1821,8 @@ TableGroup product_notice_info [note: '상품 - 정보제공고시 (품목별 �
   product_notice_value
 }
 
-TableGroup product_delivery [note: '상품 - 가구 배송/포장'] {
+TableGroup product_delivery [note: '상품 - 가구 배송/포장/반입 기본값'] {
+  carry_default_spec
   shipping_policy
   delivery_zone
   delivery_zone_zipcode
@@ -1783,4 +1905,15 @@ TableGroup order_addon [note: '주문 - 부가 서비스 (폐가구 수거/조�
   product_addon_service
   cart_item_addon
   order_item_addon
+}
+
+TableGroup product_assembly [note: '상품 - 조립식 (부품/조립 설명서)'] {
+  product_part
+  assembly_step
+  assembly_step_part
+}
+
+TableGroup order_part [note: '주문 - 부품 요청 (누락/파손/추가 구매)'] {
+  part_request
+  part_request_item
 }

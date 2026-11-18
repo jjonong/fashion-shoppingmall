@@ -190,9 +190,9 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>개요와 전체 구조</li>
     <li>공통 설계 원칙</li>
     <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
-    <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · ERD</li>
+    <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · 조립식(부품 · 조립 설명서) · ERD</li>
     <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
-    <li>4단계 주문 — 장바구니 진단 · 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · 가상계좌 · 현금영수증 · 부가 서비스 · ERD</li>
+    <li>4단계 주문 — 장바구니 진단 · 반입 판단 · 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · 가상계좌 · 현금영수증 · 부가 서비스 · 부품 요청 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
     <li>관계(FK) 전체 목록</li>
@@ -263,6 +263,8 @@ ${erOf('member')}
       <tr><td>HOME_APPLIANCE 가전</td><td>KC 인증 · 정격전압·소비전력 · 에너지효율등급 · 출시년월 · 제조자 · 제조국 · 크기 · 품질보증기준 · A/S 책임자</td></tr>
       <tr><td>KITCHENWARE 주방용품</td><td>재질 · 구성품 · 크기 · 제조자 · 제조국 · 수입 식품용 기구 신고 여부 · 품질보증기준 · A/S 책임자</td></tr>
     </table></div>
+  ${fig('조립식 부품 요청 — product_part · assembly_step · part_request', mm(D.partreq), '조립 설명서의 단계별 부품에서 바로 누락 · 파손 부품을 요청한다')}
+  <div class="callout"><b>조립식 가구</b> — 완제품과 조립식을 함께 다룬다(assembly_type). 조립식은 난이도 · 예상 시간 · 필요 인원 · 필요 공구를 상품 정보로 보여 주고(product.assembly_*), 부품 목록(product_part: 설명서 표기 코드 · 옵션별 부품 · 단품 구매 가능 여부)과 단계별 조립 설명서(assembly_step + 단계별 부품 assembly_step_part)를 둔다. 구매 후 누락 · 파손 부품은 구매 확정 후 30일까지 무료로 요청하고(part_request), 추가 부품은 유료로 산다. 조립이 어렵거나 2인 조립이면 장바구니에서 조립 서비스를 먼저 제안한다.</div>
   <div class="callout"><b>자사몰 규모에 맞춘 축소</b> — 창고별 실물 재고(warehouse · sku_inventory), 등록자 · 검수자 분리 승인(product_approval), 검색 로그 · MD 키워드는 두지 않았다. 재고는 판매 가능 재고 하나로 관리하고, 검색은 동의어 사전과 MySQL FULLTEXT(ngram) 인덱스로 처리한다.</div>
 </section>
 ${erOf('product')}
@@ -301,6 +303,8 @@ ${erOf('community')}
   ${fig('설치배송 일정 예약 — install_slot', mm(D.install), '권역 × 날짜 × 오전/오후 슬롯에 하루 가능 건수(capacity)를 두고, 재고 차감과 같은 조건부 UPDATE로 초과 예약을 막는다')}
   <div class="callout"><b>스냅샷</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수 · 사다리차 진입)는 order_address에, 배송비 내역(기본 · 권역 · 사다리차 · 계단)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다.</div>
   <div class="callout"><b>할인 안분과 부분 취소</b> — 등급 할인(다음 단계의 쿠폰 · 포인트 포함)은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다.</div>
+  ${fig('반입 판단 — shipment.carry_check_status', mm(D.carry), '고객은 주거형태만 고르고, 치수를 모르면 기본값으로 추정한 뒤 애매하면 출고 전에 기사가 확인한다')}
+  <div class="callout"><b>반입 판단</b> — 대부분의 고객은 현관문 · 엘리베이터 치수를 모르므로 입력을 요구하지 않는다. 택배로 가는 조립식 · 소형 상품은 판단하지 않고(NOT_REQUIRED), 화물 · 설치배송만 판단한다. 치수는 고객이 입력한 값이 있으면 그 값을, 없으면 주거형태(address.building_type)의 기본값(carry_default_spec)을 쓴다. 기본값으로만 통과하거나 여유가 작으면 NEEDS_CHECK로 두고 출고 전 기사가 전화로 확인해 반입 방법(엘리베이터 · 계단 · 사다리차)을 확정한다. 현장 반입 실패는 회사 판단 오류면 무료 반품으로 처리한다.</div>
   <div class="callout"><b>배송 묶음</b> — 같은 배송 정책이고 묶음배송이 허용되면(is_bundle_allowed = Y) 한 shipment로 묶고, 아니면 상품마다 따로 만든다. 택배 · 화물은 송장으로, 설치배송은 희망일 → 확정일 → 기사 배정으로 진행한다. 배송 완료 7일 후 구매 확정되면 product.sales_count와 회원 누적 구매액을 갱신한다.</div>
 </section>
 <section class="page">

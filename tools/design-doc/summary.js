@@ -149,7 +149,7 @@ const makeHtml = () => {
     <tr><th>항목</th><th>정책</th><th>담당 컬럼 · 테이블</th></tr>
     <tr><td>닉네임</td><td>2~12자 한글/영문/숫자/_ · 금칙어 불가 · 변경 후 30일 재변경 불가 · 이전 닉네임은 30일간 다른 회원 사용 불가(사칭 방지) · 대소문자 무시 중복 판단 · 탈퇴 시 deleted_{ID}</td><td><code>nickname_changed_at</code>, <code>nickname_history</code>, <code>forbidden_word</code></td></tr>
     <tr><td>금칙어</td><td>완전 일치 / 포함 두 방식, 닉네임 · 글 · 댓글 공용, 관리자가 등록</td><td><code>forbidden_word</code></td></tr>
-    <tr><td>배송지</td><td>회원당 여러 개, 기본 1개 · 층수 · 엘리베이터 · 반입 경로 치수(현관문 · 엘리베이터 · 사다리차 진입) · 배송 요청사항 · 공동현관 비밀번호(암호화). 우리 집 = <code>member_home.address_id</code></td><td><code>address</code>, <code>ux_address_default</code></td></tr>
+    <tr><td>배송지</td><td>회원당 여러 개, 기본 1개 · 주거형태(반입 기본값) · 층수 · 엘리베이터 · 반입 치수(선택 입력) · 배송 요청사항 · 공동현관 비밀번호(암호화). 우리 집 = <code>member_home.address_id</code></td><td><code>address</code>, <code>ux_address_default</code></td></tr>
     <tr><td>약관 · 마케팅 동의</td><td>버전별 관리, 필수/선택 구분. 행 = 동의 1건, 철회는 <code>withdrawn_at</code>. 광고성 수신 동의는 채널별(SMS · EMAIL · PUSH · KAKAO) + 야간(21~08시) 별도, 2년마다 동의 사실 안내</td><td><code>terms</code>, <code>member_terms_agreement</code>, <code>reconfirm_notified_at</code></td></tr>
     <tr><td>알림</td><td>유형 × 채널별 스위치. 광고성(EVENT · PRICE_DROP)은 스위치 + 채널 마케팅 동의(+ 야간 동의) 모두 필요</td><td><code>member_notification_setting</code></td></tr>
     <tr><td>등급 · 추천인</td><td>등급 혜택은 등급 테이블에서 관리, 추천인은 회원 자기 참조 + 추천 코드 UNIQUE</td><td><code>member_grade</code>, <code>referred_by</code>, <code>referral_code</code></td></tr>

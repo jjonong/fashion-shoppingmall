@@ -197,11 +197,11 @@ module.exports = {
   R0 -- STOPPED --> ST["주문 제외<br/>비슷한 상품 · product_relation SIMILAR"]
   R0 -- 판매 중 --> PR["added_price와 비교<br/>가격 인하 · 인상 표시"]
   PR --> R1["① 방별로 묶기 · room_id<br/>바닥 면적 점유율<br/>SKU 치수 ≤ member_room 치수"]
-  R1 --> R2["② 반입 확인<br/>sku_package 박스 vs 현관문 · 엘리베이터 · 사다리차 → 방문 폭"]
+  R1 --> R2["② 반입 확인 (화물 · 설치배송만)<br/>입력값 없으면 주거형태 기본값 · 애매하면 기사 확인"]
   R2 -- "통과 · 정보 없음" --> R3["③ 배송 묶음 미리보기<br/>배송 정책 · 묶음배송별 그룹<br/>예상 배송비 · 출고 예정일"]
   R2 -- 불가 --> W["반입 불가 경고<br/>사다리차 · 배송 상담 안내"] --> R3
   R3 --> R4["함께 받기면<br/>모든 묶음 수령일 맞춤<br/>(이사 예정일 기본값)"]
-  R4 --> R5["④ 제안<br/>함께 사면 좋은 상품 · product_relation ADDON<br/>부가 서비스 · product_addon_service"]
+  R4 --> R5["④ 제안<br/>함께 사면 좋은 상품 · product_relation ADDON<br/>부가 서비스 · 조립 어려움 · 2인 조립이면 조립 서비스"]
   R5 ==> OUT["주문서로"]
   classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
@@ -217,6 +217,34 @@ module.exports = {
   classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
   class A main
   class F good`,
+  carry: `flowchart TB
+  A(["배송 묶음 shipment"]) --> B{"배송 방식"}
+  B -- "택배 (조립식 · 소형)" --> N["NOT_REQUIRED<br/>판단 안 함"]
+  B -- "화물 · 설치배송" --> C["치수 = 고객 입력값<br/>없으면 carry_default_spec<br/>(address.building_type)"]
+  C --> D["박스의 짧은 두 변 vs 현관문 폭<br/>엘리베이터는 깊이 · 높이 대각선까지"]
+  D --> E{"엘리베이터 · 계단<br/>통과?"}
+  E -- "통과 (고객 입력값)" --> OK["OK"]
+  E -- "통과 (기본값만 · 여유 작음)" --> NC["NEEDS_CHECK<br/>출고 전 기사 확인 전화"]
+  E -- 불가 --> L{"사다리차 가능?<br/>ladder_truck_available ≠ N<br/>floor_no ≥ ladder_floor_from"}
+  L -- 가능 --> LD["carry_method = LADDER<br/>ladder_fee"]
+  L -- 불가 --> CS["CONSULT<br/>배송 상담"]
+  NC --> M["확인 결과로 carry_method 확정<br/>carry_check_memo"]
+  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
+  class CS bad
+  class OK,N good
+  class NC main`,
+  partreq: `flowchart LR
+  A(["조립 설명서<br/>assembly_step"]) --> B["단계별 부품 확인<br/>assembly_step_part"]
+  B --> C{"부품 문제?"}
+  C -- "누락 · 파손" --> D["part_request<br/>MISSING · DAMAGED<br/>파손은 사진 첨부"]
+  C -- "추가로 필요" --> E["part_request PURCHASE<br/>is_orderable 부품만 유료"]
+  D --> F["관리자 승인<br/>구매 확정 후 30일까지 무료"]
+  E --> F
+  F --> G["부품 발송<br/>송장 · SHIPPED"]
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  class G good`,
   vbank: `flowchart TB
   A(["가상계좌 선택<br/>현금영수증 정보 · 에스크로 여부 입력"]) --> B["PG 가상계좌 발급<br/>payment WAITING_DEPOSIT<br/>vbank_account_no · deposit_due_at"]
   B --> C["orders.expires_at = deposit_due_at<br/>재고 · 설치 슬롯 유지"]
