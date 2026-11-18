@@ -5,7 +5,7 @@
 //       node erd-page.js <in.dbml> <out.html>
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, load, initViz, erSvg, groupDesc } = require('./lib');
+const { ROOT, esc, noteOf, load, initViz, erSvg, dotSvg, AUDIT, groupDesc } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const out = process.argv[3] || path.join(ROOT, 'docs', 'erd', 'index.html');
@@ -69,6 +69,51 @@ function groupSvg(g, i) {
   return { svg: clean, ext, hideAudit: !member };
 }
 
+// ---------- 전체 구조도 (개요 화면) ----------
+// 테이블 이름만 있는 작은 상자를 영역(TableGroup)별 묶음으로 배치. 관리자 감사 컬럼(created_by 등) 선은 생략
+const STAGE_COLOR = {
+  member: ['#2f8f6b', '#EEF7F2'],
+  product: ['#2f6496', '#EDF3F9'],
+  community: ['#b5562f', '#FBF1EC'],
+  order: ['#7a5bb5', '#F3EFFA'],
+};
+function overallSvg() {
+  const F = 'Malgun Gothic';
+  let dot = `digraph ALL {
+  graph [overlap=false, sep="+18", K=0.9, pad=0.2, bgcolor="transparent", fontname="${F}"];
+  node [shape=box, style="rounded,filled", fillcolor="white", fontname="Consolas", fontsize=15, height=0.34, margin="0.1,0.04", penwidth=1.1];
+  edge [color="#9aa7b4", penwidth=1, arrowsize=0.7, arrowhead=crow];
+`;
+  groups.forEach((g) => {
+    const stage = STAGES.find((x) => g.name.startsWith(x.prefix));
+    const [line, fill] = STAGE_COLOR[stage.prefix];
+    dot += `  subgraph cluster_${g.name} {
+    label="${stage.name} · ${gTitle(g)}"; fontname="${F}"; fontsize=17; fontcolor="${line}";
+    style="rounded,filled"; fillcolor="${fill}"; color="${line}"; penwidth=1.2; margin=10;
+    node [color="${line}"];
+    ${g.tables.map((t) => t.name).join('; ')};
+  }
+`;
+  });
+  const seen = new Set();
+  refs.forEach((r) => {
+    if (AUDIT.has(r.ccol) && r.parent === 'member_account') return;
+    // member_account는 거의 모든 테이블이 참조해서 선이 엉키므로, 고객 영역 밖에서 오는 선은 생략 (설계서 전체 구조와 같은 기준)
+    if (r.parent === 'member_account' && !groupOf[r.child].startsWith('member')) return;
+    if (r.parent === r.child) return;
+    const k = `${r.parent}->${r.child}`;
+    if (seen.has(k)) return;
+    seen.add(k);
+    dot += `  ${r.parent} -> ${r.child}${r.oneToOne ? ' [arrowhead=tee]' : ''};
+`;
+  });
+  dot += '}\n';
+  return dotSvg(dot, 'fdp')
+    .replace(/ width="[\d.]+pt" height="[\d.]+pt"/, '')
+    .replace(/ id="/g, ' id="all_')
+    .replace(/<title>ALL<\/title>/, '');
+}
+
 async function main() {
   await initViz();
   const data = {
@@ -91,6 +136,7 @@ async function main() {
     svgs.push(`<template id="svg-${g.name}">${svg}</template>`);
   });
   S.tables.forEach((t) => (data.tables[t.name] = tableData(t)));
+  svgs.push(`<template id="svg-__all">${overallSvg()}</template>`);
 
   const css = fs.readFileSync(path.join(__dirname, 'web', 'erd.css'), 'utf8');
   const js = fs.readFileSync(path.join(__dirname, 'web', 'erd.js'), 'utf8');

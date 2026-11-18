@@ -112,6 +112,8 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
 // ERD SVG: 좌→우 / 위→아래 배치 중 W x H(pt) 영역에 더 크게 들어가는 쪽을 골라 크기를 맞춘다 (최대 1.15배 확대)
 let VIZ = null;
 async function initViz() { VIZ = await require('@viz-js/viz').instance(); }
+// DOT 문자열 → SVG (전체 구조도 등 erDot을 쓰지 않는 도식용)
+function dotSvg(dot, engine = 'dot') { return VIZ.renderString(dot, { format: 'svg', engine }).replace(/^[\s\S]*?(<svg)/, '$1'); }
 function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null } = {}) {
   const { dot, ext } = erDot(ctx, tables, { hideAudit, leftOf });
   let best = null;
@@ -207,4 +209,4 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('PDF', outPdf);
 }
 
-module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, head, mermaidInit, renderPdf, groupDesc };
+module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc };

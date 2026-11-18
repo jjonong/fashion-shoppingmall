@@ -82,6 +82,13 @@
         <div class="stat"><b>${D.counts.groups}</b><span>영역</span></div>
         <div class="stat"><b>MySQL 8.0</b><span>InnoDB · utf8mb4</span></div>
       </div>
+      <h2 class="ov-h">전체 구조 <span>${D.counts.tables}개 테이블 · 영역별 묶음</span></h2>
+      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 단계(고객 · 상품 · 커뮤니티 · 주문), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
+      <div class="ov-erd">
+        ${toolbarHtml('테이블·영역에 마우스를 올리면 설명 · 누르면 그 영역으로 이동 · 드래그로 이동 · Ctrl + 휠로 확대')}
+        <div class="canvas" id="canvas"><div class="pad"></div></div>
+      </div>
+      <h2 class="ov-h">영역별 보기</h2>
       <div class="stage-cols">${cols}</div>
       <div class="legend"><h3>ERD 읽는 법</h3><ul>
         <li>각 영역 ERD에는 키 컬럼(PK·FK·UK)만 보이고, 나머지는 <b>+ N columns</b>로 줄여 표시합니다. 테이블을 누르면 전체 컬럼이 나옵니다.</li>
@@ -91,6 +98,7 @@
         <li>원본: <code>docs/erd.dbml</code> (dbdiagram.io 형식). 이 페이지는 <code>tools/design-doc</code>의 <code>npm run erd</code>로 생성됩니다.</li>
       </ul></div>
     </div>`;
+    mountDiagram('__all');
     main.scrollTop = 0;
   }
 
@@ -142,23 +150,35 @@
         ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → member_account 선 생략' : ''}</p>` : ''}
         <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}">${t}</a>`).join('')}</nav>
       </div>
-      <div class="toolbar">
+      ${toolbarHtml('테이블·컬럼에 마우스를 올리면 설명 · 테이블을 누르면 아래 명세로 이동 · 드래그로 이동 · Ctrl + 휠로 확대')}
+      <div class="canvas" id="canvas"><div class="pad"></div></div>
+      <div class="specs"><h2 class="specs-h">테이블 명세</h2>${G.tables.map((t, i) => specCard(t, i + 1)).join('')}</div>
+    </div>`;
+    mountDiagram(g);
+    main.scrollTop = 0;
+  }
+  function toolbarHtml(hint) {
+    return `<div class="toolbar">
         <button class="icon-btn" data-z="out" aria-label="축소">−</button>
         <span class="zoom" id="zoomVal">100%</span>
         <button class="icon-btn" data-z="in" aria-label="확대">+</button>
         <button class="icon-btn" data-z="fit">화면 맞춤</button>
         <button class="icon-btn" data-z="one">100%</button>
-        <span class="hint">테이블·컬럼에 마우스를 올리면 설명 · 테이블을 누르면 아래 명세로 이동 · 드래그로 이동 · Ctrl + 휠로 확대</span>
-      </div>
-      <div class="canvas" id="canvas"><div class="pad"></div></div>
-      <div class="specs"><h2 class="specs-h">테이블 명세</h2>${G.tables.map((t, i) => specCard(t, i + 1)).join('')}</div>
-    </div>`;
+        <span class="hint">${hint}</span>
+      </div>`;
+  }
+  // #canvas에 svg-{key} 템플릿을 붙이고 노드·선·영역 묶음에 테이블/영역 이름을 표시
+  function mountDiagram(key) {
     const canvas = $('#canvas');
-    const tpl = document.getElementById(`svg-${g}`);
+    const tpl = document.getElementById(`svg-${key}`);
     $('.pad', canvas).appendChild(tpl.content.cloneNode(true));
     const svg = $('svg', canvas);
     const vb = svg.viewBox.baseVal;
-    view = { svg, w: vb.width, h: vb.height, canvas, zoomEl: $('#zoomVal'), g };
+    view = { svg, w: vb.width, h: vb.height, canvas, zoomEl: $('#zoomVal'), g: key };
+    svg.querySelectorAll('g.cluster').forEach((c) => {
+      const ti = $('title', c);
+      if (ti) c.dataset.g = ti.textContent.trim().replace(/^cluster_/, '');
+    });
     svg.querySelectorAll('g.node').forEach((n) => {
       const t = $('title', n).textContent.trim();
       n.dataset.t = t;
@@ -180,15 +200,14 @@
     });
     // 브라우저 기본 툴팁(SVG title) 대신 마우스 팝업을 쓰므로 제거
     svg.querySelectorAll('title').forEach((ti) => ti.remove());
-    if (zoomOf[g]) setZoom(zoomOf[g]); else fit();
-    main.scrollTop = 0;
+    if (zoomOf[key]) setZoom(zoomOf[key]); else fit();
   }
   // 긴 설명은 첫 문장(마침표·괄호 전)까지만
   function shortNote(s) {
     const t = s.split(/\. |\n/)[0];
     return t.length > 60 ? t.slice(0, 58) + '…' : t;
   }
-  function maxCanvasH() { return Math.max(320, Math.round(window.innerHeight * 0.62)); }
+  function maxCanvasH() { return Math.max(320, Math.round(window.innerHeight * (view && view.g === '__all' ? 0.8 : 0.62))); }
   function setZoom(z) {
     if (!view) return;
     z = Math.max(0.2, Math.min(3, z));
@@ -262,7 +281,9 @@
     if (d.moved) return;
     const n = e.target.closest && e.target.closest('g.node');
     // 이 영역 테이블은 아래 명세로, 회색(다른 영역) 테이블은 그 영역으로 이동
+    const cl = !n && e.target.closest && e.target.closest('g.cluster');
     if (n && n.dataset.t && D.tables[n.dataset.t]) go(D.tables[n.dataset.t].group, n.dataset.t);
+    else if (cl && cl.dataset.g && D.groups[cl.dataset.g]) go(cl.dataset.g, null);
     else if (e.target.closest && e.target.closest('.canvas')) highlight(null);
   });
 
@@ -303,7 +324,21 @@
   function hideTip() { tipEl.hidden = true; tipKey = ''; }
   main.addEventListener('mousemove', (e) => {
     const n = !drag && e.target.closest && e.target.closest('.canvas g.node');
-    if (!n || !n.dataset.t) { hideTip(); return; }
+    if (!n || !n.dataset.t) {
+      // 전체 구조도의 영역 묶음 위: 영역 설명
+      const cl = !drag && e.target.closest && e.target.closest('.canvas g.cluster');
+      const G = cl && D.groups[cl.dataset.g];
+      if (!G) { hideTip(); return; }
+      const key = `group|${cl.dataset.g}`;
+      if (key !== tipKey) {
+        tipKey = key;
+        tipEl.innerHTML = `<div class="tip-h"><code>${esc(G.title)}</code><span>${esc(D.stages[stageOf(cl.dataset.g)].name)}</span></div>
+          <p class="tip-note">${esc(G.desc)}</p><div class="tip-foot">테이블 ${G.tables.length}개 · 누르면 이 영역의 ERD와 명세로 이동</div>`;
+      }
+      tipEl.hidden = false;
+      placeTip(e.clientX, e.clientY);
+      return;
+    }
     const tx = e.target.closest('text[data-col], text[data-more]');
     const key = `${n.dataset.t}|${tx ? tx.dataset.col || 'more' : ''}`;
     if (key !== tipKey) { tipKey = key; tipEl.innerHTML = tipHtml(n, tx); }
