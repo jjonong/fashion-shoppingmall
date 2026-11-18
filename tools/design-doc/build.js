@@ -192,7 +192,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
     <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · ERD</li>
     <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
-    <li>4단계 주문 — 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · 가상계좌 · 현금영수증 · ERD</li>
+    <li>4단계 주문 — 장바구니 진단 · 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · 가상계좌 · 현금영수증 · 부가 서비스 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
     <li>관계(FK) 전체 목록</li>
@@ -286,6 +286,11 @@ ${erOf('community')}
 
 <section class="page">
   <h2>6. 4단계 주문 (장바구니 · 주문 · 결제 · 배송)</h2>
+  ${fig('장바구니 진단 — 저장하지 않고 기존 데이터로 계산', mm(D.cartcheck), '방 치수 · 반입 경로 · 포장 박스 · 배송 정책 · 연관 상품을 조합해 주문 전에 문제를 알려 준다')}
+  <div class="callout"><b>가구몰 장바구니</b> — 담을 때 놓을 방(cart_item.room_id)을 고르면 방별 합계와 바닥 면적 점유율, 방문 통과 여부를 보여 주고, 주문하면 방 이름이 설치 위치(order_item.room_name)로 기사에게 전달된다. 집들이 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담으면 유입 글(source_post_id)이 주문 상품까지 이어져, 구매 확정 시 post.purchase_count(작성자 본인 구매 제외)로 "구매로 이어진 집들이"를 보여 준다. 출고일이 다른 가구는 이사일에 한 번에 받기(orders.receive_together, 희망 수령일 기본값 = 이사 예정일)로 같은 날 도착하게 맞춘다.</div>
+  <div class="callout"><b>부가 서비스</b> — 폐가구 수거(DISPOSAL)와 조립 서비스(ASSEMBLY)는 addon_service 마스터와 상품별 제공 여부(product_addon_service, 상품별 금액 가능)로 관리한다. 조립은 자가조립 상품만, 수거는 기사가 방문하는 배송만 고를 수 있다. 주문하면 order_item_addon에 이름 · 금액을 복사하고, 부가 서비스 금액은 할인과 무료배송 기준에서 빼며 상품을 취소하면 함께 환불한다(final_amount에 포함).</div>
+</section>
+<section class="page">
   ${fig('주문 흐름', mm(D.orderflow), '재고는 주문 생성 시 차감하고, 30분 안에 결제되지 않으면 배치로 재고 · 설치 슬롯을 되돌린다. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않는다')}
   ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후 반품 · 교환은 다음 단계(클레임)')}
 </section>

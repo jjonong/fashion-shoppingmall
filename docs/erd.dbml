@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 1단계 고객 20개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 + 4단계 주문 10개 = 76개 테이블
+// 1단계 고객 20개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 + 4단계 주문 14개 = 80개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -869,6 +869,7 @@ Table post [note: '커뮤니티 글 공통. 유형별 추가 정보는 *_detail 
   like_count int [not null, default: 0, note: '캐시']
   scrap_count int [not null, default: 0, note: '캐시']
   comment_count int [not null, default: 0, note: '캐시']
+  purchase_count int [not null, default: 0, note: '캐시. 이 글에서 담아 구매 확정(CONFIRMED)된 주문 상품 수 (order_item.source_post_id). 글 작성자 본인 구매는 제외. "구매로 이어진 집들이" 정렬 근거']
   report_count int [not null, default: 0, note: '캐시. 기준 이상이면 자동 BLINDED']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime
@@ -1082,13 +1083,15 @@ Table notification [note: '알림함 (앱 내 알림 목록). 발송 여부는 m
 // 4단계: 주문 - 장바구니
 // =====================================================================
 
-Table cart_item [note: '장바구니 (회원 전용). SKU 단위로 담고 가격은 저장하지 않음 (항상 현재 가격 표시). 90일 지난 행은 배치 삭제'] {
+Table cart_item [note: '장바구니 (회원 전용). SKU 단위로 담고 가격은 저장하지 않음 (항상 현재 가격 표시). 방(room_id)별로 묶어 보고, 집들이 글에서 담았으면 source_post_id로 구매 전환을 추적. 90일 지난 행은 배치 삭제'] {
   cart_item_id bigint [pk, increment]
   member_id bigint [not null]
   sku_id bigint [not null]
   quantity smallint [not null, note: 'CHECK quantity >= 1. product.max_per_order 초과는 앱 검증']
   set_product_id bigint [note: '세트 상품으로 담았으면 세트 상품 ID (구성품 SKU를 각각 한 행씩)']
   bundle_key char(36) [note: '세트 1회 선택을 묶는 UUID. 같은 세트를 두 번 담으면 다른 값. 일반 상품은 NULL']
+  room_id bigint [note: '놓을 방 (member_room). 방별 합계·바닥 면적 점유율·방문 통과 여부를 화면에서 계산. 방을 지우면 NULL (ON DELETE SET NULL)']
+  source_post_id bigint [note: '집들이·사진 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담았으면 그 글. 같은 SKU를 다른 글에서 다시 담으면 최근 글로 갱신 (last-touch)']
   is_selected char(1) [not null, default: 'Y', note: 'Y/N 주문할 항목 체크']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime
@@ -1097,6 +1100,8 @@ Table cart_item [note: '장바구니 (회원 전용). SKU 단위로 담고 가�
     (member_id, sku_id, `COALESCE(bundle_key, '')`) [unique, name: 'ux_cart_item', note: '같은 SKU는 한 행에 수량 합산 (일반 상품의 bundle_key NULL도 중복으로 보도록 함수 기반 키)']
     sku_id [name: 'ix_cart_item_sku']
     set_product_id [name: 'ix_cart_item_set']
+    room_id [name: 'ix_cart_item_room']
+    source_post_id [name: 'ix_cart_item_source_post']
     updated_at [name: 'ix_cart_item_updated', note: '오래된 장바구니 삭제 배치']
   }
 }
@@ -1119,7 +1124,10 @@ Table orders [note: '주문 (order는 MySQL 예약어라 orders). 상태는 주�
   coupon_discount_amount bigint [not null, default: 0, note: '다음 단계(쿠폰)에서 사용. 지금은 0']
   point_used_amount bigint [not null, default: 0, note: '다음 단계(포인트)에서 사용. 지금은 0']
   shipping_fee_total bigint [not null, default: 0, note: 'SUM(shipment.fee_total)']
-  payment_amount bigint [not null, note: '실결제 금액 = 판매가 합 - 할인 - 포인트 + 배송비. CHECK payment_amount >= 0']
+  addon_fee_total bigint [not null, default: 0, note: '부가 서비스(폐가구 수거·조립) 합계 = SUM(order_item.addon_amount). 할인·무료배송 기준 금액에 포함하지 않음']
+  payment_amount bigint [not null, note: '실결제 금액 = 판매가 합 - 할인 - 포인트 + 배송비 + 부가 서비스. CHECK payment_amount >= 0']
+  desired_receive_date date [note: '희망 수령일. 기본값 member_home.move_in_planned_at (오늘 이후일 때)']
+  receive_together char(1) [not null, default: 'N', note: 'Y/N 이사일에 한 번에 받기. Y면 모든 배송 묶음을 같은 날 받도록 출고를 맞춤 (shipment.expected_ship_date 조정, 설치배송은 그 날짜 슬롯 예약)']
   status varchar(20) [not null, default: 'PENDING', note: 'PENDING(결제 대기)/PAID(진행 중)/COMPLETED(모든 상품 구매 확정 또는 취소)/CANCELED(전체 취소)/EXPIRED(결제 기한 초과). order_item 상태에서 계산해 갱신']
   ordered_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   expires_at datetime [not null, note: '결제 기한. 카드·간편결제·실시간 이체는 주문 생성 + 30분, 가상계좌를 발급하면 payment.deposit_due_at으로 연장 (그때까지 재고·설치 슬롯 유지). 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구']
@@ -1165,6 +1173,8 @@ Table order_item [note: '주문 상품 (SKU 1개 = 1행). 상태·취소·구매
   sku_id bigint [not null]
   set_product_id bigint [note: '세트로 주문했으면 세트 상품 ID']
   bundle_key char(36) [note: '세트 1회 선택 묶음 (cart_item에서 복사)']
+  source_post_id bigint [note: '유입 글 (cart_item에서 복사). 구매 확정 시 post.purchase_count 증가 (작성자 본인 구매 제외)']
+  room_name varchar(30) [note: '설치 위치 스냅샷 (cart_item.room_id의 방 이름, 예: 안방). 설치 기사 전달용']
   product_name varchar(200) [not null, note: '스냅샷']
   option_text varchar(200) [not null, note: '스냅샷 (예: 월넛 / Q). 옵션 없으면 빈 문자열']
   sku_code varchar(50) [not null, note: '스냅샷']
@@ -1176,7 +1186,8 @@ Table order_item [note: '주문 상품 (SKU 1개 = 1행). 상태·취소·구매
   grade_discount_amount bigint [not null, default: 0, note: '주문 등급 할인을 이 상품 몫으로 안분']
   coupon_discount_amount bigint [not null, default: 0, note: '쿠폰 할인 안분 (다음 단계)']
   point_used_amount bigint [not null, default: 0, note: '포인트 사용 안분 (다음 단계)']
-  final_amount bigint [not null, note: '이 상품의 실결제 몫 = item_amount - 할인 안분. 부분 취소 시 환불 기준']
+  addon_amount bigint [not null, default: 0, note: '부가 서비스 합계 = SUM(order_item_addon.amount). 할인 대상 아님']
+  final_amount bigint [not null, note: '이 상품의 실결제 몫 = item_amount - 할인 안분 + addon_amount. 부분 취소 시 환불 기준 (부가 서비스도 함께 환불)']
   status varchar(20) [not null, default: 'PENDING', note: 'PENDING(결제 대기)/PAID/PREPARING(출고 준비·제작 중)/SHIPPED/DELIVERED(배송·설치 완료)/CONFIRMED(구매 확정)/CANCEL_REQUESTED/CANCELED. PAID는 즉시 취소, PREPARING부터는 취소 요청 → 관리자 승인, SHIPPED부터는 반품(다음 단계)']
   confirmed_at datetime [note: '구매 확정 (DELIVERED 7일 후 자동 또는 회원 직접). 이때 product.sales_count, member_account.total_purchase_amount 갱신']
   canceled_at datetime
@@ -1191,6 +1202,7 @@ Table order_item [note: '주문 상품 (SKU 1개 = 1행). 상태·취소·구매
     sku_id [name: 'ix_order_item_sku']
     (product_id, status) [name: 'ix_order_item_product', note: '구매 인증(CONFIRMED 주문 상품) 조회']
     set_product_id [name: 'ix_order_item_set']
+    source_post_id [name: 'ix_order_item_source_post', note: '글별 구매 전환 집계']
     payment_cancel_id [name: 'ix_order_item_cancel']
     (status, updated_at) [name: 'ix_order_item_status', note: '출고 처리 목록, 자동 구매 확정 배치']
   }
@@ -1295,7 +1307,7 @@ Table cash_receipt [note: '현금영수증 발급·취소 이력 (현금성 결�
 // 4단계: 주문 - 배송 (배송 묶음, 설치 일정)
 // =====================================================================
 
-Table shipment [note: '배송 묶음. 같은 배송 정책이고 is_bundle_allowed = Y면 한 묶음, 아니면 상품마다 따로. 배송비 계산 결과와 설치배송 일정을 스냅샷으로 저장'] {
+Table shipment [note: '배송 묶음. 같은 배송 정책이고 is_bundle_allowed = Y면 한 묶음, 아니면 상품마다 따로. 배송비 계산 결과와 설치배송 일정을 스냅샷으로 저장. orders.receive_together = Y면 모든 묶음의 출고를 가장 늦은 출고 가능일(또는 희망 수령일)에 맞춰 같은 날 도착하게 함'] {
   shipment_id bigint [pk, increment]
   order_id bigint [not null]
   shipping_policy_id bigint [not null]
@@ -1342,6 +1354,57 @@ Table install_slot [note: '설치배송 가능 일정 (권역 × 날짜 × 오�
 
   indexes {
     (zone_id, install_date, time_slot) [unique, name: 'uk_install_slot']
+  }
+}
+
+// =====================================================================
+// 4단계: 주문 - 부가 서비스 (폐가구 수거, 조립)
+// =====================================================================
+
+Table addon_service [note: '부가 서비스 마스터. 가구 배송 기사가 방문할 때 함께 하는 유료 서비스'] {
+  service_id bigint [pk, increment]
+  service_type varchar(20) [not null, note: 'DISPOSAL(폐가구 수거)/ASSEMBLY(조립 서비스)']
+  name varchar(50) [not null, unique, note: '예: 침대 수거, 소파 수거, 수납장 조립']
+  description varchar(500)
+  fee bigint [not null, note: '기본 금액 (1개당)']
+  is_active char(1) [not null, default: 'Y']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table product_addon_service [note: '상품별 제공 부가 서비스. ASSEMBLY는 product.assembly_type = SELF인 상품만, DISPOSAL은 기사가 방문하는 배송(FREIGHT·DIRECT_INSTALL)만 (앱 검증)'] {
+  product_id bigint [not null]
+  service_id bigint [not null]
+  fee_override bigint [note: '이 상품에서의 금액. NULL이면 addon_service.fee']
+
+  indexes {
+    (product_id, service_id) [pk]
+    service_id [name: 'ix_pas_service']
+  }
+}
+
+Table cart_item_addon [note: '장바구니 상품에 고른 부가 서비스'] {
+  cart_item_id bigint [not null]
+  service_id bigint [not null]
+  quantity smallint [not null, default: 1, note: 'CHECK 1 <= quantity <= cart_item.quantity (앱 검증). 예: 의자 4개 중 2개 수거']
+
+  indexes {
+    (cart_item_id, service_id) [pk]
+    service_id [name: 'ix_cart_item_addon_service']
+  }
+}
+
+Table order_item_addon [note: '주문 상품의 부가 서비스 (주문 시점 이름·금액 스냅샷). 주문 상품을 취소하면 함께 환불'] {
+  order_item_addon_id bigint [pk, increment]
+  order_item_id bigint [not null]
+  service_id bigint [not null]
+  service_name varchar(50) [not null, note: '스냅샷']
+  unit_fee bigint [not null, note: '스냅샷 (fee_override 또는 fee)']
+  quantity smallint [not null, note: 'CHECK quantity >= 1']
+  amount bigint [not null, note: 'unit_fee × quantity']
+
+  indexes {
+    (order_item_id, service_id) [unique, name: 'uk_order_item_addon']
+    service_id [name: 'ix_order_item_addon_service']
   }
 }
 
@@ -1483,6 +1546,8 @@ Ref: post_product_tag.verified_order_item_id > order_item.order_item_id
 Ref: cart_item.member_id > member_account.member_id
 Ref: cart_item.sku_id > product_sku.sku_id
 Ref: cart_item.set_product_id > product.product_id
+Ref: cart_item.room_id > member_room.room_id
+Ref: cart_item.source_post_id > post.post_id
 
 // 주문 - 주문 / 주문 상품
 Ref: orders.member_id > member_account.member_id
@@ -1495,6 +1560,7 @@ Ref: order_item.product_id > product.product_id
 Ref: order_item.sku_id > product_sku.sku_id
 Ref: order_item.set_product_id > product.product_id
 Ref: order_item.payment_cancel_id > payment_cancel.cancel_id
+Ref: order_item.source_post_id > post.post_id
 Ref: order_item_status_history.order_item_id > order_item.order_item_id
 Ref: order_item_status_history.changed_by > member_account.member_id
 
@@ -1511,6 +1577,14 @@ Ref: shipment.order_id > orders.order_id
 Ref: shipment.shipping_policy_id > shipping_policy.policy_id
 Ref: shipment.install_slot_id > install_slot.slot_id
 Ref: install_slot.zone_id > delivery_zone.zone_id
+
+// 주문 - 부가 서비스
+Ref: product_addon_service.product_id > product.product_id
+Ref: product_addon_service.service_id > addon_service.service_id
+Ref: cart_item_addon.cart_item_id > cart_item.cart_item_id
+Ref: cart_item_addon.service_id > addon_service.service_id
+Ref: order_item_addon.order_item_id > order_item.order_item_id
+Ref: order_item_addon.service_id > addon_service.service_id
 
 // =====================================================================
 // 화면 그룹 (dbdiagram에서 영역별로 묶여 보임)
@@ -1644,4 +1718,11 @@ TableGroup order_payment [note: '주문 - 결제/환불/현금영수증'] {
 TableGroup order_delivery [note: '주문 - 배송 묶음/설치 일정'] {
   shipment
   install_slot
+}
+
+TableGroup order_addon [note: '주문 - 부가 서비스 (폐가구 수거/조립)'] {
+  addon_service
+  product_addon_service
+  cart_item_addon
+  order_item_addon
 }

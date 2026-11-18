@@ -153,7 +153,7 @@ module.exports = {
   style IN fill:#F4F6F8,stroke:#8795A1
   style SC fill:#F6FBF8,stroke:#3C9A63`,
   orderflow: `flowchart TB
-  C(["장바구니<br/>cart_item"]) --> O["주문서<br/>배송비 계산 · 반입 확인<br/>설치 희망일 선택"]
+  C(["장바구니<br/>cart_item"]) --> O["주문서<br/>배송비 계산 · 반입 확인<br/>부가 서비스 · 함께 받기<br/>설치 희망일 선택"]
   O --> R["주문 생성 PENDING<br/>orders · order_item · shipment<br/>재고 조건부 차감 + stock_history<br/>설치 슬롯 booked_count + 1"]
   R --> P{"PG 결제<br/>카드 · 간편 · 이체는 30분<br/>가상계좌는 입금 기한까지"}
   P -- 승인 --> OK["payment PAID<br/>order_item PAID"]
@@ -191,6 +191,18 @@ module.exports = {
   classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
   class H good
   class E main`,
+  cartcheck: `flowchart TB
+  CI(["<b>cart_item</b><br/>담은 상품"]) --> R1["① 방별로 묶기 · room_id<br/>바닥 면적 점유율<br/>SKU 치수 ≤ member_room 치수"]
+  R1 --> R2["② 반입 확인<br/>sku_package 박스 vs 현관문 · 엘리베이터 · 사다리차 → 방문 폭"]
+  R2 -- "통과 · 정보 없음" --> R3["③ 배송 묶음 미리보기<br/>배송 정책 · 묶음배송별 그룹<br/>예상 배송비 · 출고 예정일"]
+  R2 -- 불가 --> W["반입 불가 경고<br/>사다리차 · 배송 상담 안내"] --> R3
+  R3 --> R4["함께 받기면<br/>모든 묶음 수령일 맞춤<br/>(이사 예정일 기본값)"]
+  R4 --> R5["④ 제안<br/>함께 사면 좋은 상품 · product_relation ADDON<br/>부가 서비스 · product_addon_service"]
+  R5 ==> OUT["주문서로"]
+  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  class W bad
+  class OUT good`,
   vbank: `flowchart TB
   A(["가상계좌 선택<br/>현금영수증 정보 · 에스크로 여부 입력"]) --> B["PG 가상계좌 발급<br/>payment WAITING_DEPOSIT<br/>vbank_account_no · deposit_due_at"]
   B --> C["orders.expires_at = deposit_due_at<br/>재고 · 설치 슬롯 유지"]
