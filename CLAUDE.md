@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`. (Oracle에서 전환함. Oracle 버전은 `docs/archive_oracle/`)
 - 판매 방식: 여러 브랜드 상품을 **자사가 직접 판매** (입점 판매자·정산 없음). 사용자가 확정한 사항이므로 오픈마켓 구조로 바꾸지 않는다. 브랜드·업체는 실제 업체가 아닌 가상 데이터로 채운다.
 - 커뮤니티 범위: 자사몰은 대형 플랫폼만큼 사용자가 모이지 않으므로 **구매 고객 사진·집들이 + 운영자 매거진으로 축소** (사용자 확정). 팔로우·차단·해시태그·댓글 좋아요·스크랩 폴더·질문과답변(상품 문의와 중복)은 의도적으로 뺐다. 다시 넣기 전에 사용자와 상의한다.
-- 단계: 1단계 고객(19) + 2단계 상품(34) + 3단계 커뮤니티(12) = **65개 테이블**.
+- 단계: 1단계 고객(20) + 2단계 상품(34) + 3단계 커뮤니티(12) = **66개 테이블**.
 - **다음 단계(장바구니·주문·결제, 구매 리뷰, 쿠폰·포인트)는 대기 중.** 사용자가 요청하기 전에는 테이블을 추가하지 않는다. `stock_history.ref_id`는 다음 단계의 주문/클레임 테이블을 가리킬 예정.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 파일 | 역할 |
 |---|---|
-| `docs/erd.dbml` | **기준 원본(source of truth)**. 65개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 14개. https://dbdiagram.io/d 에 붙여넣어 확인 |
+| `docs/erd.dbml` | **기준 원본(source of truth)**. 66개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 14개. https://dbdiagram.io/d 에 붙여넣어 확인 |
 | `docs/DB_설계서.pdf` | `erd.dbml`에서 생성한 설계서 (표지, 전체 구조, 설계 원칙, 흐름도, 영역별 ERD, 테이블 명세, FK 목록). **모든 페이지 A4 세로** (사용자 요청, 가로 페이지 섞지 않음). 직접 수정 불가, 설계가 바뀌면 `tools/design-doc`에서 `npm run pdf`로 다시 생성 |
 | `docs/고객_설계_요약.pdf` | 1단계 고객 요약본 (약 8쪽: 한눈에 보기·핵심 결정, 고객 전체 ERD, 테이블 요약표, 설계 과정, 보안, 생명주기, 정책·향후 검토). 전체 설계서가 길어서 사용자가 요청한 별도 문서. `npm run summary`로 생성 |
 | `docs/erd/index.html` | ERD 웹페이지 (GitHub Pages: https://jjonong.github.io/interior-shoppingmall/erd/). 영역별 ERD + 테이블 클릭 시 전체 컬럼·인덱스·관계, 검색. 단일 HTML(외부 라이브러리 없음). 직접 수정 불가, `npm run erd`로 생성. Pages 소스는 main 브랜치 `/docs` (`docs/.nojekyll`로 Jekyll 생략) |
@@ -60,7 +60,8 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
   - nullable 대상 중복 방지(스크랩, 신고): MySQL UNIQUE는 NULL이 포함된 행을 중복으로 보지 않으므로 일반 복합 UNIQUE `(member_id, post_id)`로 충분.
 - **CHECK + FK 주의 (DDL 작성 시)**: MySQL은 `ON DELETE CASCADE`/`SET NULL` 같은 참조 동작이 있는 FK 컬럼을 CHECK에서 쓸 수 없다. CHECK에 들어가는 FK(예: `product_relation`, `scrap`, `report`, `post_product_tag`)는 참조 동작 없이 만든다.
 - **다형 참조**: 대상이 여러 종류인 테이블은 `target_type + target_id` 대신 대상별 nullable FK 컬럼을 둔다. `scrap`, `report`는 CHECK로 정확히 하나만 채우고, `notification`은 관련 대상(글+댓글 등)을 함께 채울 수 있다.
-- **개인정보**: 휴대폰 번호·공동현관 비밀번호는 `_enc`(AES-256), 검색이 필요하면 `_hash`(SHA-256)를 함께 둔다. CI/DI·토큰은 해시만 저장. 탈퇴는 soft delete + 마스킹(`withdrawn_{ID}@deleted.local`, 이름 `탈퇴회원`, 닉네임 `deleted_{ID}`), 커뮤니티 글은 숨김·댓글은 "탈퇴한 회원" 표시. 관리자 조회는 `privacy_access_log`에 기록.
+- **개인정보**: 휴대폰 번호·공동현관 비밀번호는 `_enc`(AES-256), 검색이 필요하면 `_hash`(SHA-256)를 함께 둔다. CI/DI·토큰은 해시만 저장. 탈퇴는 soft delete + 마스킹(`withdrawn_{ID}@deleted.local`, 이름 `탈퇴회원`, 닉네임 `deleted_{ID}`), 커뮤니티 글은 숨김·댓글은 "탈퇴한 회원" 표시. 탈퇴 시 `ci_hash`는 NULL로 지우고 `withdrawn_identity`(CI 해시만, member_id 없이)로 옮겨 **30일 재가입 제한** 후 파기. 신규 가입 혜택은 본인인증 회원에게만. 관리자 조회는 `privacy_access_log`에 기록.
+- **보관 기간**: `login_history` 1년, `privacy_access_log` 2년, 세션 만료 30일·토큰 만료 7일 후 삭제, `password_history` 최근 3개. 정리 배치용 `created_at`/`expires_at` 인덱스를 둔다.
 - **캐시 컬럼**: 좋아요·스크랩·댓글·리뷰 수, 평점 등은 note에 `캐시`로 표시하고 원본과 같은 트랜잭션에서 갱신.
 - **이력 테이블 패턴**: `price_history`, `stock_history`, `product_status_history`, `member_status_history`, `nickname_history`, `password_history`, `member_terms_agreement`. 시스템 변경이면 `changed_by`/`created_by`는 NULL.
 
@@ -69,7 +70,9 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **휴면**: 상태값만 쓴다 (사용자 확정, 2023년 개정으로 분리보관 의무 없음). `last_login_at` 기준 11개월에 안내(`dormant_notice_sent_at`), 1년 미접속이면 배치로 DORMANT, 로그인 + 본인 확인 시 ACTIVE. 분리보관 테이블은 만들지 않는다.
 - **정지**: 신고 승인·관리자 제재로 SUSPENDED, `suspended_until`이 지나면 배치로 ACTIVE.
 - **닉네임**: 2~12자 한글/영문/숫자/_ (앱 검증), `forbidden_word`(닉네임·글·댓글 공용 금칙어) 불가, 변경 후 30일간 재변경 불가(`nickname_changed_at`), 이전 닉네임은 `nickname_history`에 남겨 30일간 다른 회원 사용 불가(사칭 방지).
-- **배송지**: 층수·엘리베이터(사다리차 판단), 배송 요청사항(주문 시 기본값으로 복사), 공동현관 비밀번호(암호화).
+- **배송지**: 층수·엘리베이터(사다리차 판단), **반입 경로 치수**(현관문 폭, 엘리베이터 문 폭·내부 깊이·높이, 사다리차 진입 가능 `ladder_truck_available`, NULL = 모름), 배송 요청사항(주문 시 기본값으로 복사), 공동현관 비밀번호(암호화). `sku_package` 박스가 현관문 → 엘리베이터(또는 사다리차·계단) → `member_room.door_width_mm`를 통과하는지 앱에서 계산(저장 안 함). "우리 집" 배송지는 `member_home.address_id`.
+- **토큰**: `member_token.token_type` = EMAIL_VERIFY/PASSWORD_RESET/EMAIL_CHANGE(`new_email` 필수)/DORMANT_RELEASE.
+- **등급 산정**: 지금은 누적 구매액 기준(강등 없음). 최근 N개월 실적·등급 이력은 주문 단계에서 함께 설계.
 
 ## 핵심 도메인 구조
 
@@ -96,7 +99,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 ### 공유 마스터
 - `style`(인테리어 스타일)은 `member_style`, `product_style`, `post_style`이 함께 사용.
 - 회원 주거 정보 `member_home`은 맞춤 추천과 집들이 작성 기본값에 사용.
-- 마케팅 수신: `member_notification_setting`의 EVENT(광고성) 알림은 마케팅 약관 동의가 있어야 발송. `notification`은 앱 내 알림함.
+- 마케팅 수신: **법적 동의의 유일한 기준은 `member_terms_agreement`** (MARKETING_SMS/EMAIL/PUSH/KAKAO 채널별, 야간 21~08시는 MARKETING_NIGHT 별도). `member_notification_setting`은 회원이 켜고 끄는 스위치이고, 광고성 유형(EVENT, PRICE_DROP)은 스위치 ON + 해당 채널 동의(+ 야간 동의)가 모두 있어야 발송. 동의 행 = 동의 1건(철회는 `withdrawn_at`, 재동의는 새 행), 2년마다 동의 사실 안내(`reconfirm_notified_at`). `notification`은 앱 내 알림함.
 
 ## 저장소 메모
 

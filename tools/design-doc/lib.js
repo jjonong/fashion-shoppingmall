@@ -129,10 +129,10 @@ function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null
 
 // 영역(TableGroup)별 설명: 전체 설계서와 ERD 웹페이지 공용
 const groupDesc = {
-  member_basic: '회원 계정, 커뮤니티 프로필, 주거 정보, 배송지. 거의 모든 영역이 member_account를 작성자·관리자로 참조한다.',
-  member_terms_noti_style: '약관 버전과 동의 이력, 알림 수신 설정, 인테리어 스타일 취향.',
-  member_security: '로그인 이력, 1회용 토큰, 기기별 세션, 비밀번호 이력, 관리자 개인정보 접근 기록.',
-  member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어.',
+  member_basic: '회원 계정, 커뮤니티 프로필, 주거 정보, 배송지(가구 반입 경로 치수 포함). 거의 모든 영역이 member_account를 작성자·관리자로 참조한다.',
+  member_terms_noti_style: '약관 버전과 동의 이력(마케팅 동의의 유일한 기준, 2년 재확인), 알림 수신 스위치, 인테리어 스타일 취향.',
+  member_security: '로그인 이력, 1회용 토큰, 기기별 세션, 비밀번호 이력, 관리자 개인정보 접근 기록. 로그·세션은 보관 기간이 지나면 배치로 삭제.',
+  member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어, 탈퇴 후 30일 재가입 제한.',
   product_classification: '브랜드와 4단계 카테고리.',
   product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조와 이미지, 고시정보, 상품 문의.',
   product_notice_info: '상품정보제공고시 품목 유형(가구·침구·주방·가전)별 항목 마스터와 상품별 값.',

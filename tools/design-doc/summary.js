@@ -82,7 +82,8 @@ const makeHtml = () => {
     <tr><td>개인정보는 암호화·해시로만 저장</td><td>휴대폰·공동현관 비밀번호는 AES-256, CI/DI·토큰은 해시만. 원문이 유출되지 않게 한다</td></tr>
     <tr><td>상태는 4개, 잠금은 상태가 아님</td><td>ACTIVE / DORMANT / SUSPENDED / WITHDRAWN. 30분 로그인 잠금은 일시적이라 <code>locked_until</code>로만 판단</td></tr>
     <tr><td>바뀌는 값은 이력 테이블로</td><td>상태 · 닉네임 · 비밀번호 · 약관 동의 · 로그인 시도를 모두 행으로 남겨 CS · 감사 · 제재 판단 근거로 쓴다</td></tr>
-    <tr><td>탈퇴 = 삭제가 아니라 마스킹</td><td>주문 · 글 등 다른 테이블의 FK를 지키면서 개인정보만 지운다. 같은 이메일로 재가입 가능</td></tr>
+    <tr><td>탈퇴 = 삭제가 아니라 마스킹</td><td>주문 · 글 등 다른 테이블의 FK를 지키면서 개인정보만 지운다. 같은 이메일로 재가입 가능, 같은 사람(CI)은 30일 후(<code>withdrawn_identity</code>)</td></tr>
+    <tr><td>가구가 집에 들어가는지 DB로 판단</td><td>배송지에 현관문 · 엘리베이터 치수와 사다리차 진입 여부를 저장해 박스 치수(<code>sku_package</code>)와 비교. 방 치수(<code>member_room</code>)까지 이어서 확인</td></tr>
   </table>
 </section>
 
@@ -108,10 +109,10 @@ const makeHtml = () => {
     <tr><td>③ 관계 · 카디널리티</td><td>1:1 · 1:N · N:M 결정, N:M은 매핑 테이블</td><td>주거 정보 1:1 분리, 배송지 1:N, 스타일 N:M(<code>member_style</code>), 추천인 자기 참조</td></tr>
     <tr><td>④ 정규화 · 반정규화</td><td>중복 제거(3NF), 조회가 잦은 집계만 캐시 컬럼</td><td>등급 혜택은 <code>member_grade</code>에 한 번만. <code>post_count</code> · <code>point_balance</code>는 캐시</td></tr>
     <tr><td>⑤ 키</td><td>바뀌는 값은 PK로 쓰지 않음 → 대리키</td><td>이메일은 바뀌고 마스킹되므로 PK는 <code>member_id</code>, 이메일은 UNIQUE</td></tr>
-    <tr><td>⑥ 무결성</td><td>규칙을 앱이 아니라 DB 제약으로</td><td>status CHECK, <code>ci_hash</code> UNIQUE(1인 1계정), 기본 배송지 1개 함수 기반 UNIQUE</td></tr>
+    <tr><td>⑥ 무결성</td><td>규칙을 앱이 아니라 DB 제약으로</td><td>status CHECK, <code>ci_hash</code> UNIQUE(1인 1계정), 기본 배송지 1개 함수 기반 UNIQUE, 이메일 변경 토큰은 <code>new_email</code> 필수 CHECK</td></tr>
     <tr><td>⑦ 생명주기 · 보안</td><td>가입 → 활성 → 휴면/정지 → 탈퇴 단계별 데이터 처리</td><td>상태 이력, 휴면 안내, 탈퇴 마스킹, 암호화 · 해시 저장</td></tr>
     <tr><td>⑧ 인덱스</td><td>화면의 조회 조건 기준</td><td>최근 로그인 <code>(member_id, created_at)</code>, IP별 실패 <code>(ip_address, created_at)</code>, 휴면 대상 <code>(status, last_login_at)</code></td></tr>
-    <tr><td>⑨ 검증</td><td>샘플 데이터 + 시나리오 쿼리 (DDL 작성 시)</td><td>대소문자만 다른 이메일 중복 → 실패, 탈퇴 후 같은 이메일 재가입 → 성공</td></tr>
+    <tr><td>⑨ 검증</td><td>샘플 데이터 + 시나리오 쿼리 (DDL 작성 시)</td><td>대소문자만 다른 이메일 중복 → 실패, 탈퇴 후 같은 이메일 재가입 → 성공, 같은 CI로 30일 안에 재가입 → 실패</td></tr>
   </table>
 
   <h2>4. 보안 · 개인정보</h2>
@@ -119,10 +120,11 @@ const makeHtml = () => {
     <tr><th>대상</th><th>저장 방식</th></tr>
     <tr><td>비밀번호</td><td>bcrypt 해시. 소셜 전용 가입은 NULL. 최근 3개 재사용 금지 (<code>password_history</code>)</td></tr>
     <tr><td>휴대폰 · 공동현관 비밀번호</td><td>AES-256 암호문(<code>_enc</code>). 휴대폰은 검색·중복확인용 SHA-256(<code>phone_hash</code>)을 함께 저장</td></tr>
-    <tr><td>본인인증 CI/DI</td><td>해시만 저장. <code>ci_hash</code> UNIQUE로 1인 1계정</td></tr>
-    <tr><td>토큰</td><td>이메일 인증 · 비밀번호 재설정 · 리프레시 토큰은 SHA-256 해시만, 만료 · 사용 · 폐기 시각 기록</td></tr>
+    <tr><td>본인인증 CI/DI</td><td>해시만 저장. <code>ci_hash</code> UNIQUE로 1인 1계정. 탈퇴 시 CI 해시만 <code>withdrawn_identity</code>로 옮겨 30일 재가입 제한 (member_id 없이 보관, 기한 후 파기). 신규 가입 혜택은 본인인증 회원에게만</td></tr>
+    <tr><td>토큰</td><td>이메일 인증 · 비밀번호 재설정 · 이메일 변경(<code>new_email</code>) · 휴면 해제 · 리프레시 토큰은 SHA-256 해시만, 만료 · 사용 · 폐기 시각 기록</td></tr>
     <tr><td>로그인 보호</td><td>5회 실패 시 30분 잠금(<code>locked_until</code>), 모든 시도는 <code>login_history</code>에 IP · 기기와 함께 기록</td></tr>
     <tr><td>관리자 조회</td><td><code>privacy_access_log</code>에 조회 · 수정 · 다운로드 · 마스킹 해제와 사유 기록</td></tr>
+    <tr><td>보관 기간</td><td><code>login_history</code> 1년, <code>privacy_access_log</code> 2년, 세션 만료 30일 · 토큰 만료 7일 후 삭제, <code>password_history</code> 최근 3개. 정리 배치용 <code>created_at</code> · <code>expires_at</code> 인덱스</td></tr>
   </table>
 </section>
 
@@ -135,7 +137,7 @@ const makeHtml = () => {
     <tr><td>ACTIVE</td><td>가입, 휴면 해제, 정지 만료</td><td>—</td><td>SIGN_UP · DORMANT_RELEASE · SANCTION_END</td></tr>
     <tr><td>DORMANT</td><td>1년 미접속 (11개월에 <code>dormant_notice_sent_at</code> 안내)</td><td>로그인 + 본인 확인</td><td>DORMANT_BATCH. 상태값만 변경, 분리보관 없음</td></tr>
     <tr><td>SUSPENDED</td><td>신고 승인 · 관리자 제재</td><td><code>suspended_until</code> 경과 (배치)</td><td>SANCTION + <code>report_id</code> · <code>effective_until</code></td></tr>
-    <tr><td>WITHDRAWN</td><td>본인 탈퇴</td><td>없음 (같은 이메일로 신규 가입은 가능)</td><td>WITHDRAW + 사유</td></tr>
+    <tr><td>WITHDRAWN</td><td>본인 탈퇴</td><td>없음 (같은 이메일로 신규 가입 가능, 같은 CI는 30일 후)</td><td>WITHDRAW + 사유, CI 해시 → <code>withdrawn_identity</code></td></tr>
   </table>
 </section>
 
@@ -147,9 +149,9 @@ const makeHtml = () => {
     <tr><th>항목</th><th>정책</th><th>담당 컬럼 · 테이블</th></tr>
     <tr><td>닉네임</td><td>2~12자 한글/영문/숫자/_ · 금칙어 불가 · 변경 후 30일 재변경 불가 · 이전 닉네임은 30일간 다른 회원 사용 불가(사칭 방지) · 대소문자 무시 중복 판단 · 탈퇴 시 deleted_{ID}</td><td><code>nickname_changed_at</code>, <code>nickname_history</code>, <code>forbidden_word</code></td></tr>
     <tr><td>금칙어</td><td>완전 일치 / 포함 두 방식, 닉네임 · 글 · 댓글 공용, 관리자가 등록</td><td><code>forbidden_word</code></td></tr>
-    <tr><td>배송지</td><td>회원당 여러 개, 기본 1개 · 층수 · 엘리베이터(사다리차 판단) · 배송 요청사항(주문 시 기본값) · 공동현관 비밀번호(암호화, 화면 마스킹)</td><td><code>address</code>, <code>ux_address_default</code></td></tr>
-    <tr><td>약관</td><td>버전별 관리, 동의 · 철회를 행으로 기록, 필수/선택 구분</td><td><code>terms</code>, <code>member_terms_agreement</code></td></tr>
-    <tr><td>알림</td><td>유형 × 채널별 수신 설정. 광고성(EVENT)은 마케팅 동의가 있어야 발송</td><td><code>member_notification_setting</code></td></tr>
+    <tr><td>배송지</td><td>회원당 여러 개, 기본 1개 · 층수 · 엘리베이터 · 반입 경로 치수(현관문 · 엘리베이터 · 사다리차 진입) · 배송 요청사항 · 공동현관 비밀번호(암호화). 우리 집 = <code>member_home.address_id</code></td><td><code>address</code>, <code>ux_address_default</code></td></tr>
+    <tr><td>약관 · 마케팅 동의</td><td>버전별 관리, 필수/선택 구분. 행 = 동의 1건, 철회는 <code>withdrawn_at</code>. 광고성 수신 동의는 채널별(SMS · EMAIL · PUSH · KAKAO) + 야간(21~08시) 별도, 2년마다 동의 사실 안내</td><td><code>terms</code>, <code>member_terms_agreement</code>, <code>reconfirm_notified_at</code></td></tr>
+    <tr><td>알림</td><td>유형 × 채널별 스위치. 광고성(EVENT · PRICE_DROP)은 스위치 + 채널 마케팅 동의(+ 야간 동의) 모두 필요</td><td><code>member_notification_setting</code></td></tr>
     <tr><td>등급 · 추천인</td><td>등급 혜택은 등급 테이블에서 관리, 추천인은 회원 자기 참조 + 추천 코드 UNIQUE</td><td><code>member_grade</code>, <code>referred_by</code>, <code>referral_code</code></td></tr>
   </table>
 
@@ -165,10 +167,8 @@ const makeHtml = () => {
     <tr><th>항목</th><th>내용</th></tr>
     <tr><td>관리자 계정 분리</td><td>지금은 <code>role</code>로 구분. 권한 세분화 · 2단계 인증 · IP 제한이 필요하면 <code>admin_user</code> 계열로 분리 (상품 쪽 관리자 FK도 변경)</td></tr>
     <tr><td>앱 푸시 기기 토큰</td><td>PUSH 알림 채널은 있지만 FCM/APNs 토큰 저장 테이블 없음 → <code>member_device</code></td></tr>
-    <tr><td>탈퇴 후 재가입 제한</td><td>탈퇴 시 CI를 지워 신규 쿠폰 반복 수령을 막을 수 없음 → CI 해시만 일정 기간 별도 보관</td></tr>
-    <tr><td>마케팅 동의 재확인</td><td>정보통신망법상 2년마다 수신 동의 여부 안내, 야간(21~8시) 광고는 별도 동의</td></tr>
     <tr><td>휴대폰 인증번호 · 애플 로그인</td><td>SMS 인증번호 시도 횟수 제한 테이블, 애플 탈퇴 시 토큰 revoke용 refresh token 암호화 저장</td></tr>
-    <tr><td>로그 보관 기간</td><td><code>login_history</code> · <code>privacy_access_log</code> 보관 기간(접속기록 최소 1년)과 정리 방식</td></tr>
+    <tr><td>등급 산정 기준</td><td>지금은 누적 구매액이라 등급이 내려가지 않음 → 최근 N개월 실적 + 등급 변경 이력 (주문 단계에서 함께 설계)</td></tr>
   </table>
 </section>
 

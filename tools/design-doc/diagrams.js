@@ -25,9 +25,12 @@ module.exports = {
   WITHDRAWN --> [*]`,
   withdraw: `flowchart TB
   W(["탈퇴 요청"]) --> M["member_account 마스킹<br/>email → withdrawn_ID 마스킹 주소<br/>(도메인 deleted.local)<br/>name → 탈퇴회원 · nickname → deleted_ID<br/>PHONE · BIRTH · CI · DI → NULL"]
+  W --> R["CI 해시만 옮김<br/><b>withdrawn_identity</b><br/>30일 재가입 제한<br/>member_id 없이 보관 → 기한 후 파기"]
   W --> X["행 삭제<br/>member_home · member_room · address<br/>member_social · member_session"]
   W --> C["커뮤니티<br/>글 → HIDDEN<br/>댓글 작성자 → 탈퇴한 회원"]
-  W --> K["기록 유지<br/>status = WITHDRAWN<br/>withdrawn_at · 사유"]`,
+  W --> K["기록 유지<br/>status = WITHDRAWN<br/>withdrawn_at · 사유"]
+  classDef keep fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
+  class R keep`,
   option: `flowchart LR
   P["<b>product</b><br/>원목 수납 침대 프레임"]
   P --> G1["<b>OPTION_GROUP</b><br/>색상"]
@@ -71,12 +74,14 @@ module.exports = {
   E --> F{"엘리베이터 있음?<br/>address.has_elevator"}
   F -- 있음 --> T["합계"]
   F -- 없음 --> G{"floor_no ≥<br/>ladder_floor_from?"}
-  G -- 예 --> L["사다리차<br/>ladder_fee 추가"] --> T
+  G -- 예 --> LA{"사다리차 진입 가능?<br/>address.ladder_truck_available"}
+  LA -- "Y 또는 모름" --> L["사다리차<br/>ladder_fee 추가"] --> T
+  LA -- N --> Q["배송 상담<br/>(주문 전 안내)"]
   G -- 아니오 --> S["계단 운반비 추가<br/>stair_fee_per_floor × (floor_no − 1)"] --> T
   T --> R["출고 예정 = lead_days<br/>+ 권역 extra_lead_days"]
   classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
-  class X bad
+  class X,Q bad
   class T,R good`,
   post: `flowchart LR
   post(("<b>post</b><br/>공통"))
@@ -126,14 +131,14 @@ module.exports = {
   subgraph IN["회원 정보 (1단계)"]
     direction TB
     H["<b>member_home</b><br/>주거형태 · 평수 · 가족 · 반려동물"]
-    R["<b>member_room</b><br/>방 치수 · 방문 폭"]
+    R["<b>member_room</b> · <b>address</b><br/>방 치수 · 방문 폭<br/>현관문 · 엘리베이터 치수"]
     ST["<b>member_style</b><br/>취향 스타일"]
   end
   subgraph SC["점수 계산"]
     direction TB
     S1["주거 조건 일치<br/>product_home_fit"]
     S2["스타일 일치<br/>product_style"]
-    S3["방에 들어가는지<br/>SKU 치수 ≤ 방 치수<br/>sku_package ≤ 방문 폭"]
+    S3["집에 들어가는지<br/>SKU 치수 ≤ 방 치수<br/>sku_package ≤ 현관문 · 엘리베이터<br/>(address 반입 경로) · 방문 폭"]
     S4["비슷한 집의 집들이<br/>housewarming_detail<br/>→ post_product_tag<br/>(구매 인증 가중치)"]
   end
   H --> S1

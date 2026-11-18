@@ -232,14 +232,16 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <tr><th>대상</th><th>저장 방식</th></tr>
     <tr><td>비밀번호</td><td>bcrypt 해시. 소셜 전용 가입은 NULL. 최근 3개 재사용 금지 (password_history)</td></tr>
     <tr><td>휴대폰 번호</td><td>AES-256 암호문 <code>phone_enc</code> + 검색·중복확인용 SHA-256 <code>phone_hash</code></td></tr>
-    <tr><td>본인인증 CI/DI</td><td>해시만 저장. <code>ci_hash</code> UNIQUE로 1인 1계정</td></tr>
-    <tr><td>토큰</td><td>인증 · 재설정 · 리프레시 토큰은 SHA-256 해시만 저장, 만료 · 사용 · 폐기 시각 기록</td></tr>
+    <tr><td>본인인증 CI/DI</td><td>해시만 저장. <code>ci_hash</code> UNIQUE로 1인 1계정. 탈퇴 시 CI 해시만 <code>withdrawn_identity</code>로 옮겨 30일 재가입 제한(member_id 없이 보관, 기한 후 파기)</td></tr>
+    <tr><td>토큰</td><td>이메일 인증 · 비밀번호 재설정 · 이메일 변경(<code>new_email</code>) · 휴면 해제 · 리프레시 토큰은 SHA-256 해시만 저장, 만료 · 사용 · 폐기 시각 기록</td></tr>
     <tr><td>관리자 조회</td><td>privacy_access_log에 조회 · 수정 · 다운로드 · 마스킹 해제 기록</td></tr>
+    <tr><td>보관 기간</td><td>login_history 1년, privacy_access_log 2년, 세션 만료 30일 · 토큰 만료 7일 후 삭제, password_history 최근 3개. 정리 배치용 <code>created_at</code> · <code>expires_at</code> 인덱스</td></tr>
   </table>
   ${fig('로그인 처리 흐름', mm(D.login), '5회 실패 시 30분 잠금, 모든 시도를 기록. 잠금은 회원 상태가 아니라 locked_until로 판단')}
   ${fig('회원 상태 흐름', mm(D.mstatus), '전환할 때마다 member_status_history에 사유 · 처리자 · 근거 신고를 기록. 휴면은 상태값만 바꾸고 분리보관하지 않음(2023년 법 개정으로 의무 폐지)')}
-  ${fig('탈퇴 처리', mm(D.withdraw), 'soft delete + 마스킹. 같은 이메일로 재가입 가능')}
-  <div class="callout"><b>인테리어몰 특화</b> — member_home(주거형태 · 평수 · 가족형태 · 반려동물 · 이사 예정일)은 맞춤 추천과 집들이 작성 기본값에 쓴다. 배송지에는 층수 · 엘리베이터 여부를 둬서 대형 가구 사다리차 필요 여부를 판단하고, 배송 요청사항과 공동현관 비밀번호(암호화)를 저장한다. style은 회원 · 상품 · 커뮤니티 글이 함께 쓰는 공유 마스터다.</div>
+  ${fig('탈퇴 처리', mm(D.withdraw), 'soft delete + 마스킹. 같은 이메일로 재가입 가능, 같은 사람(CI)은 30일 후 재가입')}
+  <div class="callout"><b>인테리어몰 특화</b> — member_home(주거형태 · 평수 · 가족형태 · 반려동물 · 이사 예정일)은 맞춤 추천과 집들이 작성 기본값에 쓰고, address_id로 "우리 집" 배송지와 연결한다. 배송지에는 층수 · 엘리베이터 여부와 <b>반입 경로 치수</b>(현관문 폭, 엘리베이터 문 폭 · 내부 깊이 · 높이, 사다리차 진입 가능 여부)를 둬서 sku_package 박스가 현관문 → 엘리베이터(또는 사다리차 · 계단) → 방문(member_room)을 통과하는지 주문 전에 확인한다. 배송 요청사항과 공동현관 비밀번호(암호화)도 저장한다. style은 회원 · 상품 · 커뮤니티 글이 함께 쓰는 공유 마스터다.</div>
+  <div class="callout"><b>마케팅 동의</b> — 광고성 정보 수신 동의는 member_terms_agreement(MARKETING_SMS · EMAIL · PUSH · KAKAO, 야간 21~08시는 MARKETING_NIGHT 별도)가 유일한 기준이다. member_notification_setting은 회원이 켜고 끄는 스위치이고, 광고성 알림(EVENT · PRICE_DROP)은 스위치 ON + 해당 채널 동의(+ 야간 동의)가 모두 있어야 보낸다. 동의 행은 철회 시 withdrawn_at만 채우고, 2년마다 수신 동의 사실을 안내한 시각을 reconfirm_notified_at에 남긴다(정보통신망법 시행령 62조).</div>
   <div class="callout"><b>닉네임 정책</b> — 2~12자 한글/영문/숫자/_ · forbidden_word 금칙어 불가 · 변경 후 30일간 재변경 불가(nickname_changed_at) · 이전 닉네임은 nickname_history에 남겨 30일간 다른 회원이 쓰지 못하게 해 사칭을 막고 신고 추적에 쓴다. 대소문자 · 악센트 무시 콜레이션이라 'Wood'와 'wood'는 같은 닉네임으로 본다.</div>
 </section>
 ${erOf('member')}
