@@ -16,7 +16,7 @@ const { S, tableMap, groups, groupOf, refs, fk, compositePk } = ctx;
 // ---------- 전체 구조도 (HTML 카드 + 영역 간 연결 표) ----------
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 function overview() {
-  const stages = [['member', '1단계 고객', 's1'], ['product', '2단계 상품', 's2'], ['community', '3단계 커뮤니티', 's3']];
+  const stages = [['member', '1단계 고객', 's1'], ['product', '2단계 상품', 's2'], ['community', '3단계 커뮤니티', 's3'], ['order', '4단계 주문', 's4']];
   const cols = stages.map(([p, name, cls]) => {
     const gs = groups.filter((g) => g.name.startsWith(p));
     const n = gs.reduce((a, g) => a + g.tables.length, 0);
@@ -79,7 +79,7 @@ function erSection(g) {
   return `<section class="erd-page">
     <h3>ERD · ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
     <p class="gdesc">${groupDesc[g.name] || ''}</p>
-    ${fig('ERD', svg, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 7장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
+    ${fig('ERD', svg, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 8장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
   </section>`;
 }
 const erOf = (prefix) => groups.filter((g) => g.name.startsWith(prefix)).map(erSection).join('');
@@ -167,6 +167,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <div class="sc s1"><b>1단계 고객</b><span>${stageCount('member')}개</span><p>회원 · 프로필 · 주거정보 · 약관 · 보안 · 상태</p></div>
     <div class="sc s2"><b>2단계 상품</b><span>${stageCount('product')}개</span><p>옵션 · SKU · 가구 배송 · 재고 · 필터</p></div>
     <div class="sc s3"><b>3단계 커뮤니티</b><span>${stageCount('community')}개</span><p>고객 집사진 · 집들이 · 브랜드 매거진</p></div>
+    <div class="sc s4"><b>4단계 주문</b><span>${stageCount('order')}개</span><p>장바구니 · 주문 · 결제 · 배송 · 설치 일정</p></div>
   </div>
   <div class="points">
     <div><b>사진 속 상품 태그</b><p>커뮤니티 사진의 % 좌표에 스토어 상품을 연결해 바로 구매로 이어지게 한다.</p></div>
@@ -178,8 +179,8 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <tr><th>DBMS</th><td>MySQL 8.0.16 이상 · InnoDB · utf8mb4</td></tr>
     <tr><th>판매 방식</th><td>자사 직접 판매 (입점 판매자 · 정산 없음)</td></tr>
     <tr><th>원본</th><td>docs/erd.dbml (dbdiagram.io)</td></tr>
-    <tr><th>다음 단계</th><td>장바구니 · 주문 · 결제 · 구매 리뷰 · 쿠폰 · 포인트 (대기)</td></tr>
-    <tr><th>작성일</th><td>2026-11-17</td></tr>
+    <tr><th>다음 단계</th><td>구매 리뷰 · 쿠폰 · 포인트 · 반품/교환 (대기)</td></tr>
+    <tr><th>작성일</th><td>2026-11-18</td></tr>
   </table>
 </section>
 
@@ -191,6 +192,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
     <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · ERD</li>
     <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
+    <li>4단계 주문 — 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
     <li>관계(FK) 전체 목록</li>
@@ -273,7 +275,7 @@ ${erOf('product')}
 <section class="page">
   ${fig('블록 에디터 — post_block', blockMock, '집들이 · 매거진 같은 긴 글')}
   ${fig('사진 속 상품 태그 — post_product_tag', tagMock, '오늘의집 핵심 기능')}
-  ${fig('구매 인증 — post_product_tag.purchase_verified', mm(D.verify), '"직접 사서 쓴 가구" 신뢰도 표시. 주문 테이블은 다음 단계라 근거 ID(verified_order_item_id)만 두고, 주문 단계에서 FK로 연결')}
+  ${fig('구매 인증 — post_product_tag.purchase_verified', mm(D.verify), '"직접 사서 쓴 가구" 신뢰도 표시. 근거는 글 작성자의 구매 확정 주문 상품(verified_order_item_id → order_item)')}
 </section>
 <section class="page">
   ${fig('주거 정보 맞춤 추천', mm(D.recommend), '고객 · 상품 · 커뮤니티 데이터를 함께 쓰는 추천. "비슷한 집의 집들이"는 "나와 비슷한 집(같은 주거형태 · 평수대)의 집들이에 태그된 상품"으로 커뮤니티가 추천 근거가 된다')}
@@ -283,19 +285,32 @@ ${erOf('product')}
 ${erOf('community')}
 
 <section class="page">
-  <h2>6. 표 읽는 법</h2>
+  <h2>6. 4단계 주문 (장바구니 · 주문 · 결제 · 배송)</h2>
+  ${fig('주문 흐름', mm(D.orderflow), '재고는 주문 생성 시 차감하고, 30분 안에 결제되지 않으면 배치로 재고 · 설치 슬롯을 되돌린다. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않는다')}
+  ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후 반품 · 교환은 다음 단계(클레임)')}
+</section>
+<section class="page">
+  ${fig('설치배송 일정 예약 — install_slot', mm(D.install), '권역 × 날짜 × 오전/오후 슬롯에 하루 가능 건수(capacity)를 두고, 재고 차감과 같은 조건부 UPDATE로 초과 예약을 막는다')}
+  <div class="callout"><b>스냅샷</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수 · 사다리차 진입)는 order_address에, 배송비 내역(기본 · 권역 · 사다리차 · 계단)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다.</div>
+  <div class="callout"><b>할인 안분과 부분 취소</b> — 등급 할인(다음 단계의 쿠폰 · 포인트 포함)은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다.</div>
+  <div class="callout"><b>배송 묶음</b> — 같은 배송 정책이고 묶음배송이 허용되면(is_bundle_allowed = Y) 한 shipment로 묶고, 아니면 상품마다 따로 만든다. 택배 · 화물은 송장으로, 설치배송은 희망일 → 확정일 → 기사 배정으로 진행한다. 배송 완료 7일 후 구매 확정되면 product.sales_count와 회원 누적 구매액을 갱신한다.</div>
+</section>
+${erOf('order')}
+
+<section class="page">
+  <h2>7. 표 읽는 법</h2>
   <ul>
     <li><span class="k pk">PK</span> 기본키 · <span class="k fk">FK</span> 외래키 (→ 참조 대상) · <span class="k uk">UK</span> 단일 컬럼 UNIQUE · NN = NOT NULL</li>
     <li>ERD 관계선: 부모의 PK 칸에서 자식의 FK 칸으로 이어진다. 끝 모양은 까마귀발 = N(여럿), 세로줄 = 1, 원 = 0 허용(선택). 부모 쪽 원은 FK가 NULL 가능하다는 뜻</li>
     <li>ERD의 회색 테이블은 다른 영역 테이블(PK만 표시), "+ N columns"는 생략된 일반 컬럼 수</li>
     <li>복합 UNIQUE, 함수 기반 인덱스, 일반 인덱스는 각 표 아래에 적었다.</li>
   </ul>
-  <h2>7. 테이블 명세</h2>
+  <h2>8. 테이블 명세</h2>
   ${specHtml}
 </section>
 
 <section class="page">
-  <h2>8. 관계(FK) 전체 목록 <small>${refs.length}개</small></h2>
+  <h2>9. 관계(FK) 전체 목록 <small>${refs.length}개</small></h2>
   <table class="rel"><thead><tr><th>FK 컬럼 (자식)</th><th>관계</th><th>참조 (부모)</th></tr></thead><tbody>${relRows}</tbody></table>
 </section>
 

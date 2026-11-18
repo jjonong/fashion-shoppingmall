@@ -152,6 +152,45 @@ module.exports = {
   class S4 comm
   style IN fill:#F4F6F8,stroke:#8795A1
   style SC fill:#F6FBF8,stroke:#3C9A63`,
+  orderflow: `flowchart TB
+  C(["장바구니<br/>cart_item"]) --> O["주문서<br/>배송비 계산 · 반입 확인<br/>설치 희망일 선택"]
+  O --> R["주문 생성 PENDING<br/>orders · order_item · shipment<br/>재고 조건부 차감 + stock_history<br/>설치 슬롯 booked_count + 1"]
+  R --> P{"PG 결제<br/>30분 안에?"}
+  P -- 승인 --> OK["payment PAID<br/>order_item PAID"]
+  P -- "실패 · 기한 초과" --> X["EXPIRED<br/>재고 · 슬롯 복구"]
+  OK --> D["출고 · 배송 · 설치"] --> CF["구매 확정<br/>sales_count · 누적 구매액"]
+  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
+  class X bad
+  class OK,CF good
+  class R main`,
+  itemstatus: `stateDiagram-v2
+  direction LR
+  [*] --> PENDING: 주문 생성
+  PENDING --> PAID: 결제 승인
+  PENDING --> CANCELED: 결제 기한 초과
+  PAID --> PREPARING: 출고 준비 · 제작 시작
+  PAID --> CANCELED: 즉시 취소 (환불)
+  PREPARING --> CANCEL_REQUESTED: 취소 요청
+  CANCEL_REQUESTED --> CANCELED: 관리자 승인
+  CANCEL_REQUESTED --> PREPARING: 거절
+  PREPARING --> SHIPPED: 출고
+  SHIPPED --> DELIVERED: 배송 · 설치 완료
+  DELIVERED --> CONFIRMED: 7일 후 자동 · 직접 확정`,
+  install: `flowchart TB
+  A(["설치배송 상품 주문서"]) --> B["출고 가능일<br/>= 오늘 + lead_days + 권역 extra_lead_days"]
+  B --> C["<b>install_slot</b> 조회<br/>배송지 권역 · 날짜 ≥ 출고 가능일<br/>is_closed = N · booked_count < capacity"]
+  C --> D["고객이 희망일 · 오전/오후 선택<br/>shipment.desired_date"]
+  D --> E{"슬롯 예약<br/>조건부 UPDATE"}
+  E -- "0건 (그 사이 마감)" --> C
+  E -- "성공: booked_count + 1" --> F["shipment.install_slot_id"]
+  F --> G["일정 확정 · 기사 배정<br/>install_date · installer<br/>SCHEDULED"]
+  G --> H["설치 완료 DELIVERED<br/>공동현관 비밀번호 파기"]
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
+  class H good
+  class E main`,
   poststatus: `stateDiagram-v2
   direction LR
   [*] --> DRAFT: 작성 시작

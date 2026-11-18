@@ -16,6 +16,7 @@ const STAGES = [
   { prefix: 'member', name: '1단계 고객' },
   { prefix: 'product', name: '2단계 상품' },
   { prefix: 'community', name: '3단계 커뮤니티' },
+  { prefix: 'order', name: '4단계 주문' },
 ];
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 const fmtDefault = (d) => (!d ? '' : d.type === 'expression' ? d.value : d.type === 'string' ? `'${d.value}'` : String(d.value));

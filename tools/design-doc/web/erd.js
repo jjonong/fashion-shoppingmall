@@ -74,7 +74,7 @@
     });
     main.innerHTML = `<div class="overview">
       <h1>인테리어 가구몰 + 커뮤니티 ERD</h1>
-      <p class="lead">여러 브랜드 가구를 자사가 직접 판매하는 쇼핑몰과 구매 고객 사진·집들이·브랜드 매거진 커뮤니티의 DB 설계입니다.
+      <p class="lead">여러 브랜드 가구를 자사가 직접 판매하는 쇼핑몰(장바구니·주문·결제·설치배송 포함)과 구매 고객 사진·집들이·브랜드 매거진 커뮤니티의 DB 설계입니다.
         영역을 고르면 ERD가 열리고, 테이블을 누르면 전체 컬럼과 관계를 볼 수 있습니다.</p>
       <div class="stats">
         <div class="stat"><b>${D.counts.tables}</b><span>테이블</span></div>

@@ -9,15 +9,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`. (Oracle에서 전환함. Oracle 버전은 `docs/archive_oracle/`)
 - 판매 방식: 여러 브랜드 상품을 **자사가 직접 판매** (입점 판매자·정산 없음). 사용자가 확정한 사항이므로 오픈마켓 구조로 바꾸지 않는다. 브랜드·업체는 실제 업체가 아닌 가상 데이터로 채운다.
 - 커뮤니티 범위: 자사몰은 대형 플랫폼만큼 사용자가 모이지 않으므로 **구매 고객 사진·집들이 + 운영자 매거진으로 축소** (사용자 확정). 팔로우·차단·해시태그·댓글 좋아요·스크랩 폴더·질문과답변(상품 문의와 중복)은 의도적으로 뺐다. 다시 넣기 전에 사용자와 상의한다.
-- 단계: 1단계 고객(20) + 2단계 상품(34) + 3단계 커뮤니티(12) = **66개 테이블**.
-- **다음 단계(장바구니·주문·결제, 구매 리뷰, 쿠폰·포인트)는 대기 중.** 사용자가 요청하기 전에는 테이블을 추가하지 않는다. `stock_history.ref_id`는 다음 단계의 주문/클레임 테이블을 가리킬 예정.
+- 단계: 1단계 고객(20) + 2단계 상품(34) + 3단계 커뮤니티(12) + 4단계 주문(9) = **75개 테이블**.
+- **다음 단계(구매 리뷰, 쿠폰·포인트, 반품·교환 클레임, 등급 산정 기준)는 대기 중.** 사용자가 요청하기 전에는 테이블을 추가하지 않는다. `stock_history.ref_type = CLAIM`의 `ref_id`와 주문 금액의 `coupon_discount_amount`·`point_used_amount`(지금은 0)가 다음 단계와 연결될 자리.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
 ## 설계 문서와 동기화
 
 | 파일 | 역할 |
 |---|---|
-| `docs/erd.dbml` | **기준 원본(source of truth)**. 66개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 14개. https://dbdiagram.io/d 에 붙여넣어 확인 |
+| `docs/erd.dbml` | **기준 원본(source of truth)**. 75개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 18개. https://dbdiagram.io/d 에 붙여넣어 확인 |
 | `docs/DB_설계서.pdf` | `erd.dbml`에서 생성한 설계서 (표지, 전체 구조, 설계 원칙, 흐름도, 영역별 ERD, 테이블 명세, FK 목록). **모든 페이지 A4 세로** (사용자 요청, 가로 페이지 섞지 않음). 직접 수정 불가, 설계가 바뀌면 `tools/design-doc`에서 `npm run pdf`로 다시 생성 |
 | `docs/고객_설계_요약.pdf` | 1단계 고객 요약본 (약 8쪽: 한눈에 보기·핵심 결정, 고객 전체 ERD, 테이블 요약표, 설계 과정, 보안, 생명주기, 정책·향후 검토). 전체 설계서가 길어서 사용자가 요청한 별도 문서. `npm run summary`로 생성 |
 | `docs/erd/index.html` | ERD 웹페이지 (GitHub Pages: https://jjonong.github.io/interior-shoppingmall/erd/). 영역별 ERD + 테이블 클릭 시 전체 컬럼·인덱스·관계, 검색. 단일 HTML(외부 라이브러리 없음). 직접 수정 불가, `npm run erd`로 생성. Pages 소스는 main 브랜치 `/docs` (`docs/.nojekyll`로 Jekyll 생략) |
@@ -42,7 +42,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - 파일 구성: `lib.js`(DBML 로드, Graphviz ERD, Mermaid 초기화, Chrome PDF 출력 공통), `diagrams.js`(Mermaid 흐름도·상태도 원본, 두 문서 공용), `build.js`(전체 설계서), `summary.js`(고객 요약본), `style.css`, `erd-page.js`(ERD 웹페이지 생성, 화면은 `web/erd.css`·`web/erd.js`를 인라인). Chrome 경로가 다르면 `CHROME_PATH` 환경변수.
 - 테이블 명세·ERD·FK 목록·요약표는 DBML에서 자동 생성된다. **표지·설계 원칙·핵심 결정·정책 설명은 `build.js`/`summary.js`에 직접 쓴 문장**이고 흐름도는 `diagrams.js`에 있으므로, 테이블/컬럼 이름이나 설계 규칙이 바뀌면 해당 문장도 함께 고치고 두 PDF를 모두 다시 만든다(`npm run all`).
 - 요약본 ERD는 `member_account`를 가운데 두는 허브형 배치(`erSvg`의 `leftOf` 옵션)를 쓴다. 다른 영역 요약본을 추가할 때도 `summary.js`의 구성을 따른다.
-- 영역별 설명(`groupDesc`, `lib.js`에 있음: 전체 설계서와 ERD 웹페이지 공용)과 단계 구분은 `TableGroup` 이름 접두사(`member_`, `product_`, `community_`)를 기준으로 한다. 새 영역을 추가하면 이 규칙을 따른다.
+- 영역별 설명(`groupDesc`, `lib.js`에 있음: 전체 설계서와 ERD 웹페이지 공용)과 단계 구분은 `TableGroup` 이름 접두사(`member_`, `product_`, `community_`, `order_`)를 기준으로 한다. 새 영역을 추가하면 이 규칙을 따른다.
 - 스타일은 `style.css`. 모든 페이지 A4 세로 (가로 페이지 금지).
 
 ## 설계 규칙 (DBML 전반에 일관되게 적용됨)
@@ -93,8 +93,19 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **상품 태그**: `post_product_tag`는 사진 위 % 좌표 + 스토어 상품 또는 외부 제품명(둘 중 하나). 상품 상세의 "이 상품이 쓰인 사진" 근거.
 - **글 상태**: `DRAFT → PUBLISHED → HIDDEN/BLINDED/DELETED`. 신고 누적은 `report_count` 캐시로 자동 BLINDED.
 - **스크랩 = 글 저장 + 상품 찜** (`scrap`, 폴더 없음).
-- **구매 인증**: `post_product_tag.purchase_verified`(Y/N) + `verified_order_item_id` + `verified_at`. 글 작성자의 구매 확정 주문 상품이 있으면 Y, 반품·취소되면 N. 외부 제품 태그는 인증 불가(CHECK). 주문 테이블이 다음 단계라 `verified_order_item_id`는 지금 FK 없이 ID만 보관 → 주문 단계에서 `order_item` FK로 연결한다.
+- **구매 인증**: `post_product_tag.purchase_verified`(Y/N) + `verified_order_item_id` + `verified_at`. 글 작성자의 구매 확정 주문 상품이 있으면 Y, 반품·취소되면 N. 외부 제품 태그는 인증 불가(CHECK). 근거 `verified_order_item_id` → `order_item` FK (작성자의 CONFIRMED 주문 상품).
 - **주거 맞춤 추천**: `member_home`(주거형태·평수·가족·반려동물) ↔ `product_home_fit`(MD 지정 주거 조건), `member_room`(방 치수·방문 폭) ↔ SKU 치수·`sku_package`, `member_style` ↔ `product_style`, 비슷한 집의 `housewarming_detail` → `post_product_tag`(구매 인증 가중치). 결과는 저장하지 않고 조회 시 계산. 공간 코드는 `post_image.space_type`·`member_room.space_type`·`product_home_fit`(SPACE)이 공유.
+
+### 주문 (장바구니·주문·결제·배송)
+- **이름**: `order`는 MySQL 예약어라 주문 테이블은 **`orders`**.
+- **장바구니** `cart_item`: 회원 전용, SKU 단위, 가격은 저장하지 않음. 세트는 구성품 SKU를 `set_product_id` + `bundle_key`(UUID)로 묶음. 같은 SKU 중복 방지는 함수 기반 `ux_cart_item (member_id, sku_id, COALESCE(bundle_key, ''))`.
+- **상태 단위**: 상태는 **`order_item`별**(PENDING → PAID → PREPARING → SHIPPED → DELIVERED → CONFIRMED, CANCEL_REQUESTED → CANCELED), `orders.status`는 요약(PENDING/PAID/COMPLETED/CANCELED/EXPIRED). 변경은 `order_item_status_history`.
+- **스냅샷**: 상품명·옵션 문구·단가는 `order_item`, 배송지·반입 경로는 `order_address`(1:1), 배송비 내역은 `shipment`에 복사.
+- **재고 차감 시점**: 주문 생성(PENDING) 시 조건부 UPDATE로 차감 + `stock_history`(ref_type ORDER, ref_id = order_item_id). 결제 기한 30분(`orders.expires_at`)이 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구. MADE_TO_ORDER는 차감 없음.
+- **할인 안분·부분 취소**: 등급 할인(다음 단계 쿠폰·포인트 포함)을 `order_item`별로 나눠 저장, `final_amount`가 환불 기준. 취소는 주문 상품 한 줄 단위(수량 일부 취소 없음). PAID는 즉시 취소, PREPARING부터는 요청 → 관리자 승인, 출고 후는 반품(다음 단계).
+- **결제**: `payment`는 PG 시도마다 1행(주문당 PAID 1건, `pg_tid` UK), `payment_cancel` 1건이 여러 `order_item`을 환불(`order_item.payment_cancel_id`). 무료배송 기준이 깨지면 `shipping_fee_adjust`.
+- **배송 묶음** `shipment`: 같은 배송 정책 + `is_bundle_allowed = Y`면 한 묶음. 택배·화물은 송장, 설치배송은 `install_slot`(권역 × 날짜 × AM/PM, `capacity`/`booked_count`)을 조건부 UPDATE로 예약 → 확정일·기사 배정. 설치 컬럼 CHECK에 `install_slot_id`가 들어가므로 FK는 참조 동작 없이.
+- **구매 확정**: 배송 완료 7일 후 자동(또는 직접). 이때 `product.sales_count`, `member_account.total_purchase_amount` 갱신.
 
 ### 공유 마스터
 - `style`(인테리어 스타일)은 `member_style`, `product_style`, `post_style`이 함께 사용.

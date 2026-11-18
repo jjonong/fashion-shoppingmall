@@ -143,6 +143,10 @@ const groupDesc = {
   community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
   community_reaction: '스타일 분류, 댓글, 좋아요, 스크랩(글 저장 + 상품 찜).',
   community_operation: '신고와 앱 내 알림함.',
+  order_cart: 'SKU 단위 장바구니. 세트는 구성품 SKU를 bundle_key로 묶고, 가격은 저장하지 않는다.',
+  order_core: '주문(요약 상태·금액 스냅샷), 배송지 스냅샷(반입 경로 포함), 주문 상품(상품별 상태·할인 안분), 상태 이력.',
+  order_payment: 'PG 결제 시도와 결제 취소·부분 환불. 취소 1건이 주문 상품 여러 줄을 함께 환불한다.',
+  order_delivery: '배송 묶음(배송비 내역·송장·설치 일정)과 권역별 설치 가능 슬롯.',
 };
 
 // ---------- HTML 머리말 / Mermaid 초기화 ----------
