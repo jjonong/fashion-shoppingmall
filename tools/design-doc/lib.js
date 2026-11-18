@@ -127,6 +127,24 @@ function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null
   return { svg: `<div class="gv">${svg}</div>`, ext };
 }
 
+// 영역(TableGroup)별 설명: 전체 설계서와 ERD 웹페이지 공용
+const groupDesc = {
+  member_basic: '회원 계정, 커뮤니티 프로필, 주거 정보, 배송지. 거의 모든 영역이 member_account를 작성자·관리자로 참조한다.',
+  member_terms_noti_style: '약관 버전과 동의 이력, 알림 수신 설정, 인테리어 스타일 취향.',
+  member_security: '로그인 이력, 1회용 토큰, 기기별 세션, 비밀번호 이력, 관리자 개인정보 접근 기록.',
+  member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어.',
+  product_classification: '브랜드와 4단계 카테고리.',
+  product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조와 이미지, 고시정보, 상품 문의.',
+  product_notice_info: '상품정보제공고시 품목 유형(가구·침구·주방·가전)별 항목 마스터와 상품별 값.',
+  product_delivery:'가구 배송 정책, 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, SKU 포장 박스.',
+  product_link_history: '스타일·주거 조건 연결(맞춤 추천), 선호 브랜드, 재고 원장, 가격 이력, 재입고 알림 신청.',
+  product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어.',
+  product_composition_operation: '연관·세트 상품, 상품 상태 이력.',
+  community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
+  community_reaction: '스타일 분류, 댓글, 좋아요, 스크랩(글 저장 + 상품 찜).',
+  community_operation: '신고와 앱 내 알림함.',
+};
+
 // ---------- HTML 머리말 / Mermaid 초기화 ----------
 const head = (title) => `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <title>${esc(title)}</title>
@@ -184,4 +202,4 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('PDF', outPdf);
 }
 
-module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, head, mermaidInit, renderPdf };
+module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, head, mermaidInit, renderPdf, groupDesc };

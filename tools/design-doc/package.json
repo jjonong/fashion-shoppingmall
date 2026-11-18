@@ -2,12 +2,13 @@
   "name": "design-doc",
   "version": "1.0.0",
   "private": true,
-  "description": "docs/erd.dbml 검증과 DB 설계서 PDF 생성",
+  "description": "docs/erd.dbml 검증과 DB 설계서 PDF·ERD 웹페이지 생성",
   "scripts": {
     "check": "node check.js",
     "pdf": "node check.js && node build.js",
     "summary": "node check.js && node summary.js",
-    "all": "node check.js && node build.js && node summary.js"
+    "all": "node check.js && node build.js && node summary.js && node erd-page.js",
+    "erd": "node check.js && node erd-page.js"
   },
   "dependencies": {
     "@dbml/core": "12.0.0",
