@@ -201,7 +201,7 @@ button { font: inherit; color: inherit; }
 .t-list a.on { color: var(--hl); font-weight: 600; }
 
 /* ---------- 개요 ---------- */
-.overview { padding: 28px 28px 40px; max-width: 1280px; }
+.overview { padding: 28px 28px 40px; }
 .overview h1 { font-size: 24px; margin: 0 0 6px; }
 .overview .lead { color: var(--muted); margin: 0 0 20px; max-width: 760px; }
 .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
