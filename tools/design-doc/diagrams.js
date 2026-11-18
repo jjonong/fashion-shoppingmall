@@ -155,7 +155,7 @@ module.exports = {
   orderflow: `flowchart TB
   C(["장바구니<br/>cart_item"]) --> O["주문서<br/>배송비 계산 · 반입 확인<br/>설치 희망일 선택"]
   O --> R["주문 생성 PENDING<br/>orders · order_item · shipment<br/>재고 조건부 차감 + stock_history<br/>설치 슬롯 booked_count + 1"]
-  R --> P{"PG 결제<br/>30분 안에?"}
+  R --> P{"PG 결제<br/>카드 · 간편 · 이체는 30분<br/>가상계좌는 입금 기한까지"}
   P -- 승인 --> OK["payment PAID<br/>order_item PAID"]
   P -- "실패 · 기한 초과" --> X["EXPIRED<br/>재고 · 슬롯 복구"]
   OK --> D["출고 · 배송 · 설치"] --> CF["구매 확정<br/>sales_count · 누적 구매액"]
@@ -191,6 +191,20 @@ module.exports = {
   classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
   class H good
   class E main`,
+  vbank: `flowchart TB
+  A(["가상계좌 선택<br/>현금영수증 정보 · 에스크로 여부 입력"]) --> B["PG 가상계좌 발급<br/>payment WAITING_DEPOSIT<br/>vbank_account_no · deposit_due_at"]
+  B --> C["orders.expires_at = deposit_due_at<br/>재고 · 설치 슬롯 유지"]
+  C --> D{"입금 기한 안에<br/>입금 통보(웹훅)?"}
+  D -- 예 --> E["payment PAID<br/>deposited_at · depositor_name"]
+  D -- 아니오 --> X["payment · orders EXPIRED<br/>재고 · 슬롯 복구"]
+  E --> F{"현금영수증<br/>요청 정보 있음?"}
+  F -- 있음 --> G["<b>cash_receipt</b> ISSUE<br/>소득공제 · 지출증빙"]
+  F -- "없음 · 10만 원 이상" --> H["<b>cash_receipt</b> ISSUE<br/>SELF_ISSUED (010-000-1234)"]
+  F -- "없음 · 10만 원 미만" --> N["발급 안 함"]
+  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  class X bad
+  class E,G,H good`,
   poststatus: `stateDiagram-v2
   direction LR
   [*] --> DRAFT: 작성 시작

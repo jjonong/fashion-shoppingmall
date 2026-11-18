@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 1단계 고객 20개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 + 4단계 주문 9개 = 75개 테이블
+// 1단계 고객 20개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 + 4단계 주문 10개 = 76개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -1122,7 +1122,7 @@ Table orders [note: '주문 (order는 MySQL 예약어라 orders). 상태는 주�
   payment_amount bigint [not null, note: '실결제 금액 = 판매가 합 - 할인 - 포인트 + 배송비. CHECK payment_amount >= 0']
   status varchar(20) [not null, default: 'PENDING', note: 'PENDING(결제 대기)/PAID(진행 중)/COMPLETED(모든 상품 구매 확정 또는 취소)/CANCELED(전체 취소)/EXPIRED(결제 기한 초과). order_item 상태에서 계산해 갱신']
   ordered_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  expires_at datetime [not null, note: '결제 기한 (주문 생성 + 30분). 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구']
+  expires_at datetime [not null, note: '결제 기한. 카드·간편결제·실시간 이체는 주문 생성 + 30분, 가상계좌를 발급하면 payment.deposit_due_at으로 연장 (그때까지 재고·설치 슬롯 유지). 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구']
   paid_at datetime
   canceled_at datetime
   updated_at datetime
@@ -1215,17 +1215,24 @@ Table order_item_status_history [note: '주문 상품 상태 변경 이력 (CS �
 // 4단계: 주문 - 결제
 // =====================================================================
 
-Table payment [note: '결제 (PG 결제 시도마다 1행, 실패 포함). 주문당 PAID는 1건. 카드·간편결제'] {
+Table payment [note: '결제 (PG 결제 시도마다 1행, 실패 포함). 주문당 PAID는 1건. 카드·간편결제·실시간 계좌이체·가상계좌. 현금성 결제(TRANSFER, VIRTUAL_ACCOUNT)는 현금영수증(cash_receipt) 대상이고 에스크로를 고를 수 있음'] {
   payment_id bigint [pk, increment]
   order_id bigint [not null]
   pg_provider varchar(20) [not null, note: 'TOSS/KCP/INICIS...']
-  method varchar(20) [not null, note: 'CARD/KAKAO_PAY/NAVER_PAY/TOSS_PAY']
+  method varchar(20) [not null, note: 'CARD/KAKAO_PAY/NAVER_PAY/TOSS_PAY/TRANSFER(실시간 계좌이체)/VIRTUAL_ACCOUNT(가상계좌 무통장입금)']
   pg_tid varchar(100) [unique, note: 'PG 거래번호. 승인 전(READY)은 NULL']
   amount bigint [not null, note: '결제 요청 금액 = orders.payment_amount']
   canceled_amount bigint [not null, default: 0, note: '캐시. SUM(payment_cancel.cancel_amount WHERE DONE). CHECK canceled_amount <= amount']
-  status varchar(20) [not null, default: 'READY', note: 'READY/PAID/FAILED/PARTIAL_CANCELED/CANCELED']
+  status varchar(20) [not null, default: 'READY', note: 'READY/WAITING_DEPOSIT(가상계좌 발급, 입금 대기)/PAID/FAILED/EXPIRED(입금 기한 초과)/PARTIAL_CANCELED/CANCELED']
   card_company varchar(30) [note: '카드사 (카드 결제일 때)']
   installment_months tinyint [not null, default: 0, note: '할부 개월 (0 = 일시불)']
+  bank_code varchar(10) [note: '실시간 이체 출금 은행 / 가상계좌 은행 코드']
+  vbank_account_no varchar(30) [note: '가상계좌 번호 (이 주문 전용 1회 계좌). CHECK: vbank_*, deposit_due_at은 method = VIRTUAL_ACCOUNT일 때만']
+  vbank_holder varchar(50) [note: '가상계좌 예금주 표시명']
+  deposit_due_at datetime [note: '입금 기한 (예: 발급 다음날 23:59). orders.expires_at도 이 시각으로 연장']
+  deposited_at datetime [note: 'PG 입금 통보(웹훅) 시각 → status PAID']
+  depositor_name varchar(50) [note: '입금자명']
+  is_escrow char(1) [not null, default: 'N', note: 'Y/N 에스크로(구매안전서비스). 현금성 결제에서 고객이 선택 (전자상거래법). Y면 출고 시 PG에 송장 등록(shipment.escrow_registered_at)']
   approved_at datetime
   fail_reason varchar(500)
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
@@ -1233,6 +1240,7 @@ Table payment [note: '결제 (PG 결제 시도마다 1행, 실패 포함). 주�
 
   indexes {
     (order_id, status) [name: 'ix_payment_order']
+    (status, deposit_due_at) [name: 'ix_payment_deposit_due', note: '입금 기한 지난 가상계좌 만료 배치']
   }
 }
 
@@ -1243,6 +1251,9 @@ Table payment_cancel [note: '결제 취소·부분 환불. 취소 1건이 주문
   shipping_fee_adjust bigint [not null, default: 0, note: '배송비 조정. 묶음 전체 취소면 배송비 환불(+), 부분 취소로 무료배송 기준이 깨지면 차감(-)']
   reason varchar(500) [not null]
   pg_cancel_tid varchar(100) [unique, note: 'PG 취소 거래번호']
+  refund_bank_code varchar(10) [note: '환불 받을 은행. 가상계좌 결제 취소일 때만 필수 (카드·간편·실시간 이체는 PG가 원 결제수단으로 환불)']
+  refund_account_no_enc varchar(200) [note: '환불 계좌번호 AES-256 암호문. 환불 완료 후 파기(NULL)']
+  refund_holder_name varchar(50) [note: '환불 계좌 예금주']
   status varchar(20) [not null, default: 'REQUESTED', note: 'REQUESTED/DONE/FAILED']
   requested_by bigint [not null, note: '요청 회원 또는 관리자']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
@@ -1251,6 +1262,32 @@ Table payment_cancel [note: '결제 취소·부분 환불. 취소 1건이 주문
   indexes {
     payment_id [name: 'ix_payment_cancel_payment']
     requested_by [name: 'ix_payment_cancel_requested_by']
+  }
+}
+
+Table cash_receipt [note: '현금영수증 발급·취소 이력 (현금성 결제: TRANSFER, VIRTUAL_ACCOUNT). 결제 승인·입금 확인 시 ISSUE. 가구 소매업은 의무발행업종이라 요청이 없어도 10만 원 이상이면 자진 발급(SELF_ISSUED, 010-000-1234). 부분 취소 시 원 발급 CANCEL + 남은 금액 ISSUE 행을 추가'] {
+  receipt_id bigint [pk, increment]
+  payment_id bigint [not null]
+  payment_cancel_id bigint [note: '부분·전체 취소로 생긴 취소·재발급이면 그 취소 건']
+  original_receipt_id bigint [note: 'CANCEL 행이 취소하는 원 발급 행 (자기 참조). ISSUE는 NULL']
+  action varchar(10) [not null, note: 'ISSUE/CANCEL']
+  receipt_type varchar(20) [not null, note: 'INCOME_DEDUCTION(소득공제, 개인)/EXPENSE_PROOF(지출증빙, 사업자)']
+  identifier_type varchar(20) [not null, note: 'PHONE/CASH_CARD/BIZ_NO/SELF_ISSUED(자진발급)']
+  identifier_enc varchar(200) [note: '휴대폰·현금영수증 카드·사업자번호 AES-256 암호문. SELF_ISSUED는 NULL (CHECK)']
+  amount bigint [not null, note: '발급(취소) 금액']
+  supply_amount bigint [not null, note: '공급가액']
+  vat_amount bigint [not null, note: '부가세']
+  status varchar(20) [not null, default: 'REQUESTED', note: 'REQUESTED/ISSUED/FAILED. FAILED는 배치로 재시도']
+  pg_receipt_no varchar(50) [unique, note: '국세청 승인번호 (PG 경유)']
+  issued_at datetime
+  fail_reason varchar(500)
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    payment_id [name: 'ix_cash_receipt_payment']
+    payment_cancel_id [name: 'ix_cash_receipt_cancel']
+    original_receipt_id [name: 'ix_cash_receipt_original']
+    (status, created_at) [name: 'ix_cash_receipt_status', note: '발급 실패 재시도 배치']
   }
 }
 
@@ -1279,6 +1316,7 @@ Table shipment [note: '배송 묶음. 같은 배송 정책이고 is_bundle_allow
   installer_name varchar(50) [note: '배정된 설치 기사']
   installer_phone_enc varchar(200) [note: 'AES-256 암호문']
   shipped_at datetime
+  escrow_registered_at datetime [note: '에스크로 결제(payment.is_escrow = Y)면 출고 시 PG에 송장을 등록한 시각. 등록해야 에스크로 정산·구매 확정이 진행됨']
   delivered_at datetime [note: '배송·설치 완료. 이후 7일이 지나면 order_item 자동 구매 확정']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime
@@ -1464,6 +1502,9 @@ Ref: order_item_status_history.changed_by > member_account.member_id
 Ref: payment.order_id > orders.order_id
 Ref: payment_cancel.payment_id > payment.payment_id
 Ref: payment_cancel.requested_by > member_account.member_id
+Ref: cash_receipt.payment_id > payment.payment_id
+Ref: cash_receipt.payment_cancel_id > payment_cancel.cancel_id
+Ref: cash_receipt.original_receipt_id > cash_receipt.receipt_id
 
 // 주문 - 배송
 Ref: shipment.order_id > orders.order_id
@@ -1594,9 +1635,10 @@ TableGroup order_core [note: '주문 - 주문/주문 상품'] {
   order_item_status_history
 }
 
-TableGroup order_payment [note: '주문 - 결제/부분 환불'] {
+TableGroup order_payment [note: '주문 - 결제/환불/현금영수증'] {
   payment
   payment_cancel
+  cash_receipt
 }
 
 TableGroup order_delivery [note: '주문 - 배송 묶음/설치 일정'] {

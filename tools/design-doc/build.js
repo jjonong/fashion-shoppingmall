@@ -192,7 +192,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
     <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · ERD</li>
     <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
-    <li>4단계 주문 — 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · ERD</li>
+    <li>4단계 주문 — 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · 가상계좌 · 현금영수증 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
     <li>관계(FK) 전체 목록</li>
@@ -294,6 +294,12 @@ ${erOf('community')}
   <div class="callout"><b>스냅샷</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수 · 사다리차 진입)는 order_address에, 배송비 내역(기본 · 권역 · 사다리차 · 계단)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다.</div>
   <div class="callout"><b>할인 안분과 부분 취소</b> — 등급 할인(다음 단계의 쿠폰 · 포인트 포함)은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다.</div>
   <div class="callout"><b>배송 묶음</b> — 같은 배송 정책이고 묶음배송이 허용되면(is_bundle_allowed = Y) 한 shipment로 묶고, 아니면 상품마다 따로 만든다. 택배 · 화물은 송장으로, 설치배송은 희망일 → 확정일 → 기사 배정으로 진행한다. 배송 완료 7일 후 구매 확정되면 product.sales_count와 회원 누적 구매액을 갱신한다.</div>
+</section>
+<section class="page">
+  ${fig('가상계좌 · 현금영수증 — payment · cash_receipt', mm(D.vbank), '가상계좌는 입금 기한까지 재고를 잡아 두고, 입금이 확인되면 현금영수증을 발급한다')}
+  <div class="callout"><b>결제수단</b> — 카드 · 간편결제 · 실시간 계좌이체(TRANSFER)는 결제창에서 바로 승인되고, 가상계좌(VIRTUAL_ACCOUNT)는 주문 전용 1회 계좌를 발급한 뒤 입금 통보(웹훅)로 PAID가 된다. 가상계좌는 PG가 원 결제수단으로 되돌려 줄 수 없어서 취소할 때 환불 계좌(payment_cancel.refund_*, 계좌번호 암호화 · 환불 후 파기)를 받는다.</div>
+  <div class="callout"><b>현금영수증</b> — 현금성 결제(계좌이체 · 가상계좌)는 cash_receipt에 발급 · 취소를 행으로 남긴다. 가구 소매업은 현금영수증 의무발행업종이라 요청이 없어도 10만 원 이상이면 자진 발급(SELF_ISSUED)한다. 부분 취소하면 원 발급을 CANCEL하고 남은 금액으로 다시 ISSUE한다(original_receipt_id · payment_cancel_id로 연결). 실패 건은 배치로 재시도한다.</div>
+  <div class="callout"><b>에스크로</b> — 현금성 결제는 고객이 에스크로(구매안전서비스)를 고를 수 있다(payment.is_escrow). 에스크로 결제는 출고 시 PG에 송장을 등록해야 정산 · 구매 확정이 진행되므로 shipment.escrow_registered_at에 등록 시각을 남긴다.</div>
 </section>
 ${erOf('order')}
 
