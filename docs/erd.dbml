@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 1단계 고객 20개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 + 4단계 주문 14개 = 80개 테이블
+// 1단계 고객 20개 + 2단계 상품 34개 + 3단계 커뮤니티 12개 + 4단계 주문 16개 = 82개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -438,6 +438,7 @@ Table product [note: '상품 (옵션 공통 정보)'] {
   avg_rating decimal(2,1) [not null, default: 0, note: '캐시']
   sales_count int [not null, default: 0, note: '캐시. order_item 구매 확정(CONFIRMED) 시 수량만큼 증가']
   tagged_post_count int [not null, default: 0, note: '캐시. 이 상품이 태그된 커뮤니티 글 수 (상세페이지 "이 상품이 쓰인 사진")']
+  cart_count int [not null, default: 0, note: '캐시. 이 상품이 담긴 장바구니 행 수 (회원·비회원). 담기·삭제·주문 완료 시 갱신. "N명이 담았어요", MD 판단 근거']
   created_by bigint [not null, note: '등록 관리자']
   updated_by bigint [note: '수정 관리자']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
@@ -1083,26 +1084,73 @@ Table notification [note: '알림함 (앱 내 알림 목록). 발송 여부는 m
 // 4단계: 주문 - 장바구니
 // =====================================================================
 
-Table cart_item [note: '장바구니 (회원 전용). SKU 단위로 담고 가격은 저장하지 않음 (항상 현재 가격 표시). 방(room_id)별로 묶어 보고, 집들이 글에서 담았으면 source_post_id로 구매 전환을 추적. 90일 지난 행은 배치 삭제'] {
+Table cart_item [note: '장바구니 (회원 + 비회원). SKU 단위. 방(room_id)별로 묶어 보고, 집들이 글(source_post_id)·인테리어 플랜(plan_id)에서 담았으면 유입을 남긴다. 담은 시점 가격(added_price)으로 가격 변동을 표시하고 가격 인하 알림 근거로 쓴다. 회원 행은 90일, 비회원 행은 30일 지나면 배치 삭제'] {
   cart_item_id bigint [pk, increment]
-  member_id bigint [not null]
+  member_id bigint [note: '회원 장바구니. CHECK: member_id, guest_token_hash 중 정확히 하나 (CHECK에 쓰이므로 FK는 참조 동작 없이)']
+  guest_token_hash char(64) [note: '비회원 장바구니: 쿠키 토큰의 SHA-256 (원문 미저장). 로그인하면 회원 장바구니로 합침: 같은 SKU·세트 묶음이 있으면 수량 합산(max_per_order 상한, added_price는 더 낮은 값), 없으면 member_id를 채우고 토큰을 비움']
   sku_id bigint [not null]
   quantity smallint [not null, note: 'CHECK quantity >= 1. product.max_per_order 초과는 앱 검증']
   set_product_id bigint [note: '세트 상품으로 담았으면 세트 상품 ID (구성품 SKU를 각각 한 행씩)']
   bundle_key char(36) [note: '세트 1회 선택을 묶는 UUID. 같은 세트를 두 번 담으면 다른 값. 일반 상품은 NULL']
-  room_id bigint [note: '놓을 방 (member_room). 방별 합계·바닥 면적 점유율·방문 통과 여부를 화면에서 계산. 방을 지우면 NULL (ON DELETE SET NULL)']
+  added_price bigint [not null, note: '처음 담을 때의 단가 (판매가 + 옵션 추가금). 수량을 합쳐도 처음 값 유지. 화면에 "담은 뒤 N원 내렸어요/올랐어요" 표시']
+  price_alert_price bigint [note: '마지막으로 가격 인하 알림을 보낸 가격. 새 가격 < MIN(added_price, price_alert_price)일 때만 다시 알림 (중복 발송 방지). 비회원은 알림 없음']
+  room_id bigint [note: '놓을 방 (member_room). 방별 합계·바닥 면적 점유율·방문 통과 여부를 화면에서 계산. 방을 지우면 NULL (ON DELETE SET NULL). 회원 전용']
   source_post_id bigint [note: '집들이·사진 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담았으면 그 글. 같은 SKU를 다른 글에서 다시 담으면 최근 글로 갱신 (last-touch)']
-  is_selected char(1) [not null, default: 'Y', note: 'Y/N 주문할 항목 체크']
+  plan_id bigint [note: '인테리어 플랜에서 "장바구니로 담기"로 옮겼으면 그 플랜 (플랜 → 구매 전환 확인). 회원 전용']
+  is_selected char(1) [not null, default: 'Y', note: 'Y/N 주문할 항목 체크. 품절·판매중지 SKU는 주문에서 자동 제외']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime
 
   indexes {
-    (member_id, sku_id, `COALESCE(bundle_key, '')`) [unique, name: 'ux_cart_item', note: '같은 SKU는 한 행에 수량 합산 (일반 상품의 bundle_key NULL도 중복으로 보도록 함수 기반 키)']
-    sku_id [name: 'ix_cart_item_sku']
+    (`COALESCE(member_id, 0)`, `COALESCE(guest_token_hash, '')`, sku_id, `COALESCE(bundle_key, '')`) [unique, name: 'ux_cart_item', note: '회원·비회원 각각 같은 SKU는 한 행에 수량 합산 (NULL도 같은 값으로 보도록 함수 기반 키)']
+    member_id [name: 'ix_cart_item_member']
+    guest_token_hash [name: 'ix_cart_item_guest']
+    sku_id [name: 'ix_cart_item_sku', note: '가격 인하 알림 대상 조회']
     set_product_id [name: 'ix_cart_item_set']
     room_id [name: 'ix_cart_item_room']
     source_post_id [name: 'ix_cart_item_source_post']
+    plan_id [name: 'ix_cart_item_plan']
     updated_at [name: 'ix_cart_item_updated', note: '오래된 장바구니 삭제 배치']
+  }
+}
+
+Table interior_plan [note: '인테리어 플랜 (공간 꾸미기 보드). 방·스타일·예산을 정하고 후보 상품을 모아 비교 → 확정한 상품을 한 번에 장바구니로. 가구는 바로 사지 않고 조합하다가 한꺼번에 사는 구매 패턴에 맞춤. 합계·예산 대비·방 치수 확인은 저장하지 않고 계산'] {
+  plan_id bigint [pk, increment]
+  member_id bigint [not null]
+  title varchar(50) [not null, note: '예: 신혼집 거실 꾸미기']
+  room_id bigint [note: '꾸밀 방 (member_room). 지정하면 후보 상품이 방에 들어가는지 확인. 방을 지우면 NULL (ON DELETE SET NULL)']
+  style_id bigint [note: '목표 스타일 → 같은 스타일 상품·집들이 추천 (product_style, post_style)']
+  budget bigint [note: '예산. CHOSEN 항목 합계(현재 가격 × 수량)와 비교해 남은 금액 표시']
+  memo varchar(500)
+  share_token_hash char(64) [unique, note: '공유 링크 토큰 SHA-256. NULL이면 비공개, 링크로는 보기만 가능 (배우자·가족과 함께 고르기)']
+  status varchar(20) [not null, default: 'ACTIVE', note: 'ACTIVE/ARCHIVED']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime
+
+  indexes {
+    (member_id, status) [name: 'ix_interior_plan_member']
+    room_id [name: 'ix_interior_plan_room']
+    style_id [name: 'ix_interior_plan_style']
+  }
+}
+
+Table interior_plan_item [note: '플랜에 담은 상품. 같은 자리의 후보 여러 개(예: 소파 3개)를 CANDIDATE로 두고 비교한 뒤 하나를 CHOSEN으로 확정. "장바구니로 담기"는 CHOSEN 항목을 cart_item으로 복사 (room_id = 플랜의 방, source_post_id 유지, SKU 미정이면 옵션 선택 요구)'] {
+  plan_item_id bigint [pk, increment]
+  plan_id bigint [not null]
+  product_id bigint [not null]
+  sku_id bigint [note: '옵션을 아직 정하지 않았으면 NULL']
+  quantity smallint [not null, default: 1, note: 'CHECK quantity >= 1']
+  pick_status varchar(20) [not null, default: 'CANDIDATE', note: 'CANDIDATE(후보)/CHOSEN(확정)']
+  source_post_id bigint [note: '집들이 글에서 플랜에 담았으면 그 글']
+  memo varchar(200) [note: '예: 거실 창가 쪽, 색상 고민 중']
+  sort_order smallint [not null]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (plan_id, sort_order) [name: 'ix_plan_item_plan']
+    product_id [name: 'ix_plan_item_product']
+    sku_id [name: 'ix_plan_item_sku']
+    source_post_id [name: 'ix_plan_item_source_post']
   }
 }
 
@@ -1548,6 +1596,14 @@ Ref: cart_item.sku_id > product_sku.sku_id
 Ref: cart_item.set_product_id > product.product_id
 Ref: cart_item.room_id > member_room.room_id
 Ref: cart_item.source_post_id > post.post_id
+Ref: cart_item.plan_id > interior_plan.plan_id
+Ref: interior_plan.member_id > member_account.member_id
+Ref: interior_plan.room_id > member_room.room_id
+Ref: interior_plan.style_id > style.style_id
+Ref: interior_plan_item.plan_id > interior_plan.plan_id
+Ref: interior_plan_item.product_id > product.product_id
+Ref: interior_plan_item.sku_id > product_sku.sku_id
+Ref: interior_plan_item.source_post_id > post.post_id
 
 // 주문 - 주문 / 주문 상품
 Ref: orders.member_id > member_account.member_id
@@ -1698,8 +1754,10 @@ TableGroup community_operation [note: '커뮤니티 - 신고/알림'] {
   notification
 }
 
-TableGroup order_cart [note: '주문 - 장바구니'] {
+TableGroup order_cart [note: '주문 - 장바구니/인테리어 플랜'] {
   cart_item
+  interior_plan
+  interior_plan_item
 }
 
 TableGroup order_core [note: '주문 - 주문/주문 상품'] {

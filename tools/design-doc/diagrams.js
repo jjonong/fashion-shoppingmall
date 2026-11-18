@@ -192,7 +192,11 @@ module.exports = {
   class H good
   class E main`,
   cartcheck: `flowchart TB
-  CI(["<b>cart_item</b><br/>담은 상품"]) --> R1["① 방별로 묶기 · room_id<br/>바닥 면적 점유율<br/>SKU 치수 ≤ member_room 치수"]
+  CI(["<b>cart_item</b><br/>담은 상품"]) --> R0{"⓪ SKU 상태 · 가격"}
+  R0 -- SOLD_OUT --> SO["주문 제외<br/>재입고 알림 신청 · restock_request"]
+  R0 -- STOPPED --> ST["주문 제외<br/>비슷한 상품 · product_relation SIMILAR"]
+  R0 -- 판매 중 --> PR["added_price와 비교<br/>가격 인하 · 인상 표시"]
+  PR --> R1["① 방별로 묶기 · room_id<br/>바닥 면적 점유율<br/>SKU 치수 ≤ member_room 치수"]
   R1 --> R2["② 반입 확인<br/>sku_package 박스 vs 현관문 · 엘리베이터 · 사다리차 → 방문 폭"]
   R2 -- "통과 · 정보 없음" --> R3["③ 배송 묶음 미리보기<br/>배송 정책 · 묶음배송별 그룹<br/>예상 배송비 · 출고 예정일"]
   R2 -- 불가 --> W["반입 불가 경고<br/>사다리차 · 배송 상담 안내"] --> R3
@@ -201,8 +205,18 @@ module.exports = {
   R5 ==> OUT["주문서로"]
   classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
-  class W bad
+  class W,SO,ST bad
   class OUT good`,
+  plan: `flowchart TB
+  A(["<b>interior_plan</b><br/>방 · 스타일 · 예산"]) --> B["후보 담기<br/>상품 상세 · 집들이 글에서<br/>CANDIDATE"]
+  B --> C["비교 · 확정<br/>자리마다 하나를 CHOSEN"]
+  C --> D["계산 (저장 안 함)<br/>합계 vs 예산<br/>방 치수 · 반입 확인"]
+  D --> E["공유 링크<br/>가족과 함께 보기"]
+  E --> F["장바구니로 담기<br/>cart_item · plan_id · room_id<br/>source_post_id 유지"]
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
+  class A main
+  class F good`,
   vbank: `flowchart TB
   A(["가상계좌 선택<br/>현금영수증 정보 · 에스크로 여부 입력"]) --> B["PG 가상계좌 발급<br/>payment WAITING_DEPOSIT<br/>vbank_account_no · deposit_due_at"]
   B --> C["orders.expires_at = deposit_due_at<br/>재고 · 설치 슬롯 유지"]

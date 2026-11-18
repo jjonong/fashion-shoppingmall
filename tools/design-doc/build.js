@@ -287,6 +287,9 @@ ${erOf('community')}
 <section class="page">
   <h2>6. 4단계 주문 (장바구니 · 주문 · 결제 · 배송)</h2>
   ${fig('장바구니 진단 — 저장하지 않고 기존 데이터로 계산', mm(D.cartcheck), '방 치수 · 반입 경로 · 포장 박스 · 배송 정책 · 연관 상품을 조합해 주문 전에 문제를 알려 준다')}
+  ${fig('인테리어 플랜 — interior_plan · interior_plan_item', mm(D.plan), '가구는 바로 사지 않고 후보를 모아 비교하다가 한꺼번에 산다. 방 · 스타일 · 예산을 정한 보드에서 확정한 상품을 장바구니로 옮긴다')}
+  <div class="callout"><b>인테리어 플랜</b> — interior_plan은 꾸밀 방(member_room) · 목표 스타일(style) · 예산을 가진 보드다. 같은 자리의 후보(예: 소파 3개)를 CANDIDATE로 담아 비교하고 하나를 CHOSEN으로 확정한다. 합계 · 예산 대비 · 방 치수 확인은 저장하지 않고 계산하며, 공유 링크(share_token_hash, 보기 전용)로 가족과 함께 고른다. "장바구니로 담기"는 확정 항목을 cart_item으로 옮기고 plan_id · room_id · source_post_id를 남겨 플랜과 집들이의 구매 전환을 추적한다.</div>
+  <div class="callout"><b>비회원 장바구니 · 가격 인하 알림</b> — 비회원은 쿠키 토큰의 해시(guest_token_hash)로 담고, 로그인하면 회원 장바구니로 합친다(같은 SKU는 수량 합산, 담은 가격은 더 낮은 값). 주문은 회원만 할 수 있다. 담은 시점 단가(added_price)로 "담은 뒤 내렸어요"를 보여 주고, 가격이 바뀌면 그 SKU를 담은 회원에게 PRICE_DROP 알림(광고성: 설정 ON + 채널 마케팅 동의 + 야간 동의)을 보낸 뒤 price_alert_price로 같은 가격 중복 발송을 막는다. 상품별 담긴 수는 product.cart_count 캐시로 둔다.</div>
   <div class="callout"><b>가구몰 장바구니</b> — 담을 때 놓을 방(cart_item.room_id)을 고르면 방별 합계와 바닥 면적 점유율, 방문 통과 여부를 보여 주고, 주문하면 방 이름이 설치 위치(order_item.room_name)로 기사에게 전달된다. 집들이 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담으면 유입 글(source_post_id)이 주문 상품까지 이어져, 구매 확정 시 post.purchase_count(작성자 본인 구매 제외)로 "구매로 이어진 집들이"를 보여 준다. 출고일이 다른 가구는 이사일에 한 번에 받기(orders.receive_together, 희망 수령일 기본값 = 이사 예정일)로 같은 날 도착하게 맞춘다.</div>
   <div class="callout"><b>부가 서비스</b> — 폐가구 수거(DISPOSAL)와 조립 서비스(ASSEMBLY)는 addon_service 마스터와 상품별 제공 여부(product_addon_service, 상품별 금액 가능)로 관리한다. 조립은 자가조립 상품만, 수거는 기사가 방문하는 배송만 고를 수 있다. 주문하면 order_item_addon에 이름 · 금액을 복사하고, 부가 서비스 금액은 할인과 무료배송 기준에서 빼며 상품을 취소하면 함께 환불한다(final_amount에 포함).</div>
 </section>
