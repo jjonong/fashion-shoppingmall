@@ -148,7 +148,7 @@
         <button class="icon-btn" data-z="in" aria-label="확대">+</button>
         <button class="icon-btn" data-z="fit">화면 맞춤</button>
         <button class="icon-btn" data-z="one">100%</button>
-        <span class="hint">컬럼에 마우스를 올리면 설명 · 테이블을 누르면 아래 명세로 이동 · 드래그로 이동 · Ctrl + 휠로 확대</span>
+        <span class="hint">테이블·컬럼에 마우스를 올리면 설명 · 테이블을 누르면 아래 명세로 이동 · 드래그로 이동 · Ctrl + 휠로 확대</span>
       </div>
       <div class="canvas" id="canvas"><div class="pad"></div></div>
       <div class="specs"><h2 class="specs-h">테이블 명세</h2>${G.tables.map((t, i) => specCard(t, i + 1)).join('')}</div>
@@ -159,32 +159,27 @@
     const svg = $('svg', canvas);
     const vb = svg.viewBox.baseVal;
     view = { svg, w: vb.width, h: vb.height, canvas, zoomEl: $('#zoomVal'), g };
-    const NS = 'http://www.w3.org/2000/svg';
-    const tip = (el, text) => { const ti = document.createElementNS(NS, 'title'); ti.textContent = text; el.appendChild(ti); };
     svg.querySelectorAll('g.node').forEach((n) => {
       const t = $('title', n).textContent.trim();
       n.dataset.t = t;
       const T = D.tables[t];
       if (!T) return;
-      // ERD 안 컬럼 이름에 마우스를 올리면 설명, "+ N columns"에는 나머지 컬럼 목록
-      const shown = new Set();
+      // 마우스 팝업용 표시: 컬럼 이름 텍스트 → data-col, "+ N columns" → data-more
       const texts = [...n.querySelectorAll('text')];
       texts.forEach((tx) => {
-        const f = T.fields.find((x) => x.name === tx.textContent.trim());
-        if (!f) return;
-        shown.add(f.name);
-        tip(tx, `${f.name} · ${f.type}${f.ref ? ` → ${f.ref}` : ''}${f.note ? `\n${f.note}` : ''}`);
+        const name = tx.textContent.trim();
+        if (T.fields.some((x) => x.name === name)) tx.dataset.col = name;
+        else if (/^\+ \d+ columns$/.test(name)) tx.dataset.more = '1';
       });
-      texts.forEach((tx) => {
-        if (!/^\+ \d+ columns$/.test(tx.textContent.trim())) return;
-        tip(tx, T.fields.filter((f) => !shown.has(f.name)).map((f) => `${f.name}${f.note ? ` — ${shortNote(f.note)}` : ''}`).join('\n'));
-      });
+      n.dataset.shown = texts.filter((tx) => tx.dataset.col).map((tx) => tx.dataset.col).join(',');
     });
     svg.querySelectorAll('g.edge').forEach((e) => {
       const [a, b] = $('title', e).textContent.split('->');
       e.dataset.a = a.split(':')[0].trim();
       e.dataset.b = b.split(':')[0].trim();
     });
+    // 브라우저 기본 툴팁(SVG title) 대신 마우스 팝업을 쓰므로 제거
+    svg.querySelectorAll('title').forEach((ti) => ti.remove());
     if (zoomOf[g]) setZoom(zoomOf[g]); else fit();
     main.scrollTop = 0;
   }
@@ -270,6 +265,53 @@
     if (n && n.dataset.t && D.tables[n.dataset.t]) go(D.tables[n.dataset.t].group, n.dataset.t);
     else if (e.target.closest && e.target.closest('.canvas')) highlight(null);
   });
+
+  // ---------- 마우스를 따라다니는 테이블 설명 팝업 ----------
+  const tipEl = document.createElement('div');
+  tipEl.className = 'tip';
+  tipEl.hidden = true;
+  document.body.appendChild(tipEl);
+  let tipKey = '';
+  function tipHtml(n, tx) {
+    const T = D.tables[n.dataset.t];
+    if (!T) return '';
+    const G = D.groups[T.group];
+    let h = `<div class="tip-h"><code>${T.name}</code><span>${esc(G.title)}</span></div>
+      <p class="tip-note">${esc(T.note)}</p>`;
+    if (tx && tx.dataset.col) {
+      const f = T.fields.find((x) => x.name === tx.dataset.col);
+      h += `<div class="tip-col"><div><code>${esc(f.name)}</code> <span class="tip-type">${esc(f.type)}</span>${f.keys.map((k) => ` <span class="badge ${k}">${k}</span>`).join('')}</div>
+        ${f.ref ? `<div class="tip-ref">→ ${esc(f.ref)}</div>` : ''}${f.note ? `<div>${esc(f.note)}</div>` : ''}</div>`;
+    } else if (tx && tx.dataset.more) {
+      const shown = new Set((n.dataset.shown || '').split(','));
+      const rest = T.fields.filter((f) => !shown.has(f.name));
+      h += `<ul class="tip-list">${rest.slice(0, 14).map((f) => `<li><code>${esc(f.name)}</code>${f.note ? ` — ${esc(shortNote(f.note))}` : ''}</li>`).join('')}
+        ${rest.length > 14 ? `<li class="tip-more">외 ${rest.length - 14}개</li>` : ''}</ul>`;
+    } else {
+      h += `<div class="tip-foot">컬럼 ${T.fields.length}개 · 컬럼에 올리면 컬럼 설명 · 누르면 ${T.group === (view && view.g) ? '아래 명세로 이동' : '해당 영역으로 이동'}</div>`;
+    }
+    return h;
+  }
+  function placeTip(x, y) {
+    const pad = 14, r = tipEl.getBoundingClientRect();
+    let left = x + pad, top = y + pad + 4;
+    if (left + r.width > window.innerWidth - 8) left = x - r.width - pad;
+    if (top + r.height > window.innerHeight - 8) top = y - r.height - pad;
+    tipEl.style.left = `${Math.max(8, left)}px`;
+    tipEl.style.top = `${Math.max(8, top)}px`;
+  }
+  function hideTip() { tipEl.hidden = true; tipKey = ''; }
+  main.addEventListener('mousemove', (e) => {
+    const n = !drag && e.target.closest && e.target.closest('.canvas g.node');
+    if (!n || !n.dataset.t) { hideTip(); return; }
+    const tx = e.target.closest('text[data-col], text[data-more]');
+    const key = `${n.dataset.t}|${tx ? tx.dataset.col || 'more' : ''}`;
+    if (key !== tipKey) { tipKey = key; tipEl.innerHTML = tipHtml(n, tx); }
+    tipEl.hidden = false;
+    placeTip(e.clientX, e.clientY);
+  });
+  main.addEventListener('mouseleave', hideTip);
+  main.addEventListener('scroll', hideTip, true);
 
   // ---------- 선택 ----------
   function highlight(t) {

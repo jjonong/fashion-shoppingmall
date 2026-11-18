@@ -314,6 +314,34 @@ button { font: inherit; color: inherit; }
 .canvas g.edge.rel path { stroke: #e8710a; stroke-width: 2; }
 .canvas g.edge.rel polygon, .canvas g.edge.rel polyline, .canvas g.edge.rel ellipse { stroke: #e8710a; }
 
+/* ---------- ERD 마우스 팝업 (테이블 기능 설명) ---------- */
+.tip {
+  position: fixed;
+  z-index: 60;
+  max-width: min(380px, calc(100vw - 16px));
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(20, 30, 45, .18);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+.tip-h { display: flex; align-items: baseline; gap: 8px; }
+.tip-h code { font-size: 13.5px; font-weight: 700; }
+.tip-h span { margin-left: auto; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.tip-note { margin: 4px 0 0; }
+.tip-col, .tip-list, .tip-foot { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.tip-col code { font-weight: 600; }
+.tip-type { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.tip-ref { font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
+.tip-list { list-style: none; padding-left: 0; margin-bottom: 0; }
+.tip-list li { padding: 1px 0; }
+.tip-more, .tip-foot { color: var(--muted); font-size: 11.5px; }
+.tip .badge { margin-right: 0; }
+
 /* ---------- 영역 화면: 테이블 명세 ---------- */
 .specs { padding: 8px 22px 0; }
 .specs-h { font-size: 16px; margin: 18px 0 4px; }
