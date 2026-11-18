@@ -118,7 +118,6 @@ async function main() {
 <div class="layout">
   <nav class="side" id="side" aria-label="영역 목록"></nav>
   <main class="main" id="main"></main>
-  <aside class="detail" id="detail" hidden aria-label="테이블 상세"></aside>
 </div>
 <div class="scrim" id="scrim" hidden></div>
 ${svgs.join('\n')}

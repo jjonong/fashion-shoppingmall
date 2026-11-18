@@ -159,13 +159,6 @@ button { font: inherit; color: inherit; }
   padding: 12px 10px 24px;
 }
 .main { flex: 1; min-width: 0; overflow: auto; position: relative; }
-.detail {
-  width: 460px;
-  flex: none;
-  overflow: auto;
-  background: var(--panel);
-  border-left: 1px solid var(--line);
-}
 .scrim { display: none; }
 
 /* ---------- 사이드바 ---------- */
@@ -271,13 +264,25 @@ button { font: inherit; color: inherit; }
 .legend ul { margin: 0; padding-left: 18px; color: var(--muted); }
 .legend li { margin: 3px 0; }
 
-/* ---------- 영역 ERD ---------- */
-.g-view { display: flex; flex-direction: column; height: 100%; }
-.g-head { padding: 18px 22px 10px; }
+/* ---------- 영역 화면: ERD ---------- */
+.g-view { padding-bottom: 48px; }
+.g-head { padding: 18px 22px 12px; }
 .g-head .crumb { font-size: 12px; font-weight: 700; color: var(--c); }
 .g-head h1 { font-size: 20px; margin: 2px 0 4px; }
 .g-head p { margin: 0; color: var(--muted); max-width: 900px; }
 .g-head .ext { font-size: 12.5px; margin-top: 6px; }
+.jump { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.jump a {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+}
+.jump a:hover { border-color: var(--c); text-decoration: none; }
+.jump a.on { border-color: var(--hl); color: var(--hl); font-weight: 600; }
 .toolbar {
   display: flex;
   align-items: center;
@@ -291,10 +296,12 @@ button { font: inherit; color: inherit; }
 .toolbar .zoom { min-width: 54px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
 .toolbar .hint { margin-left: auto; color: var(--muted); font-size: 12px; }
 .canvas {
-  flex: 1;
-  min-height: 0;
+  height: 62vh;
+  min-height: 200px;
   overflow: auto;
+  resize: vertical;
   background: var(--paper);
+  border-bottom: 1px solid var(--line);
   cursor: grab;
   position: relative;
 }
@@ -304,37 +311,74 @@ button { font: inherit; color: inherit; }
 .canvas svg text[font-family="Consolas"] { font-family: Consolas, Menlo, "DejaVu Sans Mono", monospace; }
 .canvas svg text[font-family="Malgun Gothic"] { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
 .canvas g.node { cursor: pointer; }
+.canvas g.node text { cursor: help; }
 .canvas g.node:hover polygon[fill="none"] { stroke-width: 2.5; }
 .canvas.has-sel g.node:not(.sel):not(.rel) { opacity: .35; }
 .canvas.has-sel g.edge:not(.rel) { opacity: .15; }
 .canvas g.node.sel polygon[fill="none"] { stroke: #e8710a; stroke-width: 3; }
 .canvas g.edge.rel path { stroke: #e8710a; stroke-width: 2; }
 .canvas g.edge.rel polygon, .canvas g.edge.rel polyline, .canvas g.edge.rel ellipse { stroke: #e8710a; }
-.canvas g.edge title, .canvas g.node title { pointer-events: none; }
 
-/* ---------- 상세 패널 ---------- */
-.d-head {
-  position: sticky;
-  top: 0;
+/* ---------- 영역 화면: 테이블 명세 ---------- */
+.specs { padding: 8px 22px 0; }
+.specs-h { font-size: 16px; margin: 18px 0 4px; }
+.spec {
   background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  padding: 14px 18px 12px;
-  z-index: 2;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-top: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  scroll-margin-top: 12px;
 }
-.d-head .row { display: flex; align-items: center; gap: 8px; }
-.d-head h2 { margin: 0; font-family: var(--mono); font-size: 18px; word-break: break-all; }
-.d-head .close { margin-left: auto; }
-.d-head .grp { font-size: 12px; color: var(--c); font-weight: 700; }
-.d-body { padding: 14px 18px 30px; }
-.d-body .tnote { margin: 0 0 14px; }
-.d-body h3 { font-size: 13px; margin: 18px 0 8px; color: var(--muted); }
+.spec.sel { border-color: var(--hl); box-shadow: 0 0 0 2px var(--hl), var(--shadow); }
+.spec-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 0;
+  flex-wrap: wrap;
+}
+.spec-h .no {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--c);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.spec-h h3 { margin: 0; font-family: var(--mono); font-size: 16px; word-break: break-all; }
+.spec-h .cnt { color: var(--muted); font-size: 12.5px; }
+.spec-h .to-erd { margin-left: auto; font-size: 12px; height: 28px; }
+.spec .tnote { margin: 6px 16px 10px; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; border-top: 1px solid var(--line); }
 .cols { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.cols td { border-top: 1px solid var(--line); padding: 7px 4px; vertical-align: top; }
-.cols tr:first-child td { border-top: 0; }
-.cols .c-name { font-family: var(--mono); font-weight: 600; word-break: break-all; }
-.cols .c-type { font-family: var(--mono); color: var(--muted); font-size: 11.5px; }
-.cols .c-note { color: var(--muted); margin-top: 3px; }
-.cols .c-ref { display: inline-block; margin-top: 3px; font-family: var(--mono); font-size: 11.5px; }
+.cols th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--panel-2);
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.cols td { border-top: 1px solid var(--line); padding: 7px 10px; vertical-align: top; }
+.cols tbody tr:first-child td { border-top: 0; }
+.cols tr.is-pk td { background: color-mix(in srgb, var(--pk-soft) 55%, transparent); }
+.cols tbody tr:hover td { background: var(--accent-soft); }
+.cols .c-name { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+.cols .c-type { font-family: var(--mono); color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.cols .c-key { white-space: nowrap; }
+.cols .c-nn { text-align: center; color: var(--muted); }
+.cols .c-def { font-family: var(--mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.cols .c-desc { min-width: 260px; line-height: 1.5; }
+.cols .c-ref { font-size: 11.5px; margin-bottom: 2px; }
+.cols .c-ref code { font-size: 11.5px; }
 .badge {
   display: inline-block;
   font-size: 10.5px;
@@ -347,30 +391,26 @@ button { font: inherit; color: inherit; }
 .badge.PK { color: var(--pk); background: var(--pk-soft); }
 .badge.FK { color: var(--fk); background: var(--fk-soft); }
 .badge.UK { color: var(--uk); background: var(--uk-soft); }
-.badge.NN { color: var(--muted); background: var(--panel-2); border: 1px solid var(--line); line-height: 15px; }
 .badge.AI { color: var(--s1); background: var(--panel-2); border: 1px solid var(--line); line-height: 15px; }
-.c-def { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
-.idx { margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
-.idx li { padding: 6px 0; border-top: 1px solid var(--line); }
-.idx li:first-child { border-top: 0; }
-.idx .i-note { color: var(--muted); display: block; }
-.rels { margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
-.rels li { padding: 5px 0; border-top: 1px solid var(--line); font-family: var(--mono); }
-.rels li:first-child { border-top: 0; }
-.rels .rg { font-family: inherit; color: var(--muted); font-size: 11.5px; margin-left: 6px; }
-.none { color: var(--muted); font-size: 12.5px; }
+.spec-foot {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 4px 24px;
+  padding: 4px 16px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+  font-size: 12.5px;
+}
+.spec-foot:empty { display: none; }
+.spec-foot h4 { margin: 8px 0 4px; font-size: 12px; color: var(--muted); }
+.spec-foot ul { margin: 0; padding: 0; list-style: none; }
+.spec-foot li { padding: 2px 0; }
+.spec-foot code { font-size: 12px; }
+.spec-foot .cols-of { color: var(--muted); }
+.i-note { color: var(--muted); }
 
 /* ---------- 좁은 화면 ---------- */
 @media (max-width: 1100px) {
-  .detail {
-    position: fixed;
-    top: 56px;
-    right: 0;
-    bottom: 0;
-    width: min(460px, 100%);
-    z-index: 30;
-    box-shadow: var(--shadow);
-  }
   .stage-cols { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
@@ -389,7 +429,7 @@ button { font: inherit; color: inherit; }
     box-shadow: var(--shadow);
   }
   body.side-open .side { transform: none; }
-  body.side-open .scrim, body.detail-open .scrim {
+  body.side-open .scrim {
     display: block;
     position: fixed;
     inset: 56px 0 0 0;
@@ -400,6 +440,23 @@ button { font: inherit; color: inherit; }
   .g-head { padding: 14px 16px 8px; }
   .toolbar { padding: 8px 16px; }
   .toolbar .hint { display: none; }
+  .specs { padding: 4px 16px 0; }
+  .spec-h { padding: 10px 12px 0; }
+  .spec .tnote { margin: 6px 12px 10px; }
+  /* 컬럼 표 → 행마다 카드형으로 쌓기 (설명이 가로 스크롤 밖으로 밀리지 않게) */
+  .tbl-wrap { overflow: visible; }
+  .cols thead { display: none; }
+  .cols, .cols tbody { display: block; }
+  .cols tr { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; padding: 9px 12px; border-top: 1px solid var(--line); }
+  .cols tbody tr:first-child { border-top: 0; }
+  .cols tr.is-pk { background: color-mix(in srgb, var(--pk-soft) 55%, transparent); }
+  .cols td, .cols tr.is-pk td, .cols tbody tr:hover td { border: 0; padding: 0; background: none; }
+  .cols .c-type { text-align: right; }
+  .cols .c-nn { display: none; }
+  .cols .c-key:empty, .cols .c-def:empty, .cols .c-desc:empty { display: none; }
+  .cols .c-def { grid-column: 1 / -1; }
+  .cols .c-def::before { content: '기본값 '; font-family: inherit; }
+  .cols .c-desc { grid-column: 1 / -1; min-width: 0; }
   .results { min-width: 0; }
 }
 </style>
@@ -417,7 +474,6 @@ button { font: inherit; color: inherit; }
 <div class="layout">
   <nav class="side" id="side" aria-label="영역 목록"></nav>
   <main class="main" id="main"></main>
-  <aside class="detail" id="detail" hidden aria-label="테이블 상세"></aside>
 </div>
 <div class="scrim" id="scrim" hidden></div>
 <template id="svg-member_basic"><svg
@@ -3624,7 +3680,7 @@ button { font: inherit; color: inherit; }
   const D = window.ERD;
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  const side = $('#side'), main = $('#main'), detail = $('#detail'), q = $('#q'), results = $('#results');
+  const side = $('#side'), main = $('#main'), q = $('#q'), results = $('#results');
 
   const stageOf = (g) => D.stages.findIndex((s) => g.startsWith(s.prefix));
   const stageColor = (g) => `var(--s${stageOf(g) + 1})`;
@@ -3715,8 +3771,43 @@ button { font: inherit; color: inherit; }
     main.scrollTop = 0;
   }
 
-  // ---------- 영역 ERD ----------
-  let view = null; // { svg, w, h, canvas, zoomEl }
+  // ---------- 영역 화면: ERD + 테이블 명세 ----------
+  let view = null; // { svg, w, h, canvas, zoomEl, g }
+  const link = (name, col) => `<a href="#g=${D.tables[name].group}&t=${name}"><code>${name}</code></a>${col ? `<code>.${esc(col)}</code>` : ''}`;
+  const keyBadges = (f) => f.keys.map((k) => `<span class="badge ${k}">${k}</span>`).join('') + (f.inc ? '<span class="badge AI">AI</span>' : '');
+
+  function specCard(t, no) {
+    const T = D.tables[t];
+    const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
+        <td class="c-name">${esc(f.name)}</td>
+        <td class="c-type">${esc(f.type)}</td>
+        <td class="c-key">${keyBadges(f)}</td>
+        <td class="c-nn">${f.nn ? 'Y' : ''}</td>
+        <td class="c-def">${esc(f.def)}</td>
+        <td class="c-desc">${f.ref ? `<div class="c-ref">→ ${link(f.ref.split('.')[0], f.ref.split('.')[1])}</div>` : ''}${esc(f.note)}</td></tr>`).join('');
+    const idx = T.indexes.map((i) => `<li><code>${esc(i.pk ? 'PRIMARY' : i.name)}</code> ${i.pk ? '<span class="badge PK">PK</span>' : i.unique ? '<span class="badge UK">UNIQUE</span>' : ''}
+        <code class="cols-of">(${esc(i.cols)})</code>${i.note ? ` <span class="i-note">${esc(i.note)}</span>` : ''}</li>`).join('');
+    const outs = T.out.map((r) => `<li><code>${esc(r.col)}</code> → ${link(r.table, r.pcol)}${r.one ? ' <span class="i-note">1:1</span>' : ''}</li>`).join('');
+    const ins = T.in.map((r) => `<li>${link(r.table, r.col)}${r.one ? ' <span class="i-note">1:1</span>' : ''}</li>`).join('');
+    return `<section class="spec" id="spec-${t}">
+      <header class="spec-h">
+        <span class="no">${no}</span>
+        <h3>${t}</h3>
+        <span class="cnt">컬럼 ${T.fields.length}</span>
+        <button class="icon-btn to-erd" data-erd="${t}">ERD에서 보기 ↑</button>
+      </header>
+      <p class="tnote">${esc(T.note)}</p>
+      <div class="tbl-wrap"><table class="cols">
+        <thead><tr><th>컬럼</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <div class="spec-foot">
+        ${idx ? `<div><h4>인덱스</h4><ul>${idx}</ul></div>` : ''}
+        ${outs ? `<div><h4>참조하는 테이블</h4><ul>${outs}</ul></div>` : ''}
+        ${ins ? `<div><h4>참조받는 테이블</h4><ul>${ins}</ul></div>` : ''}
+      </div>
+    </section>`;
+  }
+
   function renderGroup(g) {
     const G = D.groups[g];
     const s = D.stages[stageOf(g)];
@@ -3725,7 +3816,8 @@ button { font: inherit; color: inherit; }
         <div class="crumb">${esc(s.name)}</div>
         <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span></h1>
         <p>${esc(G.desc)}</p>
-        ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => `<a href="#g=${g}&t=${t}"><code>${t}</code></a>`).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → member_account 선 생략' : ''}</p>` : ''}
+        ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → member_account 선 생략' : ''}</p>` : ''}
+        <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}">${t}</a>`).join('')}</nav>
       </div>
       <div class="toolbar">
         <button class="icon-btn" data-z="out" aria-label="축소">−</button>
@@ -3733,9 +3825,10 @@ button { font: inherit; color: inherit; }
         <button class="icon-btn" data-z="in" aria-label="확대">+</button>
         <button class="icon-btn" data-z="fit">화면 맞춤</button>
         <button class="icon-btn" data-z="one">100%</button>
-        <span class="hint">드래그로 이동 · Ctrl + 휠로 확대 · 테이블을 누르면 상세</span>
+        <span class="hint">컬럼에 마우스를 올리면 설명 · 테이블을 누르면 아래 명세로 이동 · 드래그로 이동 · Ctrl + 휠로 확대</span>
       </div>
       <div class="canvas" id="canvas"><div class="pad"></div></div>
+      <div class="specs"><h2 class="specs-h">테이블 명세</h2>${G.tables.map((t, i) => specCard(t, i + 1)).join('')}</div>
     </div>`;
     const canvas = $('#canvas');
     const tpl = document.getElementById(`svg-${g}`);
@@ -3743,8 +3836,27 @@ button { font: inherit; color: inherit; }
     const svg = $('svg', canvas);
     const vb = svg.viewBox.baseVal;
     view = { svg, w: vb.width, h: vb.height, canvas, zoomEl: $('#zoomVal'), g };
-    // 노드·선에 테이블 이름 표시
-    svg.querySelectorAll('g.node').forEach((n) => (n.dataset.t = $('title', n).textContent.trim()));
+    const NS = 'http://www.w3.org/2000/svg';
+    const tip = (el, text) => { const ti = document.createElementNS(NS, 'title'); ti.textContent = text; el.appendChild(ti); };
+    svg.querySelectorAll('g.node').forEach((n) => {
+      const t = $('title', n).textContent.trim();
+      n.dataset.t = t;
+      const T = D.tables[t];
+      if (!T) return;
+      // ERD 안 컬럼 이름에 마우스를 올리면 설명, "+ N columns"에는 나머지 컬럼 목록
+      const shown = new Set();
+      const texts = [...n.querySelectorAll('text')];
+      texts.forEach((tx) => {
+        const f = T.fields.find((x) => x.name === tx.textContent.trim());
+        if (!f) return;
+        shown.add(f.name);
+        tip(tx, `${f.name} · ${f.type}${f.ref ? ` → ${f.ref}` : ''}${f.note ? `\n${f.note}` : ''}`);
+      });
+      texts.forEach((tx) => {
+        if (!/^\+ \d+ columns$/.test(tx.textContent.trim())) return;
+        tip(tx, T.fields.filter((f) => !shown.has(f.name)).map((f) => `${f.name}${f.note ? ` — ${shortNote(f.note)}` : ''}`).join('\n'));
+      });
+    });
     svg.querySelectorAll('g.edge').forEach((e) => {
       const [a, b] = $('title', e).textContent.split('->');
       e.dataset.a = a.split(':')[0].trim();
@@ -3753,6 +3865,12 @@ button { font: inherit; color: inherit; }
     if (zoomOf[g]) setZoom(zoomOf[g]); else fit();
     main.scrollTop = 0;
   }
+  // 긴 설명은 첫 문장(마침표·괄호 전)까지만
+  function shortNote(s) {
+    const t = s.split(/\. |\n/)[0];
+    return t.length > 60 ? t.slice(0, 58) + '…' : t;
+  }
+  function maxCanvasH() { return Math.max(320, Math.round(window.innerHeight * 0.62)); }
   function setZoom(z) {
     if (!view) return;
     z = Math.max(0.2, Math.min(3, z));
@@ -3764,8 +3882,10 @@ button { font: inherit; color: inherit; }
   function fit() {
     if (!view) return;
     const c = view.canvas;
-    const z = Math.min((c.clientWidth - 48) / (view.w * PT), (c.clientHeight - 48) / (view.h * PT), 1.2);
+    const z = Math.min((c.clientWidth - 48) / (view.w * PT), (maxCanvasH() - 48) / (view.h * PT), 1.2);
     setZoom(z > 0 ? z : 1);
+    // 작은 ERD는 캔버스 높이를 그림에 맞춰 줄여서 아래 명세가 바로 보이게
+    c.style.height = `${Math.min(maxCanvasH(), Math.ceil(view.h * PT * zoomOf[view.g]) + 48)}px`;
   }
   function refit() { if (view && !manual[view.g]) fit(); }
   function zoomAt(z, cx, cy) {
@@ -3779,6 +3899,12 @@ button { font: inherit; color: inherit; }
   }
 
   main.addEventListener('click', (e) => {
+    const toErd = e.target.closest('[data-erd]');
+    if (toErd) {
+      main.scrollTo({ top: 0, behavior: 'smooth' });
+      highlight(toErd.dataset.erd);
+      return;
+    }
     const b = e.target.closest('[data-z]');
     if (!b || !view) return;
     const z = zoomOf[view.g];
@@ -3817,8 +3943,9 @@ button { font: inherit; color: inherit; }
     d.c.classList.remove('drag');
     if (d.moved) return;
     const n = e.target.closest && e.target.closest('g.node');
-    if (n && n.dataset.t) go(cur.g, n.dataset.t);
-    else if (cur.t && e.target.closest && e.target.closest('.canvas')) go(cur.g, null);
+    // 이 영역 테이블은 아래 명세로, 회색(다른 영역) 테이블은 그 영역으로 이동
+    if (n && n.dataset.t && D.tables[n.dataset.t]) go(D.tables[n.dataset.t].group, n.dataset.t);
+    else if (e.target.closest && e.target.closest('.canvas')) highlight(null);
   });
 
   // ---------- 선택 ----------
@@ -3836,7 +3963,7 @@ button { font: inherit; color: inherit; }
     });
     const n = t && svg.querySelector(`g.node[data-t="${t}"]`);
     if (n) {
-      // 화면 밖이면 보이도록 스크롤
+      // 캔버스 밖이면 캔버스 안에서만 스크롤해서 보이게
       const c = view.canvas, r = n.getBoundingClientRect(), cr = c.getBoundingClientRect();
       if (r.left < cr.left || r.right > cr.right || r.top < cr.top || r.bottom > cr.bottom) {
         c.scrollLeft += r.left + r.width / 2 - (cr.left + cr.width / 2);
@@ -3847,37 +3974,13 @@ button { font: inherit; color: inherit; }
 
   function selectTable(t) {
     highlight(t);
-    if (!t) { detail.hidden = true; document.body.classList.remove('detail-open'); return; }
-    const T = D.tables[t];
-    const G = D.groups[T.group];
-    const link = (name, col) => `<a href="#g=${D.tables[name].group}&t=${name}">${name}</a>${col ? `.${esc(col)}` : ''}`;
-    const rows = T.fields.map((f) => `<tr>
-        <td style="width:44%"><div class="c-name">${esc(f.name)}</div>
-          <div>${f.keys.map((k) => `<span class="badge ${k}">${k}</span>`).join('')}${f.nn ? '<span class="badge NN">NN</span>' : ''}${f.inc ? '<span class="badge AI">AI</span>' : ''}</div></td>
-        <td><div class="c-type">${esc(f.type)}${f.def ? ` <span class="c-def">= ${esc(f.def)}</span>` : ''}</div>
-          ${f.ref ? `<div class="c-ref">→ ${link(f.ref.split('.')[0], f.ref.split('.')[1])}</div>` : ''}
-          ${f.note ? `<div class="c-note">${esc(f.note)}</div>` : ''}</td></tr>`).join('');
-    const idx = T.indexes.map((i) => `<li><code>${esc(i.pk ? 'PRIMARY' : i.name)}</code> ${i.pk ? '<span class="badge PK">PK</span>' : i.unique ? '<span class="badge UK">UNIQUE</span>' : ''}
-        <span class="mono">(${esc(i.cols)})</span>${i.note ? `<span class="i-note">${esc(i.note)}</span>` : ''}</li>`).join('');
-    const outs = T.out.map((r) => `<li>${esc(r.col)} → ${link(r.table, r.pcol)}<span class="rg">${esc(D.groups[D.tables[r.table].group].title)}${r.one ? ' · 1:1' : ''}</span></li>`).join('');
-    const ins = T.in.map((r) => `<li>${link(r.table, r.col)}<span class="rg">${esc(D.groups[D.tables[r.table].group].title)}${r.one ? ' · 1:1' : ''}</span></li>`).join('');
-    detail.innerHTML = `<div class="d-head" style="--c:${stageColor(T.group)}">
-        <div class="row"><a class="grp" href="#g=${T.group}">${esc(D.stages[stageOf(T.group)].name)} · ${esc(G.title)}</a>
-          <button class="icon-btn close" id="closeDetail" aria-label="상세 닫기">✕</button></div>
-        <h2>${t}</h2>
-      </div>
-      <div class="d-body">
-        <p class="tnote">${esc(T.note)}</p>
-        <h3>컬럼 ${T.fields.length}개</h3>
-        <table class="cols"><tbody>${rows}</tbody></table>
-        <h3>인덱스</h3>${idx ? `<ul class="idx">${idx}</ul>` : '<p class="none">없음</p>'}
-        <h3>참조하는 테이블 (FK) ${T.out.length}</h3>${outs ? `<ul class="rels">${outs}</ul>` : '<p class="none">없음</p>'}
-        <h3>참조받는 테이블 ${T.in.length}</h3>${ins ? `<ul class="rels">${ins}</ul>` : '<p class="none">없음</p>'}
-      </div>`;
-    detail.hidden = false;
-    detail.scrollTop = 0;
-    document.body.classList.add('detail-open');
-    $('#closeDetail').onclick = () => go(cur.g, null);
+    main.querySelectorAll('.spec.sel').forEach((el) => el.classList.remove('sel'));
+    main.querySelectorAll('.jump a').forEach((a) => a.classList.toggle('on', a.textContent === t));
+    if (!t) return;
+    const card = document.getElementById(`spec-${t}`);
+    if (!card) return;
+    card.classList.add('sel');
+    main.scrollTo({ top: card.offsetTop - 12, behavior: 'smooth' });
   }
 
   // ---------- 검색 ----------
@@ -3931,13 +4034,9 @@ button { font: inherit; color: inherit; }
   // ---------- 기타 ----------
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
-    if (e.key === 'Escape' && cur.t && document.activeElement !== q) go(cur.g, null);
   });
   $('#menuBtn').onclick = () => document.body.classList.toggle('side-open');
-  $('#scrim').onclick = () => {
-    document.body.classList.remove('side-open');
-    if (cur.t) go(cur.g, null);
-  };
+  $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { refit(); }, 150); });
   window.addEventListener('hashchange', route);
