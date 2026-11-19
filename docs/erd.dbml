@@ -25,51 +25,51 @@ Project interior_mall {
 // =====================================================================
 
 Table member_grade [note: '[회원 등급] 회원 등급 (혜택을 DB에서 바로 변경)'] {
-  grade_id bigint [pk, increment, note: '[등급 ID]']
-  grade_name varchar(20) [not null, unique, note: '[등급명] WELCOME/SILVER/GOLD/VIP']
-  point_rate decimal(5,2) [not null, default: 0, note: '[적립률(%)]']
-  discount_rate decimal(5,2) [not null, default: 0, note: '[할인율(%)]']
-  min_purchase_amount bigint [not null, default: 0, note: '[승급 기준 누적 구매액]']
-  free_shipping char(1) [not null, default: 'N', note: '[무료배송 여부] Y/N (일반택배에만 적용, 화물/설치배송 제외)']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  grade_id bigint [pk, increment, note: '[회원 등급 ID]']
+  grade_name varchar(20) [not null, unique, note: '[회원 등급명] WELCOME/SILVER/GOLD/VIP']
+  point_rate decimal(5,2) [not null, default: 0, note: '[회원 등급 적립률(%)]']
+  discount_rate decimal(5,2) [not null, default: 0, note: '[회원 등급 할인율(%)]']
+  min_purchase_amount bigint [not null, default: 0, note: '[회원 등급 승급 기준 누적 구매액]']
+  free_shipping char(1) [not null, default: 'N', note: '[회원 등급 무료배송 여부] Y/N (일반택배에만 적용, 화물/설치배송 제외)']
+  sort_order smallint [not null, note: '[회원 등급 정렬 순서]']
 }
 
 Table member_account [note: '[회원] 회원 (커뮤니티 프로필 포함)'] {
   member_id bigint [pk, increment, note: '[회원 ID]']
-  email varchar(200) [not null, unique, note: '[이메일] 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{ID}@deleted.local로 마스킹']
-  password_hash varchar(100) [note: '[비밀번호 해시] bcrypt 해시. 소셜 전용 가입은 NULL']
-  name varchar(50) [not null, note: '[이름] 실명. 탈퇴 시 탈퇴회원']
-  nickname varchar(30) [not null, unique, note: '[닉네임] 커뮤니티 표시 이름. 2~12자 한글/영문/숫자/_ (앱 검증), forbidden_word 금칙어 불가, 최근 30일 내 다른 회원이 쓰던 닉네임 불가(nickname_history). 탈퇴 시 deleted_{ID}로 변경']
-  nickname_changed_at datetime [note: '[닉네임 변경일시] 마지막 닉네임 변경 시각. 변경 후 30일간 재변경 불가']
-  profile_image_url varchar(500) [note: '[프로필 이미지 URL]']
-  introduction varchar(200) [note: '[자기소개] 프로필 한 줄 소개']
-  phone_enc varchar(200) [note: '[휴대폰 번호(암호화)] 휴대폰 번호 AES-256 암호문']
-  phone_hash char(64) [note: '[휴대폰 번호 해시] 휴대폰 번호 SHA-256 (검색/중복확인용)']
-  birth_date date [note: '[생년월일]']
-  gender char(1) [note: '[성별] M/F']
-  ci_hash char(64) [unique, note: '[CI 해시] 본인인증 CI 해시. 중복 가입 방지. 탈퇴 시 NULL로 지우고 withdrawn_identity로 옮김 (30일 재가입 제한). 가입·본인인증 때 두 곳 모두 확인. 신규 가입 혜택은 본인인증 회원에게만 지급']
-  di_hash char(64) [note: '[DI 해시] 본인인증 DI 해시']
-  identity_verified_at datetime [note: '[본인인증일시]']
-  role varchar(20) [not null, default: 'USER', note: '[권한] USER/ADMIN/EDITOR(매거진 작성·큐레이션)']
-  grade_id bigint [not null, note: '[등급 ID]']
+  email varchar(200) [not null, unique, note: '[회원 이메일] 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{ID}@deleted.local로 마스킹']
+  password_hash varchar(100) [note: '[회원 비밀번호 해시] bcrypt 해시. 소셜 전용 가입은 NULL']
+  name varchar(50) [not null, note: '[회원 이름] 실명. 탈퇴 시 탈퇴회원']
+  nickname varchar(30) [not null, unique, note: '[회원 닉네임] 커뮤니티 표시 이름. 2~12자 한글/영문/숫자/_ (앱 검증), forbidden_word 금칙어 불가, 최근 30일 내 다른 회원이 쓰던 닉네임 불가(nickname_history). 탈퇴 시 deleted_{ID}로 변경']
+  nickname_changed_at datetime [note: '[회원 닉네임 변경일시] 마지막 닉네임 변경 시각. 변경 후 30일간 재변경 불가']
+  profile_image_url varchar(500) [note: '[회원 프로필 이미지 URL]']
+  introduction varchar(200) [note: '[회원 자기소개] 프로필 한 줄 소개']
+  phone_enc varchar(200) [note: '[회원 휴대폰 번호(암호화)] 휴대폰 번호 AES-256 암호문']
+  phone_hash char(64) [note: '[회원 휴대폰 번호 해시] 휴대폰 번호 SHA-256 (검색/중복확인용)']
+  birth_date date [note: '[회원 생년월일]']
+  gender char(1) [note: '[회원 성별] M/F']
+  ci_hash char(64) [unique, note: '[회원 CI 해시] 본인인증 CI 해시. 중복 가입 방지. 탈퇴 시 NULL로 지우고 withdrawn_identity로 옮김 (30일 재가입 제한). 가입·본인인증 때 두 곳 모두 확인. 신규 가입 혜택은 본인인증 회원에게만 지급']
+  di_hash char(64) [note: '[회원 DI 해시] 본인인증 DI 해시']
+  identity_verified_at datetime [note: '[회원 본인인증일시]']
+  role varchar(20) [not null, default: 'USER', note: '[회원 권한] USER/ADMIN/EDITOR(매거진 작성·큐레이션)']
+  grade_id bigint [not null, note: '[회원 등급 ID]']
   status varchar(20) [not null, default: 'ACTIVE', note: '[회원 상태] ACTIVE/DORMANT(휴면)/SUSPENDED(활동 정지)/WITHDRAWN. 바뀔 때마다 member_status_history에 기록. 로그인 잠금은 상태가 아니라 locked_until로 판단']
-  status_changed_at datetime [note: '[상태 변경일시] 마지막 상태 변경 시각']
-  suspended_until datetime [note: '[정지 해제일시] SUSPENDED 기한. 지나면 배치로 ACTIVE 복구']
-  dormant_notice_sent_at datetime [note: '[휴면 안내일시] 휴면 예정 안내 발송 시각. last_login_at 기준 11개월에 안내, 1년 미접속 시 배치로 DORMANT (상태값만 변경, 분리보관 없음)']
-  total_purchase_amount bigint [not null, default: 0, note: '[누적 구매액] 등급 산정용 캐시. order_item 구매 확정 시 final_amount 누적']
-  point_balance bigint [not null, default: 0, note: '[포인트 잔액] 포인트 잔액 캐시']
-  post_count int [not null, default: 0, note: '[글 수] 공개 글 수 캐시']
-  referral_code varchar(20) [unique, note: '[추천 코드] 내 추천 코드']
+  status_changed_at datetime [note: '[회원 상태 변경일시] 마지막 상태 변경 시각']
+  suspended_until datetime [note: '[회원 정지 해제일시] SUSPENDED 기한. 지나면 배치로 ACTIVE 복구']
+  dormant_notice_sent_at datetime [note: '[회원 휴면 안내일시] 휴면 예정 안내 발송 시각. last_login_at 기준 11개월에 안내, 1년 미접속 시 배치로 DORMANT (상태값만 변경, 분리보관 없음)']
+  total_purchase_amount bigint [not null, default: 0, note: '[회원 누적 구매액] 등급 산정용 캐시. order_item 구매 확정 시 final_amount 누적']
+  point_balance bigint [not null, default: 0, note: '[회원 포인트 잔액] 포인트 잔액 캐시']
+  post_count int [not null, default: 0, note: '[회원 글 수] 공개 글 수 캐시']
+  referral_code varchar(20) [unique, note: '[회원 추천 코드] 내 추천 코드']
   referred_by bigint [note: '[추천인 회원 ID] 나를 추천한 회원']
-  email_verified char(1) [not null, default: 'N', note: '[이메일 인증 여부] Y/N']
-  login_fail_count tinyint [not null, default: 0, note: '[로그인 실패 횟수] 5회 실패 시 30분 잠금']
-  locked_until datetime [note: '[잠금 해제일시]']
-  last_login_at datetime [note: '[최근 로그인일시]']
-  password_changed_at datetime [note: '[비밀번호 변경일시]']
-  withdrawn_at datetime [note: '[탈퇴일시]']
-  withdraw_reason varchar(500) [note: '[탈퇴 사유]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  email_verified char(1) [not null, default: 'N', note: '[회원 이메일 인증 여부] Y/N']
+  login_fail_count tinyint [not null, default: 0, note: '[회원 로그인 실패 횟수] 5회 실패 시 30분 잠금']
+  locked_until datetime [note: '[회원 잠금 해제일시]']
+  last_login_at datetime [note: '[회원 최근 로그인일시]']
+  password_changed_at datetime [note: '[회원 비밀번호 변경일시]']
+  withdrawn_at datetime [note: '[회원 탈퇴일시]']
+  withdraw_reason varchar(500) [note: '[회원 탈퇴 사유]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 가입일시]']
+  updated_at datetime [note: '[회원 수정일시]']
 
   indexes {
     phone_hash [name: 'ix_member_phone_hash']
@@ -80,11 +80,11 @@ Table member_account [note: '[회원] 회원 (커뮤니티 프로필 포함)'] {
 }
 
 Table member_social [note: '[소셜 계정 연동] 소셜 계정 연동 (한 회원이 여러 개 연결 가능)'] {
-  social_id bigint [pk, increment, note: '[소셜 연동 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  social_id bigint [pk, increment, note: '[소셜 계정 ID]']
+  member_id bigint [not null, note: '[연동 회원 ID]']
   provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/GOOGLE/APPLE']
-  provider_user_id varchar(100) [not null, note: '[제공자 회원 ID] 소셜 서비스의 회원 고유 ID']
-  connected_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[연동일시]']
+  provider_user_id varchar(100) [not null, note: '[소셜 계정 제공자 회원 ID] 소셜 서비스의 회원 고유 ID']
+  connected_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[소셜 계정 연동일시]']
 
   indexes {
     (provider, provider_user_id) [unique, name: 'uk_member_social']
@@ -93,15 +93,15 @@ Table member_social [note: '[소셜 계정 연동] 소셜 계정 연동 (한 회
 }
 
 Table member_home [note: '[회원 주거 정보] 회원 주거 정보 (맞춤 상품 추천, 집들이 작성 시 기본값)'] {
-  member_id bigint [pk, note: '[회원 ID] member_account와 1:1']
+  member_id bigint [pk, note: '[주거 정보 회원 ID] member_account와 1:1']
   address_id bigint [note: '[배송지 ID] "우리 집" 배송지. 층수·엘리베이터·반입 경로 치수를 집 정보와 연결. 이사하면 변경. FK ON DELETE SET NULL']
-  housing_type varchar(20) [note: '[주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/ONE_ROOM/ETC']
-  area_pyeong smallint [note: '[평수]']
-  room_count tinyint [note: '[방 개수]']
-  family_type varchar(20) [note: '[가족 형태] SINGLE/COUPLE/WITH_KIDS/WITH_PARENTS/SHARE/ETC']
-  has_pet char(1) [note: '[반려동물 여부] Y/N']
-  move_in_planned_at date [note: '[이사 예정일] 이사 예정일 (이사 시즌 기획전 타깃)']
-  updated_at datetime [note: '[수정일시]']
+  housing_type varchar(20) [note: '[회원 주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/ONE_ROOM/ETC']
+  area_pyeong smallint [note: '[회원 주거 평수]']
+  room_count tinyint [note: '[회원 주거 방 개수]']
+  family_type varchar(20) [note: '[회원 주거 가족 형태] SINGLE/COUPLE/WITH_KIDS/WITH_PARENTS/SHARE/ETC']
+  has_pet char(1) [note: '[회원 주거 반려동물 여부] Y/N']
+  move_in_planned_at date [note: '[회원 주거 이사 예정일] 이사 예정일 (이사 시즌 기획전 타깃)']
+  updated_at datetime [note: '[회원 주거 수정일시]']
 
   indexes {
     address_id [name: 'ix_member_home_address']
@@ -109,16 +109,16 @@ Table member_home [note: '[회원 주거 정보] 회원 주거 정보 (맞춤 �
 }
 
 Table member_room [note: '[회원 방] 회원이 저장한 방 치수. "우리 집 안방에 들어가는 침대" 추천과 반입 가능 여부 확인'] {
-  room_id bigint [pk, increment, note: '[방 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
-  space_type varchar(20) [not null, note: '[공간 유형] post_image.space_type과 같은 코드 (LIVING/BEDROOM/KITCHEN/KIDS/DRESSROOM/STUDY...)']
-  name varchar(30) [note: '[방 이름] 안방, 작은방']
-  width_mm int [not null, note: '[방 가로(mm)] 가로 (mm)']
-  depth_mm int [not null, note: '[방 세로(mm)] 세로 (mm)']
-  ceiling_height_mm int [note: '[천장 높이(mm)] 천장 높이 (키 큰 수납장·벙커침대 확인)']
-  door_width_mm int [note: '[방문 폭(mm)] 방문 폭. sku_package 박스가 들어갈 수 있는지 확인']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  room_id bigint [pk, increment, note: '[회원 방 ID]']
+  member_id bigint [not null, note: '[방 소유 회원 ID]']
+  space_type varchar(20) [not null, note: '[회원 방 공간 유형] post_image.space_type과 같은 코드 (LIVING/BEDROOM/KITCHEN/KIDS/DRESSROOM/STUDY...)']
+  name varchar(30) [note: '[회원 방 이름] 안방, 작은방']
+  width_mm int [not null, note: '[회원 방 가로(mm)] 가로 (mm)']
+  depth_mm int [not null, note: '[회원 방 세로(mm)] 세로 (mm)']
+  ceiling_height_mm int [note: '[회원 방 천장 높이(mm)] 천장 높이 (키 큰 수납장·벙커침대 확인)']
+  door_width_mm int [note: '[회원 방 방문 폭(mm)] 방문 폭. sku_package 박스가 들어갈 수 있는지 확인']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 방 등록일시]']
+  updated_at datetime [note: '[회원 방 수정일시]']
 
   indexes {
     member_id [name: 'ix_member_room_member']
@@ -127,26 +127,26 @@ Table member_room [note: '[회원 방] 회원이 저장한 방 치수. "우리 �
 
 Table address [note: '[배송지] 배송지 (회원당 여러 개, 기본 배송지는 1개). 반입 판단은 화물·설치배송 상품만 하고, 고객은 주거형태(building_type)만 고르면 됨 → carry_default_spec 기본값으로 추정. 현관문·엘리베이터·사다리차 치수는 "우리 집이 다를 때"만 입력하는 선택값'] {
   address_id bigint [pk, increment, note: '[배송지 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  member_id bigint [not null, note: '[배송지 소유 회원 ID]']
   alias varchar(30) [note: '[배송지 별칭] 집/회사/새 집']
-  receiver_name varchar(50) [not null, note: '[받는 분 이름]']
-  receiver_phone_enc varchar(200) [not null, note: '[받는 분 연락처(암호화)] AES-256 암호문']
-  zipcode varchar(10) [not null, note: '[우편번호]']
-  address1 varchar(200) [not null, note: '[기본 주소]']
-  address2 varchar(200) [note: '[상세 주소]']
-  floor_no smallint [note: '[층수] 가구 배송용: 층수 (지하는 음수). 사다리차·계단 운반비 계산에 사용']
-  building_type varchar(20) [note: '[주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC. 주소 검색 API의 건물 용도로 미리 채우고 고객이 확인 → carry_default_spec 기본값']
-  has_elevator char(1) [note: '[엘리베이터 유무] 가구 배송용: 엘리베이터 Y/N (사다리차 필요 판단). NULL이면 carry_default_spec.has_elevator_default']
-  entrance_door_width_mm int [note: '[현관문 폭(mm)] 선택 입력: 현관문 유효 폭 (mm). NULL이면 기본값']
-  elevator_door_width_mm int [note: '[엘리베이터 문 폭(mm)] 선택 입력: 엘리베이터 문 폭. NULL이면 기본값']
-  elevator_inner_depth_mm int [note: '[엘리베이터 내부 깊이(mm)] 선택 입력: 엘리베이터 내부 깊이 (긴 박스는 대각선으로 세워 넣으므로 높이와 함께 판단)']
-  elevator_inner_height_mm int [note: '[엘리베이터 내부 높이(mm)] 선택 입력: 엘리베이터 내부 높이']
-  ladder_truck_available char(1) [note: '[사다리차 진입 가능 여부] Y/N 사다리차 진입 가능 여부 (골목·전선 등). NULL이면 모름. N인데 사다리차가 필요하면 배송 상담']
-  delivery_request varchar(200) [note: '[배송 요청사항] 배송 요청사항 (예: 부재 시 문 앞, 설치 전 연락 주세요). 주문 시 기본값으로 복사']
-  entrance_password_enc varchar(200) [note: '[공동현관 비밀번호(암호화)] 공동현관 비밀번호 AES-256 암호문. 배송 기사 전달용, 화면에는 마스킹 표시']
+  receiver_name varchar(50) [not null, note: '[배송지 받는 분 이름]']
+  receiver_phone_enc varchar(200) [not null, note: '[배송지 받는 분 연락처(암호화)] AES-256 암호문']
+  zipcode varchar(10) [not null, note: '[배송지 우편번호]']
+  address1 varchar(200) [not null, note: '[배송지 기본 주소]']
+  address2 varchar(200) [note: '[배송지 상세 주소]']
+  floor_no smallint [note: '[배송지 층수] 가구 배송용: 층수 (지하는 음수). 사다리차·계단 운반비 계산에 사용']
+  building_type varchar(20) [note: '[배송지 주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC. 주소 검색 API의 건물 용도로 미리 채우고 고객이 확인 → carry_default_spec 기본값']
+  has_elevator char(1) [note: '[배송지 엘리베이터 유무] 가구 배송용: 엘리베이터 Y/N (사다리차 필요 판단). NULL이면 carry_default_spec.has_elevator_default']
+  entrance_door_width_mm int [note: '[배송지 현관문 폭(mm)] 선택 입력: 현관문 유효 폭 (mm). NULL이면 기본값']
+  elevator_door_width_mm int [note: '[배송지 엘리베이터 문 폭(mm)] 선택 입력: 엘리베이터 문 폭. NULL이면 기본값']
+  elevator_inner_depth_mm int [note: '[배송지 엘리베이터 내부 깊이(mm)] 선택 입력: 엘리베이터 내부 깊이 (긴 박스는 대각선으로 세워 넣으므로 높이와 함께 판단)']
+  elevator_inner_height_mm int [note: '[배송지 엘리베이터 내부 높이(mm)] 선택 입력: 엘리베이터 내부 높이']
+  ladder_truck_available char(1) [note: '[배송지 사다리차 진입 가능 여부] Y/N 사다리차 진입 가능 여부 (골목·전선 등). NULL이면 모름. N인데 사다리차가 필요하면 배송 상담']
+  delivery_request varchar(200) [note: '[배송지 배송 요청사항] 배송 요청사항 (예: 부재 시 문 앞, 설치 전 연락 주세요). 주문 시 기본값으로 복사']
+  entrance_password_enc varchar(200) [note: '[배송지 공동현관 비밀번호(암호화)] 공동현관 비밀번호 AES-256 암호문. 배송 기사 전달용, 화면에는 마스킹 표시']
   is_default char(1) [not null, default: 'N', note: '[기본 배송지 여부] Y/N']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[배송지 등록일시]']
+  updated_at datetime [note: '[배송지 수정일시]']
 
   indexes {
     member_id [name: 'ix_address_member']
@@ -164,8 +164,8 @@ Table terms [note: '[약관] 약관 (버전 관리)'] {
   version varchar(10) [not null, note: '[약관 버전]']
   title varchar(100) [not null, note: '[약관 제목]']
   content mediumtext [not null, note: '[약관 내용]']
-  is_required char(1) [not null, note: '[필수 여부] Y/N']
-  effective_at datetime [not null, note: '[시행일시] 시행일']
+  is_required char(1) [not null, note: '[약관 필수 여부] Y/N']
+  effective_at datetime [not null, note: '[약관 시행일시] 시행일']
 
   indexes {
     (terms_type, version) [unique, name: 'uk_terms_type_version']
@@ -173,12 +173,12 @@ Table terms [note: '[약관] 약관 (버전 관리)'] {
 }
 
 Table member_terms_agreement [note: '[약관 동의 이력] 약관 동의 이력. 행 = 동의 1건, 철회는 withdrawn_at, 다시 동의하면 새 행. 현재 동의 = withdrawn_at IS NULL. 마케팅(광고성 정보 수신) 동의의 유일한 기준'] {
-  agreement_id bigint [pk, increment, note: '[동의 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  agreement_id bigint [pk, increment, note: '[약관 동의 ID]']
+  member_id bigint [not null, note: '[동의 회원 ID]']
   terms_id bigint [not null, note: '[약관 ID]']
-  agreed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[동의일시]']
+  agreed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[약관 동의일시]']
   withdrawn_at datetime [note: '[동의 철회일시] 동의 철회 시각. NULL이면 현재 동의 중']
-  reconfirm_notified_at datetime [note: '[수신 동의 재확인 안내일시] 마케팅 수신 동의 재확인 안내 시각. 정보통신망법 시행령 62조: COALESCE(reconfirm_notified_at, agreed_at)부터 2년마다 동의 사실 안내 (배치)']
+  reconfirm_notified_at datetime [note: '[마케팅 수신 동의 재확인 안내일시] 마케팅 수신 동의 재확인 안내 시각. 정보통신망법 시행령 62조: COALESCE(reconfirm_notified_at, agreed_at)부터 2년마다 동의 사실 안내 (배치)']
 
   indexes {
     (member_id, withdrawn_at) [name: 'ix_mta_member', note: '회원의 현재 동의 목록']
@@ -187,11 +187,11 @@ Table member_terms_agreement [note: '[약관 동의 이력] 약관 동의 이력
 }
 
 Table member_notification_setting [note: '[알림 수신 설정] 알림 수신 스위치 (회원이 유형 × 채널별로 켜고 끔). 광고성 유형(EVENT, PRICE_DROP)은 이 설정 ON + 해당 채널 마케팅 약관 동의(member_terms_agreement) + 21~08시면 MARKETING_NIGHT 동의가 모두 있어야 발송'] {
-  member_id bigint [not null, note: '[회원 ID]']
-  noti_type varchar(20) [not null, note: '[알림 유형] ORDER/DELIVERY/RESTOCK/COMMENT/LIKE(정보성) / EVENT/PRICE_DROP(광고성: 찜 상품 가격 인하 안내도 광고성)']
-  channel varchar(10) [not null, note: '[수신 채널] PUSH/SMS/EMAIL/KAKAO. 광고성은 같은 이름의 MARKETING_* 약관 동의 필요']
-  enabled char(1) [not null, default: 'Y', note: '[수신 여부] Y/N']
-  updated_at datetime [note: '[수정일시]']
+  member_id bigint [not null, note: '[설정 회원 ID]']
+  noti_type varchar(20) [not null, note: '[수신 설정 알림 유형] ORDER/DELIVERY/RESTOCK/COMMENT/LIKE(정보성) / EVENT/PRICE_DROP(광고성: 찜 상품 가격 인하 안내도 광고성)']
+  channel varchar(10) [not null, note: '[알림 수신 채널] PUSH/SMS/EMAIL/KAKAO. 광고성은 같은 이름의 MARKETING_* 약관 동의 필요']
+  enabled char(1) [not null, default: 'Y', note: '[알림 수신 여부] Y/N']
+  updated_at datetime [note: '[알림 수신 설정 수정일시]']
 
   indexes {
     (member_id, noti_type, channel) [pk]
@@ -200,14 +200,14 @@ Table member_notification_setting [note: '[알림 수신 설정] 알림 수신 �
 
 Table style [note: '[인테리어 스타일] 인테리어 스타일 (회원 취향, 상품, 커뮤니티 글에서 함께 사용)'] {
   style_id bigint [pk, increment, note: '[스타일 ID]']
-  name varchar(30) [not null, unique, note: '[스타일명] 모던/북유럽/빈티지/내추럴/프로방스/클래식/미니멀/인더스트리얼/한국아시아/유니크']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  name varchar(30) [not null, unique, note: '[인테리어 스타일명] 모던/북유럽/빈티지/내추럴/프로방스/클래식/미니멀/인더스트리얼/한국아시아/유니크']
+  sort_order smallint [not null, note: '[스타일 정렬 순서]']
 }
 
 Table member_style [note: '[회원 선호 스타일]'] {
-  member_id bigint [not null, note: '[회원 ID]']
+  member_id bigint [not null, note: '[취향 등록 회원 ID]']
   style_id bigint [not null, note: '[스타일 ID]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[선호 스타일 등록일시]']
 
   indexes {
     (member_id, style_id) [pk]
@@ -221,13 +221,13 @@ Table member_style [note: '[회원 선호 스타일]'] {
 
 Table login_history [note: '[로그인 이력] 로그인 시도 이력 (이상 로그인 탐지, 새 기기 알림). 1년 보관 후 배치로 삭제'] {
   login_id bigint [pk, increment, note: '[로그인 이력 ID]']
-  member_id bigint [note: '[회원 ID] 없는 계정으로 시도하면 NULL']
-  login_email varchar(200) [note: '[입력 이메일] 시도한 이메일']
+  member_id bigint [note: '[로그인 시도 회원 ID] 없는 계정으로 시도하면 NULL']
+  login_email varchar(200) [note: '[로그인 입력 이메일] 시도한 이메일']
   login_type varchar(20) [not null, note: '[로그인 방식] EMAIL/KAKAO/NAVER/GOOGLE/APPLE']
   result varchar(20) [not null, note: '[로그인 결과] SUCCESS/FAIL_PASSWORD/FAIL_LOCKED/FAIL_NOT_FOUND']
-  ip_address varchar(45) [not null, note: '[IP 주소] IPv6 포함']
-  user_agent varchar(500) [note: '[브라우저 정보]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  ip_address varchar(45) [not null, note: '[로그인 IP 주소] IPv6 포함']
+  user_agent varchar(500) [note: '[로그인 브라우저 정보]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[로그인 시도일시]']
 
   indexes {
     (member_id, created_at) [name: 'ix_login_history_member']
@@ -238,13 +238,13 @@ Table login_history [note: '[로그인 이력] 로그인 시도 이력 (이상 �
 
 Table member_token [note: '[회원 1회용 토큰] 1회용 토큰 (이메일 인증, 비밀번호 재설정, 이메일 변경, 휴면 해제 본인 확인). 만료 7일 후 배치로 삭제'] {
   token_id bigint [pk, increment, note: '[토큰 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  member_id bigint [not null, note: '[토큰 발급 회원 ID]']
   token_type varchar(20) [not null, note: '[토큰 유형] EMAIL_VERIFY/PASSWORD_RESET/EMAIL_CHANGE/DORMANT_RELEASE']
   token_hash char(64) [not null, unique, note: '[토큰 해시] SHA-256. 원문은 저장하지 않음']
-  new_email varchar(200) [note: '[변경할 이메일] 변경할 이메일. CHECK: token_type = EMAIL_CHANGE일 때만 NOT NULL. 새 주소로 보낸 링크를 누르면 member_account.email에 반영']
-  expires_at datetime [not null, note: '[만료일시]']
-  used_at datetime [note: '[사용일시] 사용하면 기록, 재사용 불가']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  new_email varchar(200) [note: '[변경할 새 이메일] 변경할 이메일. CHECK: token_type = EMAIL_CHANGE일 때만 NOT NULL. 새 주소로 보낸 링크를 누르면 member_account.email에 반영']
+  expires_at datetime [not null, note: '[토큰 만료일시]']
+  used_at datetime [note: '[토큰 사용일시] 사용하면 기록, 재사용 불가']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[토큰 발급일시]']
 
   indexes {
     member_id [name: 'ix_member_token_member']
@@ -254,14 +254,14 @@ Table member_token [note: '[회원 1회용 토큰] 1회용 토큰 (이메일 인
 
 Table member_session [note: '[로그인 세션] 기기별 로그인 세션 (리프레시 토큰). 만료·폐기 30일 후 배치로 삭제'] {
   session_id bigint [pk, increment, note: '[세션 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
-  refresh_token_hash char(64) [not null, unique, note: '[리프레시 토큰 해시] SHA-256']
-  device_info varchar(200) [note: '[기기 정보]']
-  ip_address varchar(45) [note: '[IP 주소]']
-  expires_at datetime [not null, note: '[만료일시]']
-  revoked_at datetime [note: '[폐기일시] 강제 로그아웃, 비밀번호 변경 시 전체 폐기']
-  last_used_at datetime [note: '[최근 사용일시]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  member_id bigint [not null, note: '[로그인 세션 회원 ID]']
+  refresh_token_hash char(64) [not null, unique, note: '[세션 리프레시 토큰 해시] SHA-256']
+  device_info varchar(200) [note: '[세션 기기 정보]']
+  ip_address varchar(45) [note: '[세션 IP 주소]']
+  expires_at datetime [not null, note: '[세션 만료일시]']
+  revoked_at datetime [note: '[세션 폐기일시] 강제 로그아웃, 비밀번호 변경 시 전체 폐기']
+  last_used_at datetime [note: '[세션 최근 사용일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[세션 생성일시]']
 
   indexes {
     (member_id, revoked_at) [name: 'ix_member_session_member']
@@ -271,9 +271,9 @@ Table member_session [note: '[로그인 세션] 기기별 로그인 세션 (리�
 
 Table password_history [note: '[비밀번호 변경 이력] 비밀번호 변경 이력 (최근 3개 재사용 금지). 회원당 최근 3개만 유지: 새로 넣을 때 오래된 행 삭제'] {
   history_id bigint [pk, increment, note: '[비밀번호 이력 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  member_id bigint [not null, note: '[비밀번호 변경 회원 ID]']
   password_hash varchar(100) [not null, note: '[비밀번호 해시]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[비밀번호 변경일시]']
 
   indexes {
     (member_id, created_at) [name: 'ix_password_history_member']
@@ -281,13 +281,13 @@ Table password_history [note: '[비밀번호 변경 이력] 비밀번호 변경 
 }
 
 Table privacy_access_log [note: '[개인정보 접근 기록] 관리자 개인정보 접근 기록 (개인정보 안전성 확보조치 기준). 2년 보관 후 배치로 삭제'] {
-  log_id bigint [pk, increment, note: '[로그 ID]']
-  admin_id bigint [not null, note: '[관리자 ID] 조회한 관리자']
-  target_member_id bigint [not null, note: '[대상 회원 ID] 조회 대상 회원']
-  action varchar(20) [not null, note: '[접근 유형] VIEW/UPDATE/EXPORT/UNMASK']
-  reason varchar(500) [not null, note: '[접근 사유]']
-  ip_address varchar(45) [not null, note: '[IP 주소]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  log_id bigint [pk, increment, note: '[개인정보 접근 기록 ID]']
+  admin_id bigint [not null, note: '[접근한 관리자 ID] 조회한 관리자']
+  target_member_id bigint [not null, note: '[조회 대상 회원 ID] 조회 대상 회원']
+  action varchar(20) [not null, note: '[개인정보 접근 유형] VIEW/UPDATE/EXPORT/UNMASK']
+  reason varchar(500) [not null, note: '[개인정보 접근 사유]']
+  ip_address varchar(45) [not null, note: '[개인정보 접근 IP 주소]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[개인정보 접근일시]']
 
   indexes {
     admin_id [name: 'ix_pal_admin']
@@ -301,16 +301,16 @@ Table privacy_access_log [note: '[개인정보 접근 기록] 관리자 개인�
 // =====================================================================
 
 Table member_status_history [note: '[회원 상태 이력] 회원 상태 변경 이력 (가입·휴면·정지·탈퇴 전환 사유와 처리자)'] {
-  history_id bigint [pk, increment, note: '[상태 이력 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
-  from_status varchar(20) [note: '[이전 회원 상태] 가입 시 NULL']
-  to_status varchar(20) [not null, note: '[변경 회원 상태] ACTIVE/DORMANT/SUSPENDED/WITHDRAWN']
-  reason_type varchar(30) [not null, note: '[변경 사유 유형] SIGN_UP/DORMANT_BATCH/DORMANT_RELEASE/SANCTION/SANCTION_END/WITHDRAW/ADMIN_CHANGE']
-  reason varchar(500) [note: '[변경 사유] 상세 사유 (정지 사유, 탈퇴 사유 등)']
-  effective_until datetime [note: '[정지 기한] SUSPENDED 기한']
-  report_id bigint [note: '[신고 ID] 정지 근거가 된 신고']
-  changed_by bigint [note: '[변경자 ID] 처리 관리자. 배치·본인 처리는 NULL']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  history_id bigint [pk, increment, note: '[회원 상태 이력 ID]']
+  member_id bigint [not null, note: '[상태 변경 대상 회원 ID]']
+  from_status varchar(20) [note: '[변경 전 회원 상태] 가입 시 NULL']
+  to_status varchar(20) [not null, note: '[변경 후 회원 상태] ACTIVE/DORMANT/SUSPENDED/WITHDRAWN']
+  reason_type varchar(30) [not null, note: '[회원 상태 변경 사유 유형] SIGN_UP/DORMANT_BATCH/DORMANT_RELEASE/SANCTION/SANCTION_END/WITHDRAW/ADMIN_CHANGE']
+  reason varchar(500) [note: '[회원 상태 변경 사유] 상세 사유 (정지 사유, 탈퇴 사유 등)']
+  effective_until datetime [note: '[회원 정지 기한] SUSPENDED 기한']
+  report_id bigint [note: '[정지 근거 신고 ID] 정지 근거가 된 신고']
+  changed_by bigint [note: '[회원 상태 변경 처리자 ID] 처리 관리자. 배치·본인 처리는 NULL']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 상태 변경일시]']
 
   indexes {
     (member_id, created_at) [name: 'ix_msh_member', note: '회원별 상태 이력 (누적 정지 횟수 판단)']
@@ -322,10 +322,10 @@ Table member_status_history [note: '[회원 상태 이력] 회원 상태 변경 
 
 Table nickname_history [note: '[닉네임 변경 이력] 닉네임 변경 이력 (사칭 방지, 신고 추적)'] {
   history_id bigint [pk, increment, note: '[닉네임 이력 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
-  nickname varchar(30) [not null, note: '[이전 닉네임]']
-  used_from datetime [not null, note: '[사용 시작일시]']
-  used_until datetime [not null, note: '[사용 종료일시] 변경 시각. 이후 30일간 다른 회원이 이 닉네임 사용 불가']
+  member_id bigint [not null, note: '[닉네임 사용 회원 ID]']
+  nickname varchar(30) [not null, note: '[사용했던 닉네임]']
+  used_from datetime [not null, note: '[닉네임 이력 사용 시작일시]']
+  used_until datetime [not null, note: '[닉네임 이력 사용 종료일시] 변경 시각. 이후 30일간 다른 회원이 이 닉네임 사용 불가']
 
   indexes {
     (nickname, used_until) [name: 'ix_nickname_history_nickname', note: '최근 30일 내 사용된 닉네임인지 확인']
@@ -335,12 +335,12 @@ Table nickname_history [note: '[닉네임 변경 이력] 닉네임 변경 이력
 
 Table forbidden_word [note: '[금칙어] 금칙어 (닉네임, 글, 댓글 공용)'] {
   word_id bigint [pk, increment, note: '[금칙어 ID]']
-  word varchar(50) [not null, unique, note: '[금칙어]']
-  match_type varchar(10) [not null, default: 'CONTAINS', note: '[일치 방식] EXACT(완전 일치)/CONTAINS(포함). 공백·특수문자 제거 후 비교 (앱)']
-  target varchar(10) [not null, default: 'ALL', note: '[적용 대상] NICKNAME/CONTENT/ALL']
-  is_active char(1) [not null, default: 'Y', note: '[사용 여부]']
-  created_by bigint [not null, note: '[등록자 ID] 등록 관리자']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  word varchar(50) [not null, unique, note: '[금칙어 단어]']
+  match_type varchar(10) [not null, default: 'CONTAINS', note: '[금칙어 일치 방식] EXACT(완전 일치)/CONTAINS(포함). 공백·특수문자 제거 후 비교 (앱)']
+  target varchar(10) [not null, default: 'ALL', note: '[금칙어 적용 대상] NICKNAME/CONTENT/ALL']
+  is_active char(1) [not null, default: 'Y', note: '[금칙어 사용 여부]']
+  created_by bigint [not null, note: '[금칙어 등록 관리자 ID] 등록 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[금칙어 등록일시]']
 
   indexes {
     (target, is_active) [name: 'ix_forbidden_word_target']
@@ -349,8 +349,8 @@ Table forbidden_word [note: '[금칙어] 금칙어 (닉네임, 글, 댓글 공�
 }
 
 Table withdrawn_identity [note: '[탈퇴자 재가입 제한] 탈퇴 후 재가입 제한. 탈퇴 시 member_account.ci_hash를 지우고 여기로 옮김 → 같은 사람이 30일 안에 다시 가입해 신규 혜택을 반복해서 받지 못하게. member_id는 저장하지 않음 (탈퇴자 재식별 방지, 최소 보관)'] {
-  ci_hash char(64) [pk, note: '[CI 해시] 본인인증 CI 해시. 재가입 후 다시 탈퇴하면 같은 행을 갱신']
-  withdrawn_at datetime [not null, note: '[탈퇴일시]']
+  ci_hash char(64) [pk, note: '[탈퇴 회원 CI 해시] 본인인증 CI 해시. 재가입 후 다시 탈퇴하면 같은 행을 갱신']
+  withdrawn_at datetime [not null, note: '[회원 탈퇴일시]']
   rejoin_allowed_at datetime [not null, note: '[재가입 가능일시] 탈퇴 + 30일. 이 시각 전에는 같은 CI로 가입 불가. 지나면 배치로 행 삭제 (보관 목적 달성 후 파기)']
 
   indexes {
@@ -366,23 +366,23 @@ Table brand [note: '[브랜드]'] {
   brand_id bigint [pk, increment, note: '[브랜드 ID]']
   name_ko varchar(100) [not null, note: '[브랜드 한글명]']
   name_en varchar(100) [not null, unique, note: '[브랜드 영문명]']
-  logo_url varchar(500) [note: '[로고 URL]']
+  logo_url varchar(500) [note: '[브랜드 로고 URL]']
   description varchar(1000) [note: '[브랜드 소개]']
   status varchar(20) [not null, default: 'ACTIVE', note: '[브랜드 상태] ACTIVE/HIDDEN']
-  like_count int [not null, default: 0, note: '[좋아요 수] 캐시']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  like_count int [not null, default: 0, note: '[브랜드 좋아요 수] 캐시']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[브랜드 등록일시]']
+  updated_at datetime [note: '[브랜드 수정일시]']
 }
 
 Table category [note: '[카테고리] 카테고리 최대 4단계 (예: 가구 > 침대 > 침대프레임 > 수납침대)'] {
   category_id bigint [pk, increment, note: '[카테고리 ID]']
   parent_id bigint [note: '[상위 카테고리 ID] 최상위는 NULL']
   name varchar(50) [not null, note: '[카테고리명]']
-  depth tinyint [not null, note: '[단계(깊이)] 1~4']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  depth tinyint [not null, note: '[카테고리 단계(깊이)] 1~4']
+  sort_order smallint [not null, note: '[카테고리 정렬 순서]']
   icon_url varchar(500) [note: '[카테고리 아이콘 URL] 카테고리 아이콘 (가구/패브릭/조명/가전/주방/데코/수납/생활/반려동물)']
   notice_type_id bigint [note: '[기본 고시 품목 유형 ID] 이 카테고리 상품의 기본 고시 유형 (상품 등록 시 미리 선택). NULL이면 상위 카테고리 값']
-  is_active char(1) [not null, default: 'Y', note: '[사용 여부] Y/N']
+  is_active char(1) [not null, default: 'Y', note: '[카테고리 사용 여부] Y/N']
 
   indexes {
     (parent_id, name) [unique, name: 'uk_category_parent_name']
@@ -398,38 +398,38 @@ Table product [note: '[상품] 상품 (옵션 공통 정보)'] {
   brand_id bigint [not null, note: '[브랜드 ID]']
   category_id bigint [not null, note: '[카테고리 ID] 최하위 카테고리']
   shipping_policy_id bigint [not null, note: '[배송 정책 ID]']
-  model_code varchar(30) [not null, unique, note: '[모델 코드] 모델명/품번']
+  model_code varchar(30) [not null, unique, note: '[상품 모델 코드] 모델명/품번']
   name varchar(200) [not null, note: '[상품명] 검색용 FULLTEXT 인덱스 WITH PARSER ngram (DDL에서 생성, 한글 부분 일치)']
   product_type varchar(10) [not null, default: 'SINGLE', note: '[상품 유형] SINGLE/SET. SET은 product_set_item으로 구성 (예: 식탁 + 의자 4개)']
-  sale_type varchar(20) [not null, default: 'NORMAL', note: '[판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER(주문제작). PRE_ORDER는 SKU stock을 예약 한도로 사용, MADE_TO_ORDER는 재고를 차감하지 않고 lead_days만큼 제작 후 출고']
-  ship_expected_date date [note: '[예약 출고 예정일] 예약 판매 출고 예정일']
-  max_per_order smallint [note: '[1회 최대 구매 수량] 주문 1건당 최대 수량. NULL이면 제한 없음']
-  list_price bigint [not null, note: '[정가]']
-  sale_price bigint [not null, note: '[판매가] 판매가. CHECK sale_price <= list_price. 할인율은 계산']
-  description mediumtext [note: '[상세 설명] 상세페이지 본문 (HTML)']
-  width_mm int [note: '[대표 가로(mm)] 대표 사이즈 가로 (옵션별 사이즈는 SKU)']
-  depth_mm int [note: '[대표 깊이(mm)] 세로(깊이)']
-  height_mm int [note: '[대표 높이(mm)] 높이']
-  weight_kg decimal(6,1) [note: '[무게(kg)]']
-  assembly_type varchar(20) [not null, default: 'NONE', note: '[조립 방식] NONE(완제품)/SELF(자가조립)/INSTALL(설치 기사 조립)']
-  assembly_difficulty varchar(10) [note: '[조립 난이도] EASY/NORMAL/HARD. CHECK: assembly_* 컬럼은 assembly_type = SELF·INSTALL일 때만. HARD이거나 필요 인원 2명 이상이면 장바구니 진단에서 조립 서비스 우선 제안']
-  assembly_minutes smallint [note: '[조립 예상 시간(분)] 예상 조립 시간 (분)']
-  assembly_people tinyint [note: '[조립 필요 인원] 필요 인원 (예: 옷장 2명)']
-  assembly_tools varchar(200) [note: '[조립 필요 공구] 필요 공구와 동봉 여부 (예: 십자드라이버(미동봉), 육각렌치(동봉))']
+  sale_type varchar(20) [not null, default: 'NORMAL', note: '[상품 판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER(주문제작). PRE_ORDER는 SKU stock을 예약 한도로 사용, MADE_TO_ORDER는 재고를 차감하지 않고 lead_days만큼 제작 후 출고']
+  ship_expected_date date [note: '[상품 예약 출고 예정일] 예약 판매 출고 예정일']
+  max_per_order smallint [note: '[상품 1회 최대 구매 수량] 주문 1건당 최대 수량. NULL이면 제한 없음']
+  list_price bigint [not null, note: '[상품 정가]']
+  sale_price bigint [not null, note: '[상품 판매가] 판매가. CHECK sale_price <= list_price. 할인율은 계산']
+  description mediumtext [note: '[상품 상세 설명] 상세페이지 본문 (HTML)']
+  width_mm int [note: '[상품 대표 가로(mm)] 대표 사이즈 가로 (옵션별 사이즈는 SKU)']
+  depth_mm int [note: '[상품 대표 깊이(mm)] 세로(깊이)']
+  height_mm int [note: '[상품 대표 높이(mm)] 높이']
+  weight_kg decimal(6,1) [note: '[상품 무게(kg)]']
+  assembly_type varchar(20) [not null, default: 'NONE', note: '[상품 조립 방식] NONE(완제품)/SELF(자가조립)/INSTALL(설치 기사 조립)']
+  assembly_difficulty varchar(10) [note: '[상품 조립 난이도] EASY/NORMAL/HARD. CHECK: assembly_* 컬럼은 assembly_type = SELF·INSTALL일 때만. HARD이거나 필요 인원 2명 이상이면 장바구니 진단에서 조립 서비스 우선 제안']
+  assembly_minutes smallint [note: '[상품 조립 예상 시간(분)] 예상 조립 시간 (분)']
+  assembly_people tinyint [note: '[상품 조립 필요 인원] 필요 인원 (예: 옷장 2명)']
+  assembly_tools varchar(200) [note: '[상품 조립 필요 공구] 필요 공구와 동봉 여부 (예: 십자드라이버(미동봉), 육각렌치(동봉))']
   status varchar(20) [not null, default: 'DRAFT', note: '[상품 상태] DRAFT/ON_SALE/SOLD_OUT/STOPPED. 품절 기준은 SKU 재고: 판매 중인 SKU가 모두 stock = 0이면 시스템이 SOLD_OUT, 재입고되면 ON_SALE (changed_by NULL)']
-  sale_start_at datetime [note: '[판매 시작일시]']
-  sale_end_at datetime [note: '[판매 종료일시]']
-  view_count int [not null, default: 0, note: '[조회 수] 캐시']
-  scrap_count int [not null, default: 0, note: '[스크랩 수] 캐시. 오늘의집처럼 찜 = 스크랩']
-  review_count int [not null, default: 0, note: '[리뷰 수] 캐시']
-  avg_rating decimal(2,1) [not null, default: 0, note: '[평균 평점] 캐시']
-  sales_count int [not null, default: 0, note: '[판매 수량] 캐시. order_item 구매 확정(CONFIRMED) 시 수량만큼 증가']
-  tagged_post_count int [not null, default: 0, note: '[태그된 글 수] 캐시. 이 상품이 태그된 커뮤니티 글 수 (상세페이지 "이 상품이 쓰인 사진")']
-  cart_count int [not null, default: 0, note: '[장바구니 담긴 수] 캐시. 이 상품이 담긴 장바구니 행 수 (회원·비회원). 담기·삭제·주문 완료 시 갱신. "N명이 담았어요", MD 판단 근거']
-  created_by bigint [not null, note: '[등록자 ID] 등록 관리자']
-  updated_by bigint [note: '[수정자 ID] 수정 관리자']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  sale_start_at datetime [note: '[상품 판매 시작일시]']
+  sale_end_at datetime [note: '[상품 판매 종료일시]']
+  view_count int [not null, default: 0, note: '[상품 조회 수] 캐시']
+  scrap_count int [not null, default: 0, note: '[상품 스크랩 수] 캐시. 오늘의집처럼 찜 = 스크랩']
+  review_count int [not null, default: 0, note: '[상품 리뷰 수] 캐시']
+  avg_rating decimal(2,1) [not null, default: 0, note: '[상품 평균 평점] 캐시']
+  sales_count int [not null, default: 0, note: '[상품 판매 수량] 캐시. order_item 구매 확정(CONFIRMED) 시 수량만큼 증가']
+  tagged_post_count int [not null, default: 0, note: '[상품 태그된 글 수] 캐시. 이 상품이 태그된 커뮤니티 글 수 (상세페이지 "이 상품이 쓰인 사진")']
+  cart_count int [not null, default: 0, note: '[상품 장바구니 담긴 수] 캐시. 이 상품이 담긴 장바구니 행 수 (회원·비회원). 담기·삭제·주문 완료 시 갱신. "N명이 담았어요", MD 판단 근거']
+  created_by bigint [not null, note: '[상품 등록 관리자 ID] 등록 관리자']
+  updated_by bigint [note: '[상품 수정 관리자 ID] 수정 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[상품 등록일시]']
+  updated_at datetime [note: '[상품 수정일시]']
 
   indexes {
     (category_id, status, sale_price) [name: 'ix_product_category']
@@ -445,7 +445,7 @@ Table product_option_group [note: '[옵션 그룹] 옵션 그룹 (색상, 사이
   option_group_id bigint [pk, increment, note: '[옵션 그룹 ID]']
   product_id bigint [not null, note: '[상품 ID]']
   name varchar(50) [not null, note: '[옵션 그룹명] 예: 색상 / 사이즈 / 구성']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[옵션 그룹 정렬 순서]']
 
   indexes {
     (product_id, name) [unique, name: 'uk_option_group_name']
@@ -457,7 +457,7 @@ Table product_option_value [note: '[옵션 값] 옵션 값 (화이트 오크 / Q
   option_group_id bigint [not null, note: '[옵션 그룹 ID]']
   name varchar(50) [not null, note: '[옵션 값 이름]']
   color_family_id bigint [note: '[컬러 계열 ID] 색상 옵션이면 컬러 계열 (필터용)']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[옵션 값 정렬 순서]']
 
   indexes {
     (option_group_id, name) [unique, name: 'uk_option_value_name']
@@ -468,19 +468,19 @@ Table product_option_value [note: '[옵션 값] 옵션 값 (화이트 오크 / Q
 Table product_sku [note: '[상품 SKU] SKU = 옵션 값 조합. 재고, 장바구니, 주문의 기준 단위. 옵션이 없는 상품도 SKU 1개'] {
   sku_id bigint [pk, increment, note: '[SKU ID]']
   product_id bigint [not null, note: '[상품 ID]']
-  option_key varchar(200) [not null, note: '[옵션 조합 키] 옵션 값 ID를 오름차순으로 이은 문자열 (예: 12-35). 옵션 없으면 DEFAULT. 같은 조합 중복 방지']
+  option_key varchar(200) [not null, note: '[SKU 옵션 조합 키] 옵션 값 ID를 오름차순으로 이은 문자열 (예: 12-35). 옵션 없으면 DEFAULT. 같은 조합 중복 방지']
   sku_code varchar(50) [not null, unique, note: '[SKU 코드] 모델명-옵션코드']
-  barcode varchar(30) [unique, note: '[바코드] 입출고 스캔용']
-  extra_price bigint [not null, default: 0, note: '[옵션 추가금] 옵션 추가금 (퀸 +50,000)']
+  barcode varchar(30) [unique, note: '[SKU 바코드] 입출고 스캔용']
+  extra_price bigint [not null, default: 0, note: '[SKU 옵션 추가금] 옵션 추가금 (퀸 +50,000)']
   width_mm int [note: '[SKU 가로(mm)] 옵션별 실제 사이즈 (침대 SS/Q/K)']
   depth_mm int [note: '[SKU 깊이(mm)]']
   height_mm int [note: '[SKU 높이(mm)]']
-  stock int [not null, default: 0, note: '[재고 수량] 판매 가능 재고 (주문 시 차감). CHECK stock >= 0. 0이 되면 SKU status = SOLD_OUT']
-  safety_stock int [not null, default: 0, note: '[안전 재고] 품절 임박 기준']
+  stock int [not null, default: 0, note: '[SKU 재고 수량] 판매 가능 재고 (주문 시 차감). CHECK stock >= 0. 0이 되면 SKU status = SOLD_OUT']
+  safety_stock int [not null, default: 0, note: '[SKU 안전 재고] 품절 임박 기준']
   status varchar(20) [not null, default: 'ON_SALE', note: '[SKU 상태] ON_SALE/SOLD_OUT/STOPPED']
-  version int [not null, default: 0, note: '[낙관적 락 버전] 낙관적 락']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  version int [not null, default: 0, note: '[SKU 낙관적 락 버전] 낙관적 락']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[SKU 등록일시]']
+  updated_at datetime [note: '[SKU 수정일시]']
 
   indexes {
     (product_id, option_key) [unique, name: 'uk_product_sku_option_key']
@@ -500,11 +500,11 @@ Table product_sku_option [note: '[SKU 옵션 조합] SKU가 어떤 옵션 값의
 
 Table sku_package [note: '[SKU 포장 박스] 포장 박스 (가구는 SKU 1개가 여러 박스로 출고됨: 침대 = 헤드보드 + 프레임 + 갈빗살). 화물 운임과 배송 차량 판단 근거'] {
   sku_id bigint [not null, note: '[SKU ID]']
-  box_no tinyint [not null, note: '[박스 번호] 1부터. 박스 수 = 행 수']
+  box_no tinyint [not null, note: '[포장 박스 번호] 1부터. 박스 수 = 행 수']
   width_mm int [not null, note: '[박스 가로(mm)]']
   depth_mm int [not null, note: '[박스 깊이(mm)]']
   height_mm int [not null, note: '[박스 높이(mm)]']
-  weight_kg decimal(6,1) [not null, note: '[무게(kg)]']
+  weight_kg decimal(6,1) [not null, note: '[포장 박스 무게(kg)]']
   contents varchar(100) [note: '[박스 구성 내용] 박스 내용물 (헤드보드, 측판...)']
 
   indexes {
@@ -513,12 +513,12 @@ Table sku_package [note: '[SKU 포장 박스] 포장 박스 (가구는 SKU 1개�
 }
 
 Table product_image [note: '[상품 이미지] 상품 이미지 (공통 + 옵션 값별)'] {
-  image_id bigint [pk, increment, note: '[사진 ID]']
+  image_id bigint [pk, increment, note: '[상품 이미지 ID]']
   product_id bigint [not null, note: '[상품 ID]']
   option_value_id bigint [note: '[옵션 값 ID] NULL이면 공통 이미지. 색상을 고르면 해당 이미지로 교체']
   image_type varchar(20) [not null, note: '[이미지 유형] THUMBNAIL/MAIN/DETAIL/SIZE_GUIDE(치수도)']
   image_url varchar(500) [not null, note: '[이미지 URL]']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[상품 이미지 정렬 순서]']
 
   indexes {
     (product_id, option_value_id) [name: 'ix_product_image_product']
@@ -527,19 +527,19 @@ Table product_image [note: '[상품 이미지] 상품 이미지 (공통 + 옵션
 }
 
 Table product_qna [note: '[상품 문의] 상품 문의 (구매 전에도 작성 가능)'] {
-  qna_id bigint [pk, increment, note: '[문의 ID]']
+  qna_id bigint [pk, increment, note: '[상품 문의 ID]']
   product_id bigint [not null, note: '[상품 ID]']
   sku_id bigint [note: '[SKU ID] 특정 옵션에 대한 문의면 지정']
-  member_id bigint [not null, note: '[회원 ID]']
-  qna_type varchar(20) [not null, note: '[문의 유형] PRODUCT/SIZE/SHIPPING/INSTALL/RETURN/ETC']
-  content varchar(2000) [not null, note: '[문의 내용]']
-  is_secret char(1) [not null, default: 'N', note: '[비밀글 여부] 비밀글이면 작성자와 관리자만 열람']
-  answer_content varchar(2000) [note: '[답변 내용]']
-  answered_by bigint [note: '[답변자 ID] 답변 관리자']
-  answered_at datetime [note: '[답변일시]']
-  status varchar(20) [not null, default: 'WAITING', note: '[답변 상태] WAITING/ANSWERED/HIDDEN']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  member_id bigint [not null, note: '[문의 작성 회원 ID]']
+  qna_type varchar(20) [not null, note: '[상품 문의 유형] PRODUCT/SIZE/SHIPPING/INSTALL/RETURN/ETC']
+  content varchar(2000) [not null, note: '[상품 문의 내용]']
+  is_secret char(1) [not null, default: 'N', note: '[상품 문의 비밀글 여부] 비밀글이면 작성자와 관리자만 열람']
+  answer_content varchar(2000) [note: '[상품 문의 답변 내용]']
+  answered_by bigint [note: '[상품 문의 답변 관리자 ID] 답변 관리자']
+  answered_at datetime [note: '[상품 문의 답변일시]']
+  status varchar(20) [not null, default: 'WAITING', note: '[상품 문의 답변 상태] WAITING/ANSWERED/HIDDEN']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[상품 문의 등록일시]']
+  updated_at datetime [note: '[상품 문의 수정일시]']
 
   indexes {
     (product_id, created_at) [name: 'ix_product_qna_product']
@@ -558,18 +558,18 @@ Table notice_type [note: '[고시 품목 유형] 상품정보제공고시 품목
   notice_type_id bigint [pk, increment, note: '[고시 품목 유형 ID]']
   type_code varchar(30) [not null, unique, note: '[품목 유형 코드] FURNITURE(가구)/BEDDING_CURTAIN(침구류·커튼)/KITCHENWARE(주방용품)/HOME_APPLIANCE(가정용 전기제품)/SEASONAL_APPLIANCE(계절가전)/ETC(기타 재화)']
   name_ko varchar(50) [not null, note: '[품목 유형명]']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[고시 품목 유형 정렬 순서]']
 }
 
 Table notice_item [note: '[고시 항목] 품목 유형별 고시 항목. 고시가 바뀌면 행 추가·비활성으로 대응 (컬럼 변경 없음)'] {
   item_id bigint [pk, increment, note: '[고시 항목 ID]']
   notice_type_id bigint [not null, note: '[고시 품목 유형 ID]']
-  item_code varchar(30) [not null, note: '[항목 코드] MATERIAL/COMPONENTS/SIZE/MANUFACTURER/ORIGIN/KC_CERT/DELIVERY_INSTALL_FEE/RATED_VOLTAGE/POWER_CONSUMPTION/FOOD_CONTACT_MATERIAL...']
-  name_ko varchar(100) [not null, note: '[항목명] 화면 표시 항목명 (예: 정격전압·소비전력)']
-  guide varchar(300) [note: '[작성 안내] 작성 안내 (예: 구성품별 제조국이 다르면 모두 기재)']
-  is_required char(1) [not null, default: 'Y', note: '[필수 여부] Y/N']
-  is_active char(1) [not null, default: 'Y', note: '[사용 여부]']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  item_code varchar(30) [not null, note: '[고시 항목 코드] MATERIAL/COMPONENTS/SIZE/MANUFACTURER/ORIGIN/KC_CERT/DELIVERY_INSTALL_FEE/RATED_VOLTAGE/POWER_CONSUMPTION/FOOD_CONTACT_MATERIAL...']
+  name_ko varchar(100) [not null, note: '[고시 항목명] 화면 표시 항목명 (예: 정격전압·소비전력)']
+  guide varchar(300) [note: '[고시 항목 작성 안내] 작성 안내 (예: 구성품별 제조국이 다르면 모두 기재)']
+  is_required char(1) [not null, default: 'Y', note: '[고시 항목 필수 여부] Y/N']
+  is_active char(1) [not null, default: 'Y', note: '[고시 항목 사용 여부]']
+  sort_order smallint [not null, note: '[고시 항목 정렬 순서]']
 
   indexes {
     (notice_type_id, item_code) [unique, name: 'uk_notice_item']
@@ -579,8 +579,8 @@ Table notice_item [note: '[고시 항목] 품목 유형별 고시 항목. 고시
 Table product_notice [note: '[상품 정보제공고시] 상품정보제공고시 헤더 (product와 1:1). 항목 값은 product_notice_value에 행으로 저장'] {
   product_id bigint [pk, note: '[상품 ID] product와 1:1']
   notice_type_id bigint [not null, note: '[고시 품목 유형 ID] 기본값 category.notice_type_id. 바꾸면 기존 값 행 삭제 후 새 항목으로 입력']
-  updated_by bigint [note: '[수정자 ID] 관리자']
-  updated_at datetime [note: '[수정일시]']
+  updated_by bigint [note: '[상품 고시 수정 관리자 ID] 관리자']
+  updated_at datetime [note: '[상품 고시 수정일시]']
 
   indexes {
     notice_type_id [name: 'ix_product_notice_type']
@@ -591,7 +591,7 @@ Table product_notice [note: '[상품 정보제공고시] 상품정보제공고�
 Table product_notice_value [note: '[상품 고시 항목 값] 상품별 고시 항목 값. item의 유형 = product_notice.notice_type_id (앱 검증). 필수 항목이 모두 채워져야 ON_SALE 가능'] {
   product_id bigint [not null, note: '[상품 ID]']
   item_id bigint [not null, note: '[고시 항목 ID]']
-  content varchar(1000) [not null, note: '[항목 값] 해당 없으면 "해당 없음"']
+  content varchar(1000) [not null, note: '[고시 항목 값] 해당 없으면 "해당 없음"']
 
   indexes {
     (product_id, item_id) [pk]
@@ -625,9 +625,9 @@ Table product_home_fit [note: '[상품 주거 적합 조건] 상품이 잘 맞�
 }
 
 Table member_brand_preference [note: '[회원 선호 브랜드] 회원 선호(팔로우) 브랜드'] {
-  member_id bigint [not null, note: '[회원 ID]']
+  member_id bigint [not null, note: '[브랜드 선호 회원 ID]']
   brand_id bigint [not null, note: '[브랜드 ID]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[선호 브랜드 등록일시]']
 
   indexes {
     (member_id, brand_id) [pk]
@@ -638,14 +638,14 @@ Table member_brand_preference [note: '[회원 선호 브랜드] 회원 선호(�
 Table stock_history [note: '[재고 이력] 재고 원장. SKU.stock 변경과 같은 트랜잭션에서 기록'] {
   stock_history_id bigint [pk, increment, note: '[재고 이력 ID]']
   sku_id bigint [not null, note: '[SKU ID]']
-  change_type varchar(20) [not null, note: '[변경 유형] INBOUND/ORDER/CANCEL/RETURN/EXCHANGE/ADJUST']
-  quantity int [not null, note: '[변경 수량] +입고 / -출고']
-  stock_after int [not null, note: '[변경 후 재고]']
-  ref_type varchar(20) [note: '[근거 유형] ORDER(주문 생성 차감·만료/취소 복구)/CLAIM(반품·교환, 다음 단계). 대상이 여러 종류라 FK 없음']
-  ref_id bigint [note: '[근거 ID] ORDER면 order_item_id, CLAIM이면 클레임 ID (다음 단계)']
-  memo varchar(500) [note: '[메모]']
-  created_by bigint [note: '[등록자 ID] 관리자. 시스템 처리는 NULL']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  change_type varchar(20) [not null, note: '[재고 변경 유형] INBOUND/ORDER/CANCEL/RETURN/EXCHANGE/ADJUST']
+  quantity int [not null, note: '[재고 변경 수량] +입고 / -출고']
+  stock_after int [not null, note: '[변경 후 재고 수량]']
+  ref_type varchar(20) [note: '[재고 변경 근거 유형] ORDER(주문 생성 차감·만료/취소 복구)/CLAIM(반품·교환, 다음 단계). 대상이 여러 종류라 FK 없음']
+  ref_id bigint [note: '[재고 변경 근거 ID] ORDER면 order_item_id, CLAIM이면 클레임 ID (다음 단계)']
+  memo varchar(500) [note: '[재고 변경 메모]']
+  created_by bigint [note: '[재고 변경 등록 관리자 ID] 관리자. 시스템 처리는 NULL']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[재고 변경일시]']
 
   indexes {
     (sku_id, created_at) [name: 'ix_stock_history_sku']
@@ -656,10 +656,10 @@ Table stock_history [note: '[재고 이력] 재고 원장. SKU.stock 변경과 �
 Table price_history [note: '[가격 이력] 가격 변경 이력 (가격 인하 알림 근거)'] {
   price_history_id bigint [pk, increment, note: '[가격 이력 ID]']
   product_id bigint [not null, note: '[상품 ID]']
-  list_price bigint [not null, note: '[정가]']
-  sale_price bigint [not null, note: '[판매가]']
-  changed_by bigint [not null, note: '[변경자 ID] 관리자']
-  changed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[변경일시]']
+  list_price bigint [not null, note: '[변경된 정가]']
+  sale_price bigint [not null, note: '[변경된 판매가]']
+  changed_by bigint [not null, note: '[가격 변경 처리자 ID] 관리자']
+  changed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[가격 변경일시]']
 
   indexes {
     (product_id, changed_at) [name: 'ix_price_history_product']
@@ -668,11 +668,11 @@ Table price_history [note: '[가격 이력] 가격 변경 이력 (가격 인하 
 }
 
 Table restock_request [note: '[재입고 알림 신청] 재입고 알림 신청 (SKU 단위). 재고가 0 → 양수가 되면 WAITING 신청자에게 발송'] {
-  request_id bigint [pk, increment, note: '[요청 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  request_id bigint [pk, increment, note: '[재입고 알림 신청 ID]']
+  member_id bigint [not null, note: '[재입고 알림 신청 회원 ID]']
   sku_id bigint [not null, note: '[SKU ID]']
-  status varchar(20) [not null, default: 'WAITING', note: '[알림 상태] WAITING/NOTIFIED/CANCELED. 알림 후 다시 신청하면 같은 행을 WAITING으로 되돌림']
-  requested_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[요청일시]']
+  status varchar(20) [not null, default: 'WAITING', note: '[재입고 알림 상태] WAITING/NOTIFIED/CANCELED. 알림 후 다시 신청하면 같은 행을 WAITING으로 되돌림']
+  requested_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[재입고 알림 신청일시]']
   notified_at datetime [note: '[알림 발송일시]']
 
   indexes {
@@ -689,21 +689,21 @@ Table color_family [note: '[컬러 계열] 컬러 계열 마스터. 상품 필�
   color_family_id bigint [pk, increment, note: '[컬러 계열 ID]']
   family_code varchar(20) [not null, unique, note: '[컬러 계열 코드] WHITE/IVORY/BEIGE/BROWN/NATURAL_WOOD/GRAY/BLACK/NAVY/GREEN/PINK/MULTI']
   name_ko varchar(30) [not null, note: '[컬러 계열명]']
-  represent_hex char(7) [not null, note: '[대표 색상값] 필터 칩 표시 색']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  represent_hex char(7) [not null, note: '[컬러 계열 대표 색상값] 필터 칩 표시 색']
+  sort_order smallint [not null, note: '[컬러 계열 정렬 순서]']
 }
 
 Table material [note: '[소재] 소재 마스터'] {
   material_id bigint [pk, increment, note: '[소재 ID]']
   material_code varchar(20) [not null, unique, note: '[소재 코드] SOLID_WOOD(원목)/MDF/PB/STEEL/GLASS/MARBLE/FABRIC/LEATHER/RATTAN/PLASTIC...']
   name_ko varchar(30) [not null, note: '[소재명]']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[소재 정렬 순서]']
 }
 
 Table product_material [note: '[상품 소재] 상품 소재 (필터용). 법정 표기 문구는 product_notice.material'] {
   product_id bigint [not null, note: '[상품 ID]']
   material_id bigint [not null, note: '[소재 ID]']
-  part varchar(20) [not null, default: 'MAIN', note: '[적용 부위] MAIN/FRAME/TOP(상판)/LEG(다리)/UPHOLSTERY(커버)']
+  part varchar(20) [not null, default: 'MAIN', note: '[상품 소재 적용 부위] MAIN/FRAME/TOP(상판)/LEG(다리)/UPHOLSTERY(커버)']
 
   indexes {
     (product_id, material_id, part) [pk]
@@ -712,13 +712,13 @@ Table product_material [note: '[상품 소재] 상품 소재 (필터용). 법정
 }
 
 Table attribute [note: '[필터 속성] 카테고리별 필터 속성 (침대 사이즈, 소파 인원, 수납 여부, 전구 색온도...)'] {
-  attribute_id bigint [pk, increment, note: '[속성 ID]']
+  attribute_id bigint [pk, increment, note: '[필터 속성 ID]']
   category_id bigint [note: '[카테고리 ID] 적용 카테고리 (하위 카테고리 포함). NULL이면 전체']
-  attribute_code varchar(30) [not null, unique, note: '[속성 코드] BED_SIZE/SOFA_SEATS/HAS_STORAGE/LIGHT_COLOR_TEMP...']
-  name_ko varchar(30) [not null, note: '[속성명]']
+  attribute_code varchar(30) [not null, unique, note: '[필터 속성 코드] BED_SIZE/SOFA_SEATS/HAS_STORAGE/LIGHT_COLOR_TEMP...']
+  name_ko varchar(30) [not null, note: '[필터 속성명]']
   is_filterable char(1) [not null, default: 'Y', note: '[필터 노출 여부] 검색 필터 노출 여부']
-  is_multi_select char(1) [not null, default: 'N', note: '[복수 값 허용 여부] 상품 하나에 값 여러 개 허용 여부']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  is_multi_select char(1) [not null, default: 'N', note: '[필터 속성 복수 값 허용 여부] 상품 하나에 값 여러 개 허용 여부']
+  sort_order smallint [not null, note: '[필터 속성 정렬 순서]']
 
   indexes {
     category_id [name: 'ix_attribute_category']
@@ -730,7 +730,7 @@ Table attribute_value [note: '[필터 속성 값] 속성 값 (침대 사이즈 �
   attribute_id bigint [not null, note: '[속성 ID]']
   value_code varchar(30) [not null, note: '[속성 값 코드]']
   name_ko varchar(30) [not null, note: '[속성 값 이름]']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[속성 값 정렬 순서]']
 
   indexes {
     (attribute_id, value_code) [unique, name: 'uk_attribute_value']
@@ -748,12 +748,12 @@ Table product_attribute_value [note: '[상품 속성 값] 상품별 속성 값']
 }
 
 Table search_synonym [note: '[검색 동의어] 검색 동의어 (쇼파 → 소파, 행거 → 옷걸이, 러그 → 카페트). 스토어와 커뮤니티 검색 공용'] {
-  synonym_id bigint [pk, increment, note: '[동의어 ID]']
-  term varchar(50) [not null, unique, note: '[검색어] 사용자가 입력하는 단어']
-  standard_term varchar(50) [not null, note: '[표준어] 표준 검색어']
-  is_active char(1) [not null, default: 'Y', note: '[사용 여부]']
-  created_by bigint [not null, note: '[등록자 ID]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  synonym_id bigint [pk, increment, note: '[검색 동의어 ID]']
+  term varchar(50) [not null, unique, note: '[입력 검색어] 사용자가 입력하는 단어']
+  standard_term varchar(50) [not null, note: '[검색 동의어 표준어] 표준 검색어']
+  is_active char(1) [not null, default: 'Y', note: '[검색 동의어 사용 여부]']
+  created_by bigint [not null, note: '[검색 동의어 등록 관리자 ID]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[검색 동의어 등록일시]']
 
   indexes {
     created_by [name: 'ix_search_synonym_created_by']
@@ -767,10 +767,10 @@ Table search_synonym [note: '[검색 동의어] 검색 동의어 (쇼파 → 소
 Table product_relation [note: '[연관 상품]'] {
   product_id bigint [not null, note: '[상품 ID]']
   related_product_id bigint [not null, note: '[연관 상품 ID] CHECK product_id <> related_product_id']
-  relation_type varchar(20) [not null, note: '[연관 유형] SAME_SERIES(같은 시리즈)/ADDON(추가 구매: 침대 → 매트리스)/SIMILAR(비슷한 상품)']
-  sort_order smallint [not null, note: '[정렬 순서]']
-  created_by bigint [not null, note: '[등록자 ID]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  relation_type varchar(20) [not null, note: '[상품 연관 유형] SAME_SERIES(같은 시리즈)/ADDON(추가 구매: 침대 → 매트리스)/SIMILAR(비슷한 상품)']
+  sort_order smallint [not null, note: '[연관 상품 정렬 순서]']
+  created_by bigint [not null, note: '[연관 상품 등록 관리자 ID]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[연관 상품 등록일시]']
 
   indexes {
     (product_id, relation_type, related_product_id) [pk]
@@ -782,8 +782,8 @@ Table product_relation [note: '[연관 상품]'] {
 Table product_set_item [note: '[세트 구성품] 세트 상품 구성품 (식탁 세트 = 식탁 1 + 의자 4). 세트는 자체 SKU 없이 구성품 SKU를 각각 선택'] {
   set_product_id bigint [not null, note: '[세트 상품 ID] product_type = SET인 상품']
   component_product_id bigint [not null, note: '[구성품 상품 ID] product_type = SINGLE인 상품']
-  quantity smallint [not null, default: 1, note: '[구성 수량]']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  quantity smallint [not null, default: 1, note: '[세트 구성품 구성 수량]']
+  sort_order smallint [not null, note: '[세트 구성품 정렬 순서]']
 
   indexes {
     (set_product_id, component_product_id) [pk]
@@ -792,13 +792,13 @@ Table product_set_item [note: '[세트 구성품] 세트 상품 구성품 (식�
 }
 
 Table product_status_history [note: '[상품 상태 이력] 상품 상태 변경 이력 (판매중지 사유 추적)'] {
-  history_id bigint [pk, increment, note: '[상태 이력 ID]']
+  history_id bigint [pk, increment, note: '[상품 상태 이력 ID]']
   product_id bigint [not null, note: '[상품 ID]']
-  from_status varchar(20) [note: '[이전 상품 상태] 최초 등록은 NULL']
-  to_status varchar(20) [not null, note: '[변경 상품 상태]']
-  reason varchar(500) [note: '[변경 사유]']
-  changed_by bigint [note: '[변경자 ID] 관리자. 자동 품절 처리 등 시스템 변경은 NULL']
-  changed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[변경일시]']
+  from_status varchar(20) [note: '[변경 전 상품 상태] 최초 등록은 NULL']
+  to_status varchar(20) [not null, note: '[변경 후 상품 상태]']
+  reason varchar(500) [note: '[상품 상태 변경 사유]']
+  changed_by bigint [note: '[상품 상태 변경 처리자 ID] 관리자. 자동 품절 처리 등 시스템 변경은 NULL']
+  changed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[상품 상태 변경일시]']
 
   indexes {
     (product_id, changed_at) [name: 'ix_psh_product']
@@ -816,11 +816,11 @@ Table product_part [note: '[상품 부품] 조립식 상품 부품 목록 (설�
   sku_id bigint [note: '[SKU ID] 옵션마다 다른 부품이면 그 SKU (예: 색상별 판재). NULL이면 모든 옵션 공통']
   part_code varchar(30) [not null, note: '[부품 코드] 설명서 표기 (예: A, B, 볼트 M6×30)']
   name varchar(100) [not null, note: '[부품명] 예: 측판(좌), 선반, 캠볼트']
-  quantity smallint [not null, note: '[기본 수량] 상품 1개에 들어가는 수량']
+  quantity smallint [not null, note: '[부품 기본 수량] 상품 1개에 들어가는 수량']
   image_url varchar(500) [note: '[부품 이미지 URL]']
-  is_orderable char(1) [not null, default: 'Y', note: '[단품 구매 가능 여부] Y/N 단품 구매·요청 가능']
+  is_orderable char(1) [not null, default: 'Y', note: '[부품 단품 구매 가능 여부] Y/N 단품 구매·요청 가능']
   unit_price bigint [not null, default: 0, note: '[부품 단가] 추가 구매(PURCHASE) 단가']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[부품 정렬 순서]']
 
   indexes {
     (product_id, part_code) [unique, name: 'uk_product_part']
@@ -831,9 +831,9 @@ Table product_part [note: '[상품 부품] 조립식 상품 부품 목록 (설�
 Table assembly_step [note: '[조립 단계] 단계별 조립 설명서. 단계 순서대로 이미지·영상·설명을 보여 주고, 각 단계에서 쓰는 부품은 assembly_step_part'] {
   step_id bigint [pk, increment, note: '[조립 단계 ID]']
   product_id bigint [not null, note: '[상품 ID]']
-  step_no smallint [not null, note: '[단계 번호] 1부터']
-  title varchar(100) [not null, note: '[단계 제목] 예: 측판과 바닥판 연결']
-  description text [note: '[단계 설명]']
+  step_no smallint [not null, note: '[조립 단계 번호] 1부터']
+  title varchar(100) [not null, note: '[조립 단계 제목] 예: 측판과 바닥판 연결']
+  description text [note: '[조립 단계 설명]']
   image_url varchar(500) [note: '[단계 이미지 URL]']
   video_url varchar(500) [note: '[단계 영상 URL]']
 
@@ -845,7 +845,7 @@ Table assembly_step [note: '[조립 단계] 단계별 조립 설명서. 단계 �
 Table assembly_step_part [note: '[조립 단계별 부품] 조립 단계에서 쓰는 부품 (설명서 화면의 부품 표시, 부품 요청 시 "몇 단계에서 쓰는 부품" 안내)'] {
   step_id bigint [not null, note: '[조립 단계 ID]']
   part_id bigint [not null, note: '[부품 ID]']
-  quantity smallint [not null, default: 1, note: '[사용 수량]']
+  quantity smallint [not null, default: 1, note: '[조립 단계 부품 사용 수량]']
 
   indexes {
     (step_id, part_id) [pk]
@@ -860,11 +860,11 @@ Table assembly_step_part [note: '[조립 단계별 부품] 조립 단계에서 �
 Table addon_service [note: '[부가 서비스] 부가 서비스 마스터. 가구 배송 기사가 방문할 때 함께 하는 유료 서비스'] {
   service_id bigint [pk, increment, note: '[부가 서비스 ID]']
   service_type varchar(20) [not null, note: '[서비스 유형] DISPOSAL(폐가구 수거)/ASSEMBLY(조립 서비스)']
-  name varchar(50) [not null, unique, note: '[서비스명] 예: 침대 수거, 소파 수거, 수납장 조립']
+  name varchar(50) [not null, unique, note: '[부가 서비스명] 예: 침대 수거, 소파 수거, 수납장 조립']
   description varchar(500) [note: '[서비스 설명]']
-  fee bigint [not null, note: '[기본 요금] 기본 금액 (1개당)']
-  is_active char(1) [not null, default: 'Y', note: '[사용 여부]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  fee bigint [not null, note: '[부가 서비스 기본 요금] 기본 금액 (1개당)']
+  is_active char(1) [not null, default: 'Y', note: '[부가 서비스 사용 여부]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[부가 서비스 등록일시]']
 }
 
 Table product_addon_service [note: '[상품별 부가 서비스] 상품별 제공 부가 서비스. ASSEMBLY는 product.assembly_type = SELF인 상품만, DISPOSAL은 기사가 방문하는 배송(FREIGHT·DIRECT_INSTALL)만 (앱 검증)'] {
@@ -884,24 +884,24 @@ Table product_addon_service [note: '[상품별 부가 서비스] 상품별 제�
 
 Table post [note: '[커뮤니티 글] 커뮤니티 글 공통. 유형별 추가 정보는 *_detail 테이블 (슈퍼타입/서브타입). 자사몰 규모에 맞춰 고객 사진·집들이와 운영자 매거진만 운영'] {
   post_id bigint [pk, increment, note: '[글 ID]']
-  member_id bigint [not null, note: '[회원 ID] 작성자. MAGAZINE은 role이 EDITOR/ADMIN인 회원만 (앱 검증)']
+  member_id bigint [not null, note: '[글 작성 회원 ID] 작성자. MAGAZINE은 role이 EDITOR/ADMIN인 회원만 (앱 검증)']
   post_type varchar(20) [not null, note: '[글 유형] PHOTO(집사진)/HOUSEWARMING(집들이)/MAGAZINE(브랜드 매거진)']
   title varchar(200) [note: '[글 제목] PHOTO는 NULL 허용, 나머지는 필수 (CHECK)']
   cover_image_id bigint [note: '[대표 사진 ID] 목록 썸네일로 쓸 이미지']
   status varchar(20) [not null, default: 'DRAFT', note: '[글 상태] DRAFT(임시저장)/PUBLISHED/HIDDEN(작성자 숨김)/BLINDED(신고 누적·관리자 블라인드)/DELETED']
-  published_at datetime [note: '[발행일시] 최초 발행 시각. 피드 정렬 기준']
+  published_at datetime [note: '[글 발행일시] 최초 발행 시각. 피드 정렬 기준']
   is_featured char(1) [not null, default: 'N', note: '[추천 글 여부] 에디터 추천 (메인 노출)']
-  featured_at datetime [note: '[추천 지정일시]']
+  featured_at datetime [note: '[글 추천 지정일시]']
   allow_comment char(1) [not null, default: 'Y', note: '[댓글 허용 여부]']
-  view_count int [not null, default: 0, note: '[조회 수] 캐시']
-  like_count int [not null, default: 0, note: '[좋아요 수] 캐시']
-  scrap_count int [not null, default: 0, note: '[스크랩 수] 캐시']
+  view_count int [not null, default: 0, note: '[글 조회 수] 캐시']
+  like_count int [not null, default: 0, note: '[글 좋아요 수] 캐시']
+  scrap_count int [not null, default: 0, note: '[글 스크랩 수] 캐시']
   comment_count int [not null, default: 0, note: '[댓글 수] 캐시']
-  purchase_count int [not null, default: 0, note: '[구매 전환 수] 캐시. 이 글에서 담아 구매 확정(CONFIRMED)된 주문 상품 수 (order_item.source_post_id). 글 작성자 본인 구매는 제외. "구매로 이어진 집들이" 정렬 근거']
-  report_count int [not null, default: 0, note: '[신고 수] 캐시. 기준 이상이면 자동 BLINDED']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
-  deleted_at datetime [note: '[삭제일시]']
+  purchase_count int [not null, default: 0, note: '[글 구매 전환 수] 캐시. 이 글에서 담아 구매 확정(CONFIRMED)된 주문 상품 수 (order_item.source_post_id). 글 작성자 본인 구매는 제외. "구매로 이어진 집들이" 정렬 근거']
+  report_count int [not null, default: 0, note: '[글 신고 수] 캐시. 기준 이상이면 자동 BLINDED']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[글 등록일시]']
+  updated_at datetime [note: '[글 수정일시]']
+  deleted_at datetime [note: '[글 삭제일시]']
 
   indexes {
     (post_type, status, published_at) [name: 'ix_post_feed', note: '유형별 최신 피드']
@@ -913,15 +913,15 @@ Table post [note: '[커뮤니티 글] 커뮤니티 글 공통. 유형별 추가 
 }
 
 Table post_image [note: '[글 사진] 글에 올린 사진. 상품 태그의 기준'] {
-  image_id bigint [pk, increment, note: '[사진 ID]']
+  image_id bigint [pk, increment, note: '[글 사진 ID]']
   post_id bigint [not null, note: '[글 ID]']
   image_url varchar(500) [not null, note: '[사진 URL]']
-  width_px int [not null, note: '[원본 가로(px)] 피드 레이아웃(메이슨리)용 원본 크기']
-  height_px int [not null, note: '[원본 세로(px)]']
-  space_type varchar(20) [note: '[공간 유형] LIVING/BEDROOM/KITCHEN/BATHROOM/KIDS/DRESSROOM/STUDY/ENTRANCE/BALCONY/ETC. 공간별 사진 필터']
-  caption varchar(1000) [note: '[사진 설명] PHOTO 글은 사진마다 설명']
-  sort_order smallint [not null, note: '[정렬 순서]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  width_px int [not null, note: '[글 사진 원본 가로(px)] 피드 레이아웃(메이슨리)용 원본 크기']
+  height_px int [not null, note: '[글 사진 원본 세로(px)]']
+  space_type varchar(20) [note: '[글 사진 공간 유형] LIVING/BEDROOM/KITCHEN/BATHROOM/KIDS/DRESSROOM/STUDY/ENTRANCE/BALCONY/ETC. 공간별 사진 필터']
+  caption varchar(1000) [note: '[글 사진 설명] PHOTO 글은 사진마다 설명']
+  sort_order smallint [not null, note: '[글 사진 정렬 순서]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[글 사진 등록일시]']
 
   indexes {
     (post_id, sort_order) [unique, name: 'uk_post_image_order']
@@ -930,13 +930,13 @@ Table post_image [note: '[글 사진] 글에 올린 사진. 상품 태그의 기
 }
 
 Table post_block [note: '[글 본문 블록] 본문 블록 (집들이/매거진 같은 긴 글 에디터). 글 = 블록을 sort_order 순서로 이어 붙인 것'] {
-  block_id bigint [pk, increment, note: '[블록 ID]']
+  block_id bigint [pk, increment, note: '[본문 블록 ID]']
   post_id bigint [not null, note: '[글 ID]']
-  sort_order smallint [not null, note: '[정렬 순서]']
-  block_type varchar(20) [not null, note: '[블록 유형] HEADING/TEXT/IMAGE/QUOTE/DIVIDER/PRODUCT(상품 카드)']
+  sort_order smallint [not null, note: '[본문 블록 정렬 순서]']
+  block_type varchar(20) [not null, note: '[본문 블록 유형] HEADING/TEXT/IMAGE/QUOTE/DIVIDER/PRODUCT(상품 카드)']
   text_content text [note: '[블록 텍스트] HEADING/TEXT/QUOTE 본문']
-  image_id bigint [note: '[사진 ID] IMAGE 블록이면 post_image']
-  product_id bigint [note: '[상품 ID] product 블록이면 상품. CHECK 유형별 필수 컬럼']
+  image_id bigint [note: '[블록 사진 ID] IMAGE 블록이면 post_image']
+  product_id bigint [note: '[상품 카드 상품 ID] product 블록이면 상품. CHECK 유형별 필수 컬럼']
 
   indexes {
     (post_id, sort_order) [unique, name: 'uk_post_block_order']
@@ -946,16 +946,16 @@ Table post_block [note: '[글 본문 블록] 본문 블록 (집들이/매거진 
 }
 
 Table post_product_tag [note: '[사진 상품 태그] 사진 위 상품 태그 (사진 속 가구를 눌러 바로 구매). 오늘의집 핵심 기능'] {
-  tag_id bigint [pk, increment, note: '[태그 ID]']
-  image_id bigint [not null, note: '[사진 ID]']
-  product_id bigint [note: '[상품 ID] 스토어 상품. 판매하지 않는 제품이면 NULL']
-  external_name varchar(200) [note: '[외부 제품명] 스토어에 없는 제품 직접 입력 (예: 이케아 빌리 책장). CHECK product_id 또는 external_name 중 하나 필수']
-  pos_x decimal(5,2) [not null, note: '[X 좌표(%)] 사진 가로 위치 % (0~100). 해상도와 무관']
-  pos_y decimal(5,2) [not null, note: '[Y 좌표(%)] 사진 세로 위치 % (0~100)']
-  purchase_verified char(1) [not null, default: 'N', note: '[구매 인증 여부] Y = 글 작성자가 이 상품을 구매 확정함 ("구매 인증" 뱃지). CHECK purchase_verified = N OR product_id IS NOT NULL (외부 제품은 인증 불가)']
+  tag_id bigint [pk, increment, note: '[상품 태그 ID]']
+  image_id bigint [not null, note: '[태그가 붙은 사진 ID]']
+  product_id bigint [note: '[태그된 상품 ID] 스토어 상품. 판매하지 않는 제품이면 NULL']
+  external_name varchar(200) [note: '[상품 태그 외부 제품명] 스토어에 없는 제품 직접 입력 (예: 이케아 빌리 책장). CHECK product_id 또는 external_name 중 하나 필수']
+  pos_x decimal(5,2) [not null, note: '[상품 태그 X 좌표(%)] 사진 가로 위치 % (0~100). 해상도와 무관']
+  pos_y decimal(5,2) [not null, note: '[상품 태그 Y 좌표(%)] 사진 세로 위치 % (0~100)']
+  purchase_verified char(1) [not null, default: 'N', note: '[상품 태그 구매 인증 여부] Y = 글 작성자가 이 상품을 구매 확정함 ("구매 인증" 뱃지). CHECK purchase_verified = N OR product_id IS NOT NULL (외부 제품은 인증 불가)']
   verified_order_item_id bigint [note: '[구매 인증 주문 상품 ID] 인증 근거 주문 상품 (order_item, 글 작성자의 CONFIRMED 주문 상품). 반품·취소되면 N으로 되돌리고 NULL']
-  verified_at datetime [note: '[구매 인증일시]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  verified_at datetime [note: '[상품 태그 구매 인증일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[상품 태그 등록일시]']
 
   indexes {
     image_id [name: 'ix_ppt_image']
@@ -966,16 +966,16 @@ Table post_product_tag [note: '[사진 상품 태그] 사진 위 상품 태그 (
 
 Table housewarming_detail [note: '[집들이 상세] 집들이 상세 (post와 1:1). 목록 필터 조건'] {
   post_id bigint [pk, note: '[글 ID] post_type = HOUSEWARMING']
-  housing_type varchar(20) [not null, note: '[주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/ONE_ROOM/ETC']
-  area_pyeong smallint [not null, note: '[평수]']
-  room_count tinyint [note: '[방 개수]']
-  family_type varchar(20) [note: '[가족 형태] SINGLE/COUPLE/WITH_KIDS/WITH_PARENTS/SHARE/ETC']
-  region varchar(30) [note: '[지역] 시/도 단위까지만 (개인정보 보호)']
-  work_type varchar(20) [not null, note: '[시공 유형] SELF(셀프)/PARTIAL(부분 시공)/PRO(전문가 시공)']
-  work_scope varchar(200) [note: '[시공 범위] 도배, 바닥, 조명, 욕실 리모델링 등']
-  work_period_weeks smallint [note: '[시공 기간(주)]']
-  budget_manwon int [note: '[예산(만 원)]']
-  has_pet char(1) [note: '[반려동물 여부] Y/N']
+  housing_type varchar(20) [not null, note: '[집들이 주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/ONE_ROOM/ETC']
+  area_pyeong smallint [not null, note: '[집들이 평수]']
+  room_count tinyint [note: '[집들이 방 개수]']
+  family_type varchar(20) [note: '[집들이 가족 형태] SINGLE/COUPLE/WITH_KIDS/WITH_PARENTS/SHARE/ETC']
+  region varchar(30) [note: '[집들이 지역] 시/도 단위까지만 (개인정보 보호)']
+  work_type varchar(20) [not null, note: '[집들이 시공 유형] SELF(셀프)/PARTIAL(부분 시공)/PRO(전문가 시공)']
+  work_scope varchar(200) [note: '[집들이 시공 범위] 도배, 바닥, 조명, 욕실 리모델링 등']
+  work_period_weeks smallint [note: '[집들이 시공 기간(주)]']
+  budget_manwon int [note: '[집들이 예산(만 원)]']
+  has_pet char(1) [note: '[집들이 반려동물 여부] Y/N']
 
   indexes {
     (housing_type, area_pyeong) [name: 'ix_hw_housing_area']
@@ -985,9 +985,9 @@ Table housewarming_detail [note: '[집들이 상세] 집들이 상세 (post와 1
 
 Table magazine_detail [note: '[매거진 상세] 브랜드 매거진 상세 (post와 1:1). 운영자가 쓰는 인테리어 가이드·신상품 소개'] {
   post_id bigint [pk, note: '[글 ID] post_type = MAGAZINE']
-  topic varchar(20) [not null, note: '[주제] STYLING(스타일링)/GUIDE(구매 가이드)/CARE(관리법)/NEW_ARRIVAL(신상품)/TREND/DIY']
-  subtitle varchar(200) [note: '[부제목]']
-  reading_min smallint [note: '[읽는 시간(분)]']
+  topic varchar(20) [not null, note: '[매거진 주제] STYLING(스타일링)/GUIDE(구매 가이드)/CARE(관리법)/NEW_ARRIVAL(신상품)/TREND/DIY']
+  subtitle varchar(200) [note: '[매거진 부제목]']
+  reading_min smallint [note: '[매거진 읽는 시간(분)]']
 
   indexes {
     topic [name: 'ix_magazine_topic']
@@ -1010,15 +1010,15 @@ Table post_style [note: '[글 스타일] 글의 인테리어 스타일 (1단계 
 
 Table post_comment [note: '[댓글] 댓글 + 대댓글 (1단계 깊이)'] {
   comment_id bigint [pk, increment, note: '[댓글 ID]']
-  post_id bigint [not null, note: '[글 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  post_id bigint [not null, note: '[댓글 단 글 ID]']
+  member_id bigint [not null, note: '[댓글 작성 회원 ID]']
   parent_id bigint [note: '[상위 댓글 ID] 대댓글이면 원댓글. 대댓글의 대댓글은 원댓글에 붙임']
-  mention_member_id bigint [note: '[멘션 회원 ID] @닉네임 멘션 대상']
+  mention_member_id bigint [note: '[멘션된 회원 ID] @닉네임 멘션 대상']
   content varchar(1000) [not null, note: '[댓글 내용]']
   status varchar(20) [not null, default: 'ACTIVE', note: '[댓글 상태] ACTIVE/DELETED/BLINDED. 대댓글이 있으면 "삭제된 댓글입니다"로 표시']
-  report_count int [not null, default: 0, note: '[신고 수] 캐시']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  report_count int [not null, default: 0, note: '[댓글 신고 수] 캐시']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[댓글 등록일시]']
+  updated_at datetime [note: '[댓글 수정일시]']
 
   indexes {
     (post_id, parent_id, created_at) [name: 'ix_comment_post']
@@ -1029,9 +1029,9 @@ Table post_comment [note: '[댓글] 댓글 + 대댓글 (1단계 깊이)'] {
 }
 
 Table post_like [note: '[글 좋아요]'] {
-  member_id bigint [not null, note: '[회원 ID]']
-  post_id bigint [not null, note: '[글 ID]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  member_id bigint [not null, note: '[좋아요 누른 회원 ID]']
+  post_id bigint [not null, note: '[좋아요 누른 글 ID]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[좋아요 누른 일시]']
 
   indexes {
     (member_id, post_id) [pk]
@@ -1041,10 +1041,10 @@ Table post_like [note: '[글 좋아요]'] {
 
 Table scrap [note: '[스크랩] 스크랩 = 글 저장 + 상품 찜. 대상은 post 또는 product 중 하나 (CHECK)'] {
   scrap_id bigint [pk, increment, note: '[스크랩 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
-  post_id bigint [note: '[글 ID]']
-  product_id bigint [note: '[상품 ID]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  member_id bigint [not null, note: '[스크랩한 회원 ID]']
+  post_id bigint [note: '[스크랩한 글 ID]']
+  product_id bigint [note: '[스크랩한 상품 ID]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[스크랩한 일시]']
 
   indexes {
     (member_id, post_id) [unique, name: 'uk_scrap_post', note: '같은 글 중복 스크랩 방지. MySQL UNIQUE는 NULL 행을 중복으로 보지 않아 상품 스크랩 행과 충돌하지 않음']
@@ -1061,16 +1061,16 @@ Table scrap [note: '[스크랩] 스크랩 = 글 저장 + 상품 찜. 대상은 p
 
 Table report [note: '[신고] 신고 (글/댓글/회원). 대상 컬럼 중 정확히 하나만 채움 (CHECK). 승인되면 회원 정지는 member_status_history로 기록'] {
   report_id bigint [pk, increment, note: '[신고 ID]']
-  reporter_id bigint [not null, note: '[신고자 ID]']
-  post_id bigint [note: '[글 ID]']
-  comment_id bigint [note: '[댓글 ID]']
-  target_member_id bigint [note: '[대상 회원 ID]']
+  reporter_id bigint [not null, note: '[신고한 회원 ID]']
+  post_id bigint [note: '[신고된 글 ID]']
+  comment_id bigint [note: '[신고된 댓글 ID]']
+  target_member_id bigint [note: '[신고된 회원 ID]']
   reason_type varchar(20) [not null, note: '[신고 사유 유형] SPAM/ADVERTISING/ABUSE/ADULT/COPYRIGHT/PRIVACY/ETC']
   detail varchar(1000) [note: '[신고 상세 내용]']
-  status varchar(20) [not null, default: 'RECEIVED', note: '[처리 상태] RECEIVED/ACCEPTED/REJECTED']
-  handled_by bigint [note: '[처리자 ID] 처리 관리자']
-  handled_at datetime [note: '[처리일시]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  status varchar(20) [not null, default: 'RECEIVED', note: '[신고 처리 상태] RECEIVED/ACCEPTED/REJECTED']
+  handled_by bigint [note: '[신고 처리 관리자 ID] 처리 관리자']
+  handled_at datetime [note: '[신고 처리일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[신고일시]']
 
   indexes {
     (reporter_id, post_id) [unique, name: 'uk_report_post', note: '같은 글 중복 신고 방지 (NULL 행은 중복 아님)']
@@ -1086,17 +1086,17 @@ Table report [note: '[신고] 신고 (글/댓글/회원). 대상 컬럼 중 정�
 
 Table notification [note: '[알림] 알림함 (앱 내 알림 목록). 발송 여부는 member_notification_setting 기준'] {
   notification_id bigint [pk, increment, note: '[알림 ID]']
-  member_id bigint [not null, note: '[회원 ID] 받는 사람']
+  member_id bigint [not null, note: '[알림 받는 회원 ID] 받는 사람']
   actor_id bigint [note: '[알림 발생 회원 ID] 행동한 사람 (좋아요/댓글 단 회원). 시스템 알림은 NULL']
   noti_type varchar(20) [not null, note: '[알림 유형] COMMENT/REPLY/MENTION/LIKE/FEATURED(추천 선정)/RESTOCK/PRICE_DROP/ORDER/DELIVERY/NOTICE']
-  post_id bigint [note: '[글 ID]']
-  comment_id bigint [note: '[댓글 ID]']
-  product_id bigint [note: '[상품 ID]']
+  post_id bigint [note: '[알림 관련 글 ID]']
+  comment_id bigint [note: '[알림 관련 댓글 ID]']
+  product_id bigint [note: '[알림 관련 상품 ID]']
   message varchar(300) [not null, note: '[알림 문구]']
-  link_url varchar(500) [note: '[이동 URL]']
-  is_read char(1) [not null, default: 'N', note: '[읽음 여부]']
-  read_at datetime [note: '[읽은 일시]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  link_url varchar(500) [note: '[알림 이동 URL]']
+  is_read char(1) [not null, default: 'N', note: '[알림 읽음 여부]']
+  read_at datetime [note: '[알림 읽은 일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[알림 발생일시]']
 
   indexes {
     (member_id, is_read, created_at) [name: 'ix_notification_member', note: '안 읽은 알림 수, 최신순 목록']
@@ -1113,20 +1113,20 @@ Table notification [note: '[알림] 알림함 (앱 내 알림 목록). 발송 �
 
 Table cart_item [note: '[장바구니 상품] 장바구니 (회원 + 비회원). SKU 단위. 방(room_id)별로 묶어 보고, 집들이 글(source_post_id)·인테리어 플랜(plan_id)에서 담았으면 유입을 남긴다. 담은 시점 가격(added_price)으로 가격 변동을 표시하고 가격 인하 알림 근거로 쓴다. 회원 행은 90일, 비회원 행은 30일 지나면 배치 삭제'] {
   cart_item_id bigint [pk, increment, note: '[장바구니 상품 ID]']
-  member_id bigint [note: '[회원 ID] 회원 장바구니. CHECK: member_id, guest_token_hash 중 정확히 하나 (CHECK에 쓰이므로 FK는 참조 동작 없이)']
-  guest_token_hash char(64) [note: '[비회원 토큰 해시] 비회원 장바구니: 쿠키 토큰의 SHA-256 (원문 미저장). 로그인하면 회원 장바구니로 합침: 같은 SKU·세트 묶음이 있으면 수량 합산(max_per_order 상한, added_price는 더 낮은 값), 없으면 member_id를 채우고 토큰을 비움']
-  sku_id bigint [not null, note: '[SKU ID]']
-  quantity smallint [not null, note: '[수량] CHECK quantity >= 1. product.max_per_order 초과는 앱 검증']
+  member_id bigint [note: '[장바구니 회원 ID] 회원 장바구니. CHECK: member_id, guest_token_hash 중 정확히 하나 (CHECK에 쓰이므로 FK는 참조 동작 없이)']
+  guest_token_hash char(64) [note: '[장바구니 비회원 토큰 해시] 비회원 장바구니: 쿠키 토큰의 SHA-256 (원문 미저장). 로그인하면 회원 장바구니로 합침: 같은 SKU·세트 묶음이 있으면 수량 합산(max_per_order 상한, added_price는 더 낮은 값), 없으면 member_id를 채우고 토큰을 비움']
+  sku_id bigint [not null, note: '[담은 SKU ID]']
+  quantity smallint [not null, note: '[장바구니 담은 수량] CHECK quantity >= 1. product.max_per_order 초과는 앱 검증']
   set_product_id bigint [note: '[세트 상품 ID] 세트 상품으로 담았으면 세트 상품 ID (구성품 SKU를 각각 한 행씩)']
-  bundle_key char(36) [note: '[세트 묶음 키] 세트 1회 선택을 묶는 UUID. 같은 세트를 두 번 담으면 다른 값. 일반 상품은 NULL']
-  added_price bigint [not null, note: '[담은 시점 단가] 처음 담을 때의 단가 (판매가 + 옵션 추가금). 수량을 합쳐도 처음 값 유지. 화면에 "담은 뒤 N원 내렸어요/올랐어요" 표시']
-  price_alert_price bigint [note: '[가격 인하 알림 발송 가격] 마지막으로 가격 인하 알림을 보낸 가격. 새 가격 < MIN(added_price, price_alert_price)일 때만 다시 알림 (중복 발송 방지). 비회원은 알림 없음']
-  room_id bigint [note: '[방 ID] 놓을 방 (member_room). 방별 합계·바닥 면적 점유율·방문 통과 여부를 화면에서 계산. 방을 지우면 NULL (ON DELETE SET NULL). 회원 전용']
+  bundle_key char(36) [note: '[장바구니 세트 묶음 키] 세트 1회 선택을 묶는 UUID. 같은 세트를 두 번 담으면 다른 값. 일반 상품은 NULL']
+  added_price bigint [not null, note: '[장바구니 담은 시점 단가] 처음 담을 때의 단가 (판매가 + 옵션 추가금). 수량을 합쳐도 처음 값 유지. 화면에 "담은 뒤 N원 내렸어요/올랐어요" 표시']
+  price_alert_price bigint [note: '[장바구니 가격 인하 알림 발송 가격] 마지막으로 가격 인하 알림을 보낸 가격. 새 가격 < MIN(added_price, price_alert_price)일 때만 다시 알림 (중복 발송 방지). 비회원은 알림 없음']
+  room_id bigint [note: '[놓을 방 ID] 놓을 방 (member_room). 방별 합계·바닥 면적 점유율·방문 통과 여부를 화면에서 계산. 방을 지우면 NULL (ON DELETE SET NULL). 회원 전용']
   source_post_id bigint [note: '[유입 글 ID] 집들이·사진 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담았으면 그 글. 같은 SKU를 다른 글에서 다시 담으면 최근 글로 갱신 (last-touch)']
-  plan_id bigint [note: '[플랜 ID] 인테리어 플랜에서 "장바구니로 담기"로 옮겼으면 그 플랜 (플랜 → 구매 전환 확인). 회원 전용']
-  is_selected char(1) [not null, default: 'Y', note: '[주문 선택 여부] Y/N 주문할 항목 체크. 품절·판매중지 SKU는 주문에서 자동 제외']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  plan_id bigint [note: '[유입 플랜 ID] 인테리어 플랜에서 "장바구니로 담기"로 옮겼으면 그 플랜 (플랜 → 구매 전환 확인). 회원 전용']
+  is_selected char(1) [not null, default: 'Y', note: '[장바구니 주문 선택 여부] Y/N 주문할 항목 체크. 품절·판매중지 SKU는 주문에서 자동 제외']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[장바구니 담은 일시]']
+  updated_at datetime [note: '[장바구니 수정일시]']
 
   indexes {
     (`COALESCE(member_id, 0)`, `COALESCE(guest_token_hash, '')`, sku_id, `COALESCE(bundle_key, '')`) [unique, name: 'ux_cart_item', note: '회원·비회원 각각 같은 SKU는 한 행에 수량 합산 (NULL도 같은 값으로 보도록 함수 기반 키)']
@@ -1144,7 +1144,7 @@ Table cart_item [note: '[장바구니 상품] 장바구니 (회원 + 비회원).
 Table cart_item_addon [note: '[장바구니 부가 서비스] 장바구니 상품에 고른 부가 서비스'] {
   cart_item_id bigint [not null, note: '[장바구니 상품 ID]']
   service_id bigint [not null, note: '[부가 서비스 ID]']
-  quantity smallint [not null, default: 1, note: '[수량] CHECK 1 <= quantity <= cart_item.quantity (앱 검증). 예: 의자 4개 중 2개 수거']
+  quantity smallint [not null, default: 1, note: '[장바구니 부가 서비스 수량] CHECK 1 <= quantity <= cart_item.quantity (앱 검증). 예: 의자 4개 중 2개 수거']
 
   indexes {
     (cart_item_id, service_id) [pk]
@@ -1158,16 +1158,16 @@ Table cart_item_addon [note: '[장바구니 부가 서비스] 장바구니 상�
 
 Table interior_plan [note: '[인테리어 플랜] 인테리어 플랜 (공간 꾸미기 보드). 방·스타일·예산을 정하고 후보 상품을 모아 비교 → 확정한 상품을 한 번에 장바구니로. 가구는 바로 사지 않고 조합하다가 한꺼번에 사는 구매 패턴에 맞춤. 합계·예산 대비·방 치수 확인은 저장하지 않고 계산'] {
   plan_id bigint [pk, increment, note: '[플랜 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  member_id bigint [not null, note: '[플랜 작성 회원 ID]']
   title varchar(50) [not null, note: '[플랜 이름] 예: 신혼집 거실 꾸미기']
-  room_id bigint [note: '[방 ID] 꾸밀 방 (member_room). 지정하면 후보 상품이 방에 들어가는지 확인. 방을 지우면 NULL (ON DELETE SET NULL)']
+  room_id bigint [note: '[꾸밀 방 ID] 꾸밀 방 (member_room). 지정하면 후보 상품이 방에 들어가는지 확인. 방을 지우면 NULL (ON DELETE SET NULL)']
   style_id bigint [note: '[스타일 ID] 목표 스타일 → 같은 스타일 상품·집들이 추천 (product_style, post_style)']
-  budget bigint [note: '[예산] 예산. CHOSEN 항목 합계(현재 가격 × 수량)와 비교해 남은 금액 표시']
-  memo varchar(500) [note: '[메모]']
-  share_token_hash char(64) [unique, note: '[공유 토큰 해시] 공유 링크 토큰 SHA-256. NULL이면 비공개, 링크로는 보기만 가능 (배우자·가족과 함께 고르기)']
+  budget bigint [note: '[플랜 예산] 예산. CHOSEN 항목 합계(현재 가격 × 수량)와 비교해 남은 금액 표시']
+  memo varchar(500) [note: '[플랜 메모]']
+  share_token_hash char(64) [unique, note: '[플랜 공유 토큰 해시] 공유 링크 토큰 SHA-256. NULL이면 비공개, 링크로는 보기만 가능 (배우자·가족과 함께 고르기)']
   status varchar(20) [not null, default: 'ACTIVE', note: '[플랜 상태] ACTIVE/ARCHIVED']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[플랜 등록일시]']
+  updated_at datetime [note: '[플랜 수정일시]']
 
   indexes {
     (member_id, status) [name: 'ix_interior_plan_member']
@@ -1179,14 +1179,14 @@ Table interior_plan [note: '[인테리어 플랜] 인테리어 플랜 (공간 �
 Table interior_plan_item [note: '[플랜 상품] 플랜에 담은 상품. 같은 자리의 후보 여러 개(예: 소파 3개)를 CANDIDATE로 두고 비교한 뒤 하나를 CHOSEN으로 확정. "장바구니로 담기"는 CHOSEN 항목을 cart_item으로 복사 (room_id = 플랜의 방, source_post_id 유지, SKU 미정이면 옵션 선택 요구)'] {
   plan_item_id bigint [pk, increment, note: '[플랜 상품 ID]']
   plan_id bigint [not null, note: '[플랜 ID]']
-  product_id bigint [not null, note: '[상품 ID]']
+  product_id bigint [not null, note: '[후보 상품 ID]']
   sku_id bigint [note: '[SKU ID] 옵션을 아직 정하지 않았으면 NULL']
-  quantity smallint [not null, default: 1, note: '[수량] CHECK quantity >= 1']
-  pick_status varchar(20) [not null, default: 'CANDIDATE', note: '[선택 상태] CANDIDATE(후보)/CHOSEN(확정)']
+  quantity smallint [not null, default: 1, note: '[플랜 상품 수량] CHECK quantity >= 1']
+  pick_status varchar(20) [not null, default: 'CANDIDATE', note: '[플랜 상품 선택 상태] CANDIDATE(후보)/CHOSEN(확정)']
   source_post_id bigint [note: '[유입 글 ID] 집들이 글에서 플랜에 담았으면 그 글']
-  memo varchar(200) [note: '[메모] 예: 거실 창가 쪽, 색상 고민 중']
-  sort_order smallint [not null, note: '[정렬 순서]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  memo varchar(200) [note: '[플랜 상품 메모] 예: 거실 창가 쪽, 색상 고민 중']
+  sort_order smallint [not null, note: '[플랜 상품 정렬 순서]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[플랜 상품 등록일시]']
 
   indexes {
     (plan_id, sort_order) [name: 'ix_plan_item_plan']
@@ -1203,27 +1203,27 @@ Table interior_plan_item [note: '[플랜 상품] 플랜에 담은 상품. 같은
 Table orders [note: '[주문] 주문 (order는 MySQL 예약어라 orders). 상태는 주문 상품(order_item)별로 관리하고 여기는 요약. 금액은 주문 시점 스냅샷'] {
   order_id bigint [pk, increment, note: '[주문 ID]']
   order_no varchar(20) [not null, unique, note: '[주문번호] 화면·고객센터용 주문번호 (예: 20261118-000123). PG 가맹점 주문번호로도 사용']
-  member_id bigint [not null, note: '[회원 ID]']
+  member_id bigint [not null, note: '[주문 회원 ID]']
   orderer_name varchar(50) [not null, note: '[주문자 이름] 주문자 스냅샷']
   orderer_phone_enc varchar(200) [not null, note: '[주문자 연락처(암호화)] AES-256 암호문']
   orderer_email varchar(200) [not null, note: '[주문자 이메일]']
-  grade_id bigint [not null, note: '[등급 ID] 주문 시점 등급 (등급 할인 근거)']
-  total_list_amount bigint [not null, note: '[정가 합계] 정가 합계 (할인 표시용)']
-  total_sale_amount bigint [not null, note: '[판매가 합계] 판매가 + 옵션 추가금 합계 = SUM(order_item.item_amount)']
-  grade_discount_amount bigint [not null, default: 0, note: '[등급 할인액]']
-  coupon_discount_amount bigint [not null, default: 0, note: '[쿠폰 할인액] 다음 단계(쿠폰)에서 사용. 지금은 0']
-  point_used_amount bigint [not null, default: 0, note: '[포인트 사용액] 다음 단계(포인트)에서 사용. 지금은 0']
-  shipping_fee_total bigint [not null, default: 0, note: '[배송비 합계] SUM(shipment.fee_total)']
-  addon_fee_total bigint [not null, default: 0, note: '[부가 서비스 금액 합계] 부가 서비스(폐가구 수거·조립) 합계 = SUM(order_item.addon_amount). 할인·무료배송 기준 금액에 포함하지 않음']
-  payment_amount bigint [not null, note: '[결제 금액] 실결제 금액 = 판매가 합 - 할인 - 포인트 + 배송비 + 부가 서비스. CHECK payment_amount >= 0']
-  desired_receive_date date [note: '[희망 수령일] 희망 수령일. 기본값 member_home.move_in_planned_at (오늘 이후일 때)']
-  receive_together char(1) [not null, default: 'N', note: '[한 번에 받기 여부] Y/N 이사일에 한 번에 받기. Y면 모든 배송 묶음을 같은 날 받도록 출고를 맞춤 (shipment.expected_ship_date 조정, 설치배송은 그 날짜 슬롯 예약)']
+  grade_id bigint [not null, note: '[주문 시점 회원 등급 ID] 주문 시점 등급 (등급 할인 근거)']
+  total_list_amount bigint [not null, note: '[주문 정가 합계] 정가 합계 (할인 표시용)']
+  total_sale_amount bigint [not null, note: '[주문 판매가 합계] 판매가 + 옵션 추가금 합계 = SUM(order_item.item_amount)']
+  grade_discount_amount bigint [not null, default: 0, note: '[주문 등급 할인액]']
+  coupon_discount_amount bigint [not null, default: 0, note: '[주문 쿠폰 할인액] 다음 단계(쿠폰)에서 사용. 지금은 0']
+  point_used_amount bigint [not null, default: 0, note: '[주문 포인트 사용액] 다음 단계(포인트)에서 사용. 지금은 0']
+  shipping_fee_total bigint [not null, default: 0, note: '[주문 배송비 합계] SUM(shipment.fee_total)']
+  addon_fee_total bigint [not null, default: 0, note: '[주문 부가 서비스 금액 합계] 부가 서비스(폐가구 수거·조립) 합계 = SUM(order_item.addon_amount). 할인·무료배송 기준 금액에 포함하지 않음']
+  payment_amount bigint [not null, note: '[주문 결제 금액] 실결제 금액 = 판매가 합 - 할인 - 포인트 + 배송비 + 부가 서비스. CHECK payment_amount >= 0']
+  desired_receive_date date [note: '[주문 희망 수령일] 희망 수령일. 기본값 member_home.move_in_planned_at (오늘 이후일 때)']
+  receive_together char(1) [not null, default: 'N', note: '[주문 한 번에 받기 여부] Y/N 이사일에 한 번에 받기. Y면 모든 배송 묶음을 같은 날 받도록 출고를 맞춤 (shipment.expected_ship_date 조정, 설치배송은 그 날짜 슬롯 예약)']
   status varchar(20) [not null, default: 'PENDING', note: '[주문 상태] PENDING(결제 대기)/PAID(진행 중)/COMPLETED(모든 상품 구매 확정 또는 취소)/CANCELED(전체 취소)/EXPIRED(결제 기한 초과). order_item 상태에서 계산해 갱신']
   ordered_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[주문일시]']
-  expires_at datetime [not null, note: '[결제 기한] 결제 기한. 카드·간편결제·실시간 이체는 주문 생성 + 30분, 가상계좌를 발급하면 payment.deposit_due_at으로 연장 (그때까지 재고·설치 슬롯 유지). 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구']
-  paid_at datetime [note: '[결제일시]']
-  canceled_at datetime [note: '[취소일시]']
-  updated_at datetime [note: '[수정일시]']
+  expires_at datetime [not null, note: '[주문 결제 기한] 결제 기한. 카드·간편결제·실시간 이체는 주문 생성 + 30분, 가상계좌를 발급하면 payment.deposit_due_at으로 연장 (그때까지 재고·설치 슬롯 유지). 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구']
+  paid_at datetime [note: '[주문 결제일시]']
+  canceled_at datetime [note: '[주문 취소일시]']
+  updated_at datetime [note: '[주문 수정일시]']
 
   indexes {
     (member_id, ordered_at) [name: 'ix_orders_member', note: '내 주문 목록 (최신순)']
@@ -1234,22 +1234,22 @@ Table orders [note: '[주문] 주문 (order는 MySQL 예약어라 orders). 상�
 
 Table order_address [note: '[주문 배송지] 주문 배송지 스냅샷 (orders와 1:1). 주문 후 회원이 배송지를 고치거나 지워도 이 주문은 그대로. 반입 경로까지 복사해 설치 기사에게 전달'] {
   order_id bigint [pk, note: '[주문 ID] orders와 1:1']
-  receiver_name varchar(50) [not null, note: '[받는 분 이름]']
-  receiver_phone_enc varchar(200) [not null, note: '[받는 분 연락처(암호화)] AES-256 암호문']
-  zipcode varchar(10) [not null, note: '[우편번호]']
-  address1 varchar(200) [not null, note: '[기본 주소]']
-  address2 varchar(200) [note: '[상세 주소]']
+  receiver_name varchar(50) [not null, note: '[주문 배송지 받는 분 이름]']
+  receiver_phone_enc varchar(200) [not null, note: '[주문 배송지 받는 분 연락처(암호화)] AES-256 암호문']
+  zipcode varchar(10) [not null, note: '[주문 배송지 우편번호]']
+  address1 varchar(200) [not null, note: '[주문 배송지 기본 주소]']
+  address2 varchar(200) [note: '[주문 배송지 상세 주소]']
   zone_id bigint [not null, note: '[권역 ID] 우편번호로 찾은 배송 권역 (배송비·설치 슬롯 기준)']
-  building_type varchar(20) [note: '[주거형태] 주거형태 스냅샷 (반입 기본값 근거)']
-  floor_no smallint [note: '[층수]']
-  has_elevator char(1) [note: '[엘리베이터 유무]']
-  entrance_door_width_mm int [note: '[현관문 폭(mm)]']
-  elevator_door_width_mm int [note: '[엘리베이터 문 폭(mm)]']
-  elevator_inner_depth_mm int [note: '[엘리베이터 내부 깊이(mm)]']
-  elevator_inner_height_mm int [note: '[엘리베이터 내부 높이(mm)]']
-  ladder_truck_available char(1) [note: '[사다리차 진입 가능 여부]']
-  delivery_request varchar(200) [note: '[배송 요청사항] address.delivery_request 기본값, 주문서에서 수정 가능']
-  entrance_password_enc varchar(200) [note: '[공동현관 비밀번호(암호화)] AES-256 암호문. 배송 완료 후 파기(NULL)']
+  building_type varchar(20) [note: '[주문 배송지 주거형태] 주거형태 스냅샷 (반입 기본값 근거)']
+  floor_no smallint [note: '[주문 배송지 층수]']
+  has_elevator char(1) [note: '[주문 배송지 엘리베이터 유무]']
+  entrance_door_width_mm int [note: '[주문 배송지 현관문 폭(mm)]']
+  elevator_door_width_mm int [note: '[주문 배송지 엘리베이터 문 폭(mm)]']
+  elevator_inner_depth_mm int [note: '[주문 배송지 엘리베이터 내부 깊이(mm)]']
+  elevator_inner_height_mm int [note: '[주문 배송지 엘리베이터 내부 높이(mm)]']
+  ladder_truck_available char(1) [note: '[주문 배송지 사다리차 진입 가능 여부]']
+  delivery_request varchar(200) [note: '[주문 배송지 배송 요청사항] address.delivery_request 기본값, 주문서에서 수정 가능']
+  entrance_password_enc varchar(200) [note: '[주문 배송지 공동현관 비밀번호(암호화)] AES-256 암호문. 배송 완료 후 파기(NULL)']
 
   indexes {
     zone_id [name: 'ix_order_address_zone']
@@ -1260,32 +1260,32 @@ Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태
   order_item_id bigint [pk, increment, note: '[주문 상품 ID]']
   order_id bigint [not null, note: '[주문 ID]']
   shipment_id bigint [not null, note: '[배송 묶음 ID] 배송 묶음']
-  product_id bigint [not null, note: '[상품 ID]']
-  sku_id bigint [not null, note: '[SKU ID]']
+  product_id bigint [not null, note: '[주문한 상품 ID]']
+  sku_id bigint [not null, note: '[주문한 SKU ID]']
   set_product_id bigint [note: '[세트 상품 ID] 세트로 주문했으면 세트 상품 ID']
-  bundle_key char(36) [note: '[세트 묶음 키] 세트 1회 선택 묶음 (cart_item에서 복사)']
+  bundle_key char(36) [note: '[주문 상품 세트 묶음 키] 세트 1회 선택 묶음 (cart_item에서 복사)']
   source_post_id bigint [note: '[유입 글 ID] 유입 글 (cart_item에서 복사). 구매 확정 시 post.purchase_count 증가 (작성자 본인 구매 제외)']
-  room_name varchar(30) [note: '[설치 위치(방 이름)] 설치 위치 스냅샷 (cart_item.room_id의 방 이름, 예: 안방). 설치 기사 전달용']
+  room_name varchar(30) [note: '[주문 상품 설치 위치(방 이름)] 설치 위치 스냅샷 (cart_item.room_id의 방 이름, 예: 안방). 설치 기사 전달용']
   product_name varchar(200) [not null, note: '[상품명(스냅샷)] 스냅샷']
-  option_text varchar(200) [not null, note: '[옵션 문구(스냅샷)] 스냅샷 (예: 월넛 / Q). 옵션 없으면 빈 문자열']
-  sku_code varchar(50) [not null, note: '[SKU 코드] 스냅샷']
-  sale_type varchar(20) [not null, note: '[판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER 스냅샷. MADE_TO_ORDER는 재고 차감 없음']
-  unit_list_price bigint [not null, note: '[정가 단가] 정가 + 옵션 추가금']
-  unit_price bigint [not null, note: '[단가] 판매가 + 옵션 추가금']
-  quantity smallint [not null, note: '[수량] CHECK quantity >= 1']
-  item_amount bigint [not null, note: '[상품 금액] unit_price × quantity']
-  grade_discount_amount bigint [not null, default: 0, note: '[등급 할인액] 주문 등급 할인을 이 상품 몫으로 안분']
-  coupon_discount_amount bigint [not null, default: 0, note: '[쿠폰 할인액] 쿠폰 할인 안분 (다음 단계)']
-  point_used_amount bigint [not null, default: 0, note: '[포인트 사용액] 포인트 사용 안분 (다음 단계)']
-  addon_amount bigint [not null, default: 0, note: '[부가 서비스 금액] 부가 서비스 합계 = SUM(order_item_addon.amount). 할인 대상 아님']
-  final_amount bigint [not null, note: '[실결제 금액] 이 상품의 실결제 몫 = item_amount - 할인 안분 + addon_amount. 부분 취소 시 환불 기준 (부가 서비스도 함께 환불)']
+  option_text varchar(200) [not null, note: '[주문 상품 옵션 문구(스냅샷)] 스냅샷 (예: 월넛 / Q). 옵션 없으면 빈 문자열']
+  sku_code varchar(50) [not null, note: '[주문 상품 SKU 코드] 스냅샷']
+  sale_type varchar(20) [not null, note: '[주문 상품 판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER 스냅샷. MADE_TO_ORDER는 재고 차감 없음']
+  unit_list_price bigint [not null, note: '[주문 상품 정가 단가] 정가 + 옵션 추가금']
+  unit_price bigint [not null, note: '[주문 상품 단가] 판매가 + 옵션 추가금']
+  quantity smallint [not null, note: '[주문 상품 수량] CHECK quantity >= 1']
+  item_amount bigint [not null, note: '[주문 상품 금액] unit_price × quantity']
+  grade_discount_amount bigint [not null, default: 0, note: '[주문 상품 등급 할인액] 주문 등급 할인을 이 상품 몫으로 안분']
+  coupon_discount_amount bigint [not null, default: 0, note: '[주문 상품 쿠폰 할인액] 쿠폰 할인 안분 (다음 단계)']
+  point_used_amount bigint [not null, default: 0, note: '[주문 상품 포인트 사용액] 포인트 사용 안분 (다음 단계)']
+  addon_amount bigint [not null, default: 0, note: '[주문 상품 부가 서비스 금액] 부가 서비스 합계 = SUM(order_item_addon.amount). 할인 대상 아님']
+  final_amount bigint [not null, note: '[주문 상품 실결제 금액] 이 상품의 실결제 몫 = item_amount - 할인 안분 + addon_amount. 부분 취소 시 환불 기준 (부가 서비스도 함께 환불)']
   status varchar(20) [not null, default: 'PENDING', note: '[주문 상품 상태] PENDING(결제 대기)/PAID/PREPARING(출고 준비·제작 중)/SHIPPED/DELIVERED(배송·설치 완료)/CONFIRMED(구매 확정)/CANCEL_REQUESTED/CANCELED. PAID는 즉시 취소, PREPARING부터는 취소 요청 → 관리자 승인, SHIPPED부터는 반품(다음 단계)']
-  confirmed_at datetime [note: '[구매 확정일시] 구매 확정 (DELIVERED 7일 후 자동 또는 회원 직접). 이때 product.sales_count, member_account.total_purchase_amount 갱신']
-  canceled_at datetime [note: '[취소일시]']
-  cancel_reason varchar(500) [note: '[취소 사유]']
+  confirmed_at datetime [note: '[주문 상품 구매 확정일시] 구매 확정 (DELIVERED 7일 후 자동 또는 회원 직접). 이때 product.sales_count, member_account.total_purchase_amount 갱신']
+  canceled_at datetime [note: '[주문 상품 취소일시]']
+  cancel_reason varchar(500) [note: '[주문 상품 취소 사유]']
   payment_cancel_id bigint [note: '[결제 취소 ID] 환불 처리된 결제 취소 건']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[주문 상품 등록일시]']
+  updated_at datetime [note: '[주문 상품 수정일시]']
 
   indexes {
     order_id [name: 'ix_order_item_order']
@@ -1300,13 +1300,13 @@ Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태
 }
 
 Table order_item_status_history [note: '[주문 상품 상태 이력] 주문 상품 상태 변경 이력 (CS 응대, 처리자 추적)'] {
-  history_id bigint [pk, increment, note: '[상태 이력 ID]']
+  history_id bigint [pk, increment, note: '[주문 상품 상태 이력 ID]']
   order_item_id bigint [not null, note: '[주문 상품 ID]']
-  from_status varchar(20) [note: '[이전 주문 상품 상태] 최초 생성은 NULL']
-  to_status varchar(20) [not null, note: '[변경 주문 상품 상태]']
-  reason varchar(500) [note: '[변경 사유]']
-  changed_by bigint [note: '[변경자 ID] 관리자. 회원 본인·시스템(결제 승인, 자동 확정)은 NULL']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  from_status varchar(20) [note: '[변경 전 주문 상품 상태] 최초 생성은 NULL']
+  to_status varchar(20) [not null, note: '[변경 후 주문 상품 상태]']
+  reason varchar(500) [note: '[주문 상품 상태 변경 사유]']
+  changed_by bigint [note: '[주문 상품 상태 변경 처리자 ID] 관리자. 회원 본인·시스템(결제 승인, 자동 확정)은 NULL']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[주문 상품 상태 변경일시]']
 
   indexes {
     (order_item_id, created_at) [name: 'ix_oish_item']
@@ -1319,8 +1319,8 @@ Table order_item_addon [note: '[주문 상품 부가 서비스] 주문 상품의
   order_item_id bigint [not null, note: '[주문 상품 ID]']
   service_id bigint [not null, note: '[부가 서비스 ID]']
   service_name varchar(50) [not null, note: '[서비스명(스냅샷)] 스냅샷']
-  unit_fee bigint [not null, note: '[단가(스냅샷)] 스냅샷 (fee_override 또는 fee)']
-  quantity smallint [not null, note: '[수량] CHECK quantity >= 1']
+  unit_fee bigint [not null, note: '[주문 부가 서비스 단가(스냅샷)] 스냅샷 (fee_override 또는 fee)']
+  quantity smallint [not null, note: '[주문 부가 서비스 수량] CHECK quantity >= 1']
   amount bigint [not null, note: '[서비스 금액] unit_fee × quantity']
 
   indexes {
@@ -1334,20 +1334,20 @@ Table order_item_addon [note: '[주문 상품 부가 서비스] 주문 상품의
 // =====================================================================
 
 Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누락(MISSING)·파손(DAMAGED)은 구매 확정 후 30일까지 무료 발송, 추가 구매(PURCHASE)는 is_orderable 부품만 유료 (결제 흐름은 다음 단계에서 정교화)'] {
-  request_id bigint [pk, increment, note: '[요청 ID]']
-  member_id bigint [not null, note: '[회원 ID]']
+  request_id bigint [pk, increment, note: '[부품 요청 ID]']
+  member_id bigint [not null, note: '[부품 요청 회원 ID]']
   order_item_id bigint [not null, note: '[주문 상품 ID] 부품이 필요한 구매 상품']
-  request_type varchar(20) [not null, note: '[요청 유형] MISSING/DAMAGED/PURCHASE']
-  status varchar(20) [not null, default: 'REQUESTED', note: '[요청 상태] REQUESTED/APPROVED/SHIPPED/REJECTED']
-  photo_url varchar(500) [note: '[파손 사진 URL] 파손 사진 (DAMAGED는 필수, 앱 검증)']
-  amount bigint [not null, default: 0, note: '[유료 금액] PURCHASE만 SUM(part.unit_price × 수량), MISSING·DAMAGED는 0']
-  carrier_code varchar(20) [note: '[택배사 코드]']
-  tracking_no varchar(50) [note: '[송장번호]']
-  reject_reason varchar(500) [note: '[반려 사유]']
-  handled_by bigint [note: '[처리자 ID] 처리 관리자']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  handled_at datetime [note: '[처리일시]']
-  shipped_at datetime [note: '[출고일시]']
+  request_type varchar(20) [not null, note: '[부품 요청 유형] MISSING/DAMAGED/PURCHASE']
+  status varchar(20) [not null, default: 'REQUESTED', note: '[부품 요청 상태] REQUESTED/APPROVED/SHIPPED/REJECTED']
+  photo_url varchar(500) [note: '[부품 요청 파손 사진 URL] 파손 사진 (DAMAGED는 필수, 앱 검증)']
+  amount bigint [not null, default: 0, note: '[부품 요청 유료 금액] PURCHASE만 SUM(part.unit_price × 수량), MISSING·DAMAGED는 0']
+  carrier_code varchar(20) [note: '[부품 요청 택배사 코드]']
+  tracking_no varchar(50) [note: '[부품 요청 송장번호]']
+  reject_reason varchar(500) [note: '[부품 요청 반려 사유]']
+  handled_by bigint [note: '[부품 요청 처리 관리자 ID] 처리 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[부품 요청 등록일시]']
+  handled_at datetime [note: '[부품 요청 처리일시]']
+  shipped_at datetime [note: '[부품 요청 출고일시]']
 
   indexes {
     (member_id, created_at) [name: 'ix_part_request_member']
@@ -1360,7 +1360,7 @@ Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누�
 Table part_request_item [note: '[부품 요청 상품] 요청한 부품과 수량'] {
   request_id bigint [not null, note: '[요청 ID]']
   part_id bigint [not null, note: '[부품 ID]']
-  quantity smallint [not null, note: '[요청 수량] CHECK quantity >= 1']
+  quantity smallint [not null, note: '[요청 부품 수량] CHECK quantity >= 1']
 
   indexes {
     (request_id, part_id) [pk]
@@ -1375,25 +1375,25 @@ Table part_request_item [note: '[부품 요청 상품] 요청한 부품과 수�
 Table payment [note: '[결제] 결제 (PG 결제 시도마다 1행, 실패 포함). 주문당 PAID는 1건. 카드·간편결제·실시간 계좌이체·가상계좌. 현금성 결제(TRANSFER, VIRTUAL_ACCOUNT)는 현금영수증(cash_receipt) 대상이고 에스크로를 고를 수 있음'] {
   payment_id bigint [pk, increment, note: '[결제 ID]']
   order_id bigint [not null, note: '[주문 ID]']
-  pg_provider varchar(20) [not null, note: '[PG사] TOSS/KCP/INICIS...']
+  pg_provider varchar(20) [not null, note: '[결제 PG사] TOSS/KCP/INICIS...']
   method varchar(20) [not null, note: '[결제수단] CARD/KAKAO_PAY/NAVER_PAY/TOSS_PAY/TRANSFER(실시간 계좌이체)/VIRTUAL_ACCOUNT(가상계좌 무통장입금)']
-  pg_tid varchar(100) [unique, note: '[PG 거래번호] PG 거래번호. 승인 전(READY)은 NULL']
+  pg_tid varchar(100) [unique, note: '[결제 PG 거래번호] PG 거래번호. 승인 전(READY)은 NULL']
   amount bigint [not null, note: '[결제 금액] 결제 요청 금액 = orders.payment_amount']
-  canceled_amount bigint [not null, default: 0, note: '[누적 취소 금액] 캐시. SUM(payment_cancel.cancel_amount WHERE DONE). CHECK canceled_amount <= amount']
+  canceled_amount bigint [not null, default: 0, note: '[결제 누적 취소 금액] 캐시. SUM(payment_cancel.cancel_amount WHERE DONE). CHECK canceled_amount <= amount']
   status varchar(20) [not null, default: 'READY', note: '[결제 상태] READY/WAITING_DEPOSIT(가상계좌 발급, 입금 대기)/PAID/FAILED/EXPIRED(입금 기한 초과)/PARTIAL_CANCELED/CANCELED']
-  card_company varchar(30) [note: '[카드사] 카드사 (카드 결제일 때)']
-  installment_months tinyint [not null, default: 0, note: '[할부 개월 수] 할부 개월 (0 = 일시불)']
-  bank_code varchar(10) [note: '[은행 코드] 실시간 이체 출금 은행 / 가상계좌 은행 코드']
-  vbank_account_no varchar(30) [note: '[가상계좌 번호] 가상계좌 번호 (이 주문 전용 1회 계좌). CHECK: vbank_*, deposit_due_at은 method = VIRTUAL_ACCOUNT일 때만']
-  vbank_holder varchar(50) [note: '[가상계좌 예금주] 가상계좌 예금주 표시명']
-  deposit_due_at datetime [note: '[입금 기한] 입금 기한 (예: 발급 다음날 23:59). orders.expires_at도 이 시각으로 연장']
-  deposited_at datetime [note: '[입금일시] PG 입금 통보(웹훅) 시각 → status PAID']
-  depositor_name varchar(50) [note: '[입금자명]']
-  is_escrow char(1) [not null, default: 'N', note: '[에스크로 여부] Y/N 에스크로(구매안전서비스). 현금성 결제에서 고객이 선택 (전자상거래법). Y면 출고 시 PG에 송장 등록(shipment.escrow_registered_at)']
-  approved_at datetime [note: '[승인일시]']
-  fail_reason varchar(500) [note: '[실패 사유]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  card_company varchar(30) [note: '[결제 카드사] 카드사 (카드 결제일 때)']
+  installment_months tinyint [not null, default: 0, note: '[결제 할부 개월 수] 할부 개월 (0 = 일시불)']
+  bank_code varchar(10) [note: '[결제 은행 코드] 실시간 이체 출금 은행 / 가상계좌 은행 코드']
+  vbank_account_no varchar(30) [note: '[결제 가상계좌 번호] 가상계좌 번호 (이 주문 전용 1회 계좌). CHECK: vbank_*, deposit_due_at은 method = VIRTUAL_ACCOUNT일 때만']
+  vbank_holder varchar(50) [note: '[결제 가상계좌 예금주] 가상계좌 예금주 표시명']
+  deposit_due_at datetime [note: '[결제 입금 기한] 입금 기한 (예: 발급 다음날 23:59). orders.expires_at도 이 시각으로 연장']
+  deposited_at datetime [note: '[결제 입금일시] PG 입금 통보(웹훅) 시각 → status PAID']
+  depositor_name varchar(50) [note: '[결제 입금자명]']
+  is_escrow char(1) [not null, default: 'N', note: '[결제 에스크로 여부] Y/N 에스크로(구매안전서비스). 현금성 결제에서 고객이 선택 (전자상거래법). Y면 출고 시 PG에 송장 등록(shipment.escrow_registered_at)']
+  approved_at datetime [note: '[결제 승인일시]']
+  fail_reason varchar(500) [note: '[결제 실패 사유]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[결제 등록일시]']
+  updated_at datetime [note: '[결제 수정일시]']
 
   indexes {
     (order_id, status) [name: 'ix_payment_order']
@@ -1404,17 +1404,17 @@ Table payment [note: '[결제] 결제 (PG 결제 시도마다 1행, 실패 포�
 Table payment_cancel [note: '[결제 취소] 결제 취소·부분 환불. 취소 1건이 주문 상품 여러 줄을 함께 환불할 수 있고, 해당 order_item.payment_cancel_id가 이 행을 가리킴'] {
   cancel_id bigint [pk, increment, note: '[결제 취소 ID]']
   payment_id bigint [not null, note: '[결제 ID]']
-  cancel_amount bigint [not null, note: '[환불 금액] 환불 금액 = 취소 상품 final_amount 합 + shipping_fee_adjust']
-  shipping_fee_adjust bigint [not null, default: 0, note: '[배송비 조정액] 배송비 조정. 묶음 전체 취소면 배송비 환불(+), 부분 취소로 무료배송 기준이 깨지면 차감(-)']
-  reason varchar(500) [not null, note: '[취소 사유]']
-  pg_cancel_tid varchar(100) [unique, note: '[PG 취소 거래번호]']
-  refund_bank_code varchar(10) [note: '[환불 은행 코드] 환불 받을 은행. 가상계좌 결제 취소일 때만 필수 (카드·간편·실시간 이체는 PG가 원 결제수단으로 환불)']
-  refund_account_no_enc varchar(200) [note: '[환불 계좌번호(암호화)] 환불 계좌번호 AES-256 암호문. 환불 완료 후 파기(NULL)']
-  refund_holder_name varchar(50) [note: '[환불 예금주] 환불 계좌 예금주']
-  status varchar(20) [not null, default: 'REQUESTED', note: '[취소 상태] REQUESTED/DONE/FAILED']
-  requested_by bigint [not null, note: '[요청자 ID] 요청 회원 또는 관리자']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  done_at datetime [note: '[환불 완료일시]']
+  cancel_amount bigint [not null, note: '[결제 취소 환불 금액] 환불 금액 = 취소 상품 final_amount 합 + shipping_fee_adjust']
+  shipping_fee_adjust bigint [not null, default: 0, note: '[결제 취소 배송비 조정액] 배송비 조정. 묶음 전체 취소면 배송비 환불(+), 부분 취소로 무료배송 기준이 깨지면 차감(-)']
+  reason varchar(500) [not null, note: '[결제 취소 사유]']
+  pg_cancel_tid varchar(100) [unique, note: '[결제 취소 PG 거래번호]']
+  refund_bank_code varchar(10) [note: '[결제 취소 환불 은행 코드] 환불 받을 은행. 가상계좌 결제 취소일 때만 필수 (카드·간편·실시간 이체는 PG가 원 결제수단으로 환불)']
+  refund_account_no_enc varchar(200) [note: '[결제 취소 환불 계좌번호(암호화)] 환불 계좌번호 AES-256 암호문. 환불 완료 후 파기(NULL)']
+  refund_holder_name varchar(50) [note: '[결제 취소 환불 예금주] 환불 계좌 예금주']
+  status varchar(20) [not null, default: 'REQUESTED', note: '[결제 취소 상태] REQUESTED/DONE/FAILED']
+  requested_by bigint [not null, note: '[결제 취소 요청자 ID] 요청 회원 또는 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[결제 취소 등록일시]']
+  done_at datetime [note: '[결제 취소 환불 완료일시]']
 
   indexes {
     payment_id [name: 'ix_payment_cancel_payment']
@@ -1427,18 +1427,18 @@ Table cash_receipt [note: '[현금영수증] 현금영수증 발급·취소 이�
   payment_id bigint [not null, note: '[결제 ID]']
   payment_cancel_id bigint [note: '[결제 취소 ID] 부분·전체 취소로 생긴 취소·재발급이면 그 취소 건']
   original_receipt_id bigint [note: '[원 발급 영수증 ID] CANCEL 행이 취소하는 원 발급 행 (자기 참조). ISSUE는 NULL']
-  action varchar(10) [not null, note: '[발급/취소 구분] ISSUE/CANCEL']
-  receipt_type varchar(20) [not null, note: '[발급 유형] INCOME_DEDUCTION(소득공제, 개인)/EXPENSE_PROOF(지출증빙, 사업자)']
-  identifier_type varchar(20) [not null, note: '[발급 식별 유형] PHONE/CASH_CARD/BIZ_NO/SELF_ISSUED(자진발급)']
-  identifier_enc varchar(200) [note: '[발급 식별값(암호화)] 휴대폰·현금영수증 카드·사업자번호 AES-256 암호문. SELF_ISSUED는 NULL (CHECK)']
-  amount bigint [not null, note: '[발급 금액] 발급(취소) 금액']
-  supply_amount bigint [not null, note: '[공급가액]']
-  vat_amount bigint [not null, note: '[부가세]']
-  status varchar(20) [not null, default: 'REQUESTED', note: '[처리 상태] REQUESTED/ISSUED/FAILED. FAILED는 배치로 재시도']
-  pg_receipt_no varchar(50) [unique, note: '[승인번호] 국세청 승인번호 (PG 경유)']
-  issued_at datetime [note: '[발급일시]']
-  fail_reason varchar(500) [note: '[실패 사유]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  action varchar(10) [not null, note: '[현금영수증 발급/취소 구분] ISSUE/CANCEL']
+  receipt_type varchar(20) [not null, note: '[현금영수증 발급 유형] INCOME_DEDUCTION(소득공제, 개인)/EXPENSE_PROOF(지출증빙, 사업자)']
+  identifier_type varchar(20) [not null, note: '[현금영수증 발급 식별 유형] PHONE/CASH_CARD/BIZ_NO/SELF_ISSUED(자진발급)']
+  identifier_enc varchar(200) [note: '[현금영수증 발급 식별값(암호화)] 휴대폰·현금영수증 카드·사업자번호 AES-256 암호문. SELF_ISSUED는 NULL (CHECK)']
+  amount bigint [not null, note: '[현금영수증 발급 금액] 발급(취소) 금액']
+  supply_amount bigint [not null, note: '[현금영수증 공급가액]']
+  vat_amount bigint [not null, note: '[현금영수증 부가세]']
+  status varchar(20) [not null, default: 'REQUESTED', note: '[현금영수증 처리 상태] REQUESTED/ISSUED/FAILED. FAILED는 배치로 재시도']
+  pg_receipt_no varchar(50) [unique, note: '[현금영수증 승인번호] 국세청 승인번호 (PG 경유)']
+  issued_at datetime [note: '[현금영수증 발급일시]']
+  fail_reason varchar(500) [note: '[현금영수증 실패 사유]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[현금영수증 등록일시]']
 
   indexes {
     payment_id [name: 'ix_cash_receipt_payment']
@@ -1456,18 +1456,18 @@ Table shipping_policy [note: '[배송 정책] 배송 정책. 가구는 배송 �
   policy_id bigint [pk, increment, note: '[배송 정책 ID]']
   name varchar(100) [not null, note: '[배송 정책명] 예: 대형가구 설치배송(수도권)']
   delivery_type varchar(20) [not null, note: '[배송 방식] PARCEL(일반택배)/FREIGHT(화물택배)/DIRECT_INSTALL(업체 직접 설치배송)']
-  shipping_fee bigint [not null, default: 0, note: '[기본 배송비]']
-  free_threshold bigint [note: '[무료배송 기준 금액] 이 금액 이상 무료배송 (권역 추가비·양중비는 별도). NULL이면 조건 없음']
-  ladder_floor_from smallint [note: '[사다리차 적용 시작 층] 엘리베이터가 없을 때 이 층 이상이면 사다리차. NULL이면 사다리차 대상 아님 (소형 택배)']
-  ladder_fee bigint [not null, default: 0, note: '[사다리차 비용]']
-  stair_fee_per_floor bigint [not null, default: 0, note: '[계단 운반비(층당)] 엘리베이터 없이 계단으로 옮길 때 층당 비용 (2층부터, 사다리차 기준 층 미만)']
-  return_fee bigint [not null, note: '[반품 배송비] 반품 배송비 (편도)']
-  exchange_fee bigint [not null, note: '[교환 배송비] 교환 배송비 (왕복)']
-  lead_days smallint [not null, note: '[출고 소요일] 결제 후 출고까지 소요일. 주문제작 가구는 길다']
-  same_day_cutoff varchar(5) [note: '[오늘출발 마감 시각] 오늘출발 마감 시각 HH24:MI. NULL이면 오늘출발 아님']
-  is_bundle_allowed char(1) [not null, default: 'Y', note: '[묶음배송 허용 여부] 다른 상품과 묶음배송 가능 여부']
-  is_active char(1) [not null, default: 'Y', note: '[사용 여부]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  shipping_fee bigint [not null, default: 0, note: '[배송 정책 기본 배송비]']
+  free_threshold bigint [note: '[배송 정책 무료배송 기준 금액] 이 금액 이상 무료배송 (권역 추가비·양중비는 별도). NULL이면 조건 없음']
+  ladder_floor_from smallint [note: '[배송 정책 사다리차 적용 시작 층] 엘리베이터가 없을 때 이 층 이상이면 사다리차. NULL이면 사다리차 대상 아님 (소형 택배)']
+  ladder_fee bigint [not null, default: 0, note: '[배송 정책 사다리차 비용]']
+  stair_fee_per_floor bigint [not null, default: 0, note: '[배송 정책 계단 운반비(층당)] 엘리베이터 없이 계단으로 옮길 때 층당 비용 (2층부터, 사다리차 기준 층 미만)']
+  return_fee bigint [not null, note: '[배송 정책 반품 배송비] 반품 배송비 (편도)']
+  exchange_fee bigint [not null, note: '[배송 정책 교환 배송비] 교환 배송비 (왕복)']
+  lead_days smallint [not null, note: '[배송 정책 출고 소요일] 결제 후 출고까지 소요일. 주문제작 가구는 길다']
+  same_day_cutoff varchar(5) [note: '[배송 정책 오늘출발 마감 시각] 오늘출발 마감 시각 HH24:MI. NULL이면 오늘출발 아님']
+  is_bundle_allowed char(1) [not null, default: 'Y', note: '[배송 정책 묶음배송 허용 여부] 다른 상품과 묶음배송 가능 여부']
+  is_active char(1) [not null, default: 'Y', note: '[배송 정책 사용 여부]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[배송 정책 등록일시]']
 }
 
 Table shipping_policy_zone [note: '[배송 정책 권역 설정] 배송 정책별 권역 설정. 행이 없는 권역은 기본 배송비로 배송'] {
@@ -1475,7 +1475,7 @@ Table shipping_policy_zone [note: '[배송 정책 권역 설정] 배송 정책�
   zone_id bigint [not null, note: '[권역 ID]']
   is_available char(1) [not null, default: 'Y', note: '[배송 가능 여부] N이면 배송 불가 (예: 설치배송은 제주·도서산간 불가)']
   extra_fee bigint [not null, default: 0, note: '[권역 추가 배송비]']
-  extra_lead_days smallint [not null, default: 0, note: '[추가 소요일] 권역 추가 소요일']
+  extra_lead_days smallint [not null, default: 0, note: '[권역 추가 출고 소요일] 권역 추가 소요일']
 
   indexes {
     (policy_id, zone_id) [pk]
@@ -1484,17 +1484,17 @@ Table shipping_policy_zone [note: '[배송 정책 권역 설정] 배송 정책�
 }
 
 Table delivery_zone [note: '[배송 권역] 배송 권역. 설치배송 가능 지역과 추가 배송비를 판단하는 단위'] {
-  zone_id bigint [pk, increment, note: '[권역 ID]']
+  zone_id bigint [pk, increment, note: '[배송 권역 ID]']
   zone_code varchar(20) [not null, unique, note: '[권역 코드] METRO(수도권)/CHUNGCHEONG/GANGWON/HONAM/YEONGNAM/JEJU/ISLAND(도서산간)']
   name_ko varchar(30) [not null, note: '[권역명]']
-  sort_order smallint [not null, note: '[정렬 순서]']
+  sort_order smallint [not null, note: '[배송 권역 정렬 순서]']
 }
 
 Table delivery_zone_zipcode [note: '[권역 우편번호 범위] 우편번호 범위 → 권역. 배송지 zipcode로 권역을 찾는다'] {
-  range_id bigint [pk, increment, note: '[범위 ID]']
+  range_id bigint [pk, increment, note: '[우편번호 범위 ID]']
   zone_id bigint [not null, note: '[권역 ID]']
-  zip_from char(5) [not null, note: '[시작 우편번호]']
-  zip_to char(5) [not null, note: '[끝 우편번호] CHECK zip_from <= zip_to. 범위가 겹치면 더 좁은 범위(도서산간)를 우선 적용']
+  zip_from char(5) [not null, note: '[범위 시작 우편번호]']
+  zip_to char(5) [not null, note: '[범위 끝 우편번호] CHECK zip_from <= zip_to. 범위가 겹치면 더 좁은 범위(도서산간)를 우선 적용']
 
   indexes {
     (zip_from, zip_to) [name: 'ix_zone_zipcode_range']
@@ -1503,14 +1503,14 @@ Table delivery_zone_zipcode [note: '[권역 우편번호 범위] 우편번호 �
 }
 
 Table carry_default_spec [note: '[반입 기본값] 주거형태별 반입 기본값. 고객이 현관문·엘리베이터 치수를 입력하지 않으면 이 값으로 반입 여부를 추정 (관리자가 데이터로 조정). 기본값으로만 통과하면 shipment.carry_check_status = NEEDS_CHECK → 출고 전 기사 확인'] {
-  building_type varchar(20) [pk, note: '[주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC (address.building_type과 같은 코드)']
-  has_elevator_default char(1) [not null, note: '[엘리베이터 기본값] Y/N 이 유형의 일반적인 엘리베이터 유무 (빌라·주택은 N)']
-  entrance_door_width_mm int [not null, note: '[현관문 폭(mm)] 표준 현관문 유효 폭']
-  elevator_door_width_mm int [note: '[엘리베이터 문 폭(mm)] 표준 엘리베이터 문 폭']
-  elevator_inner_depth_mm int [note: '[엘리베이터 내부 깊이(mm)] 표준 엘리베이터 내부 깊이']
-  elevator_inner_height_mm int [note: '[엘리베이터 내부 높이(mm)] 표준 엘리베이터 내부 높이']
-  note varchar(300) [note: '[비고] 근거·주의 (예: 2000년 이전 아파트는 엘리베이터가 작을 수 있음)']
-  updated_at datetime [note: '[수정일시]']
+  building_type varchar(20) [pk, note: '[반입 기본값 주거형태] APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC (address.building_type과 같은 코드)']
+  has_elevator_default char(1) [not null, note: '[주거형태별 엘리베이터 기본값] Y/N 이 유형의 일반적인 엘리베이터 유무 (빌라·주택은 N)']
+  entrance_door_width_mm int [not null, note: '[반입 기본값 현관문 폭(mm)] 표준 현관문 유효 폭']
+  elevator_door_width_mm int [note: '[반입 기본값 엘리베이터 문 폭(mm)] 표준 엘리베이터 문 폭']
+  elevator_inner_depth_mm int [note: '[반입 기본값 엘리베이터 내부 깊이(mm)] 표준 엘리베이터 내부 깊이']
+  elevator_inner_height_mm int [note: '[반입 기본값 엘리베이터 내부 높이(mm)] 표준 엘리베이터 내부 높이']
+  note varchar(300) [note: '[반입 기본값 비고] 근거·주의 (예: 2000년 이전 아파트는 엘리베이터가 작을 수 있음)']
+  updated_at datetime [note: '[반입 기본값 수정일시]']
 }
 
 // =====================================================================
@@ -1523,29 +1523,29 @@ Table shipment [note: '[배송 묶음] 배송 묶음. 같은 배송 정책이고
   shipping_policy_id bigint [not null, note: '[배송 정책 ID]']
   delivery_type varchar(20) [not null, note: '[배송 방식] PARCEL/FREIGHT/DIRECT_INSTALL 스냅샷']
   base_fee bigint [not null, default: 0, note: '[기본 배송비] 기본 배송비 (무료배송 기준 충족 시 0)']
-  zone_extra_fee bigint [not null, default: 0, note: '[권역 추가비]']
-  ladder_fee bigint [not null, default: 0, note: '[사다리차 비용]']
-  stair_fee bigint [not null, default: 0, note: '[계단 운반비]']
+  zone_extra_fee bigint [not null, default: 0, note: '[배송 권역 추가비]']
+  ladder_fee bigint [not null, default: 0, note: '[배송 사다리차 비용]']
+  stair_fee bigint [not null, default: 0, note: '[배송 계단 운반비]']
   fee_total bigint [not null, default: 0, note: '[배송비 합계] 합계. 설계서 "가구 배송비 계산 흐름" 결과']
-  expected_ship_date date [not null, note: '[출고 예정일] 결제일 + lead_days + 권역 extra_lead_days (주문제작은 제작 기간 포함)']
+  expected_ship_date date [not null, note: '[배송 출고 예정일] 결제일 + lead_days + 권역 extra_lead_days (주문제작은 제작 기간 포함)']
   status varchar(20) [not null, default: 'WAITING', note: '[배송 상태] WAITING(출고 대기)/SCHEDULED(설치일 확정)/SHIPPED/DELIVERED/CANCELED']
-  carrier_code varchar(20) [note: '[택배사 코드] 택배·화물 회사 코드']
-  tracking_no varchar(50) [note: '[송장번호]']
+  carrier_code varchar(20) [note: '[배송 택배사 코드] 택배·화물 회사 코드']
+  tracking_no varchar(50) [note: '[배송 송장번호]']
   install_slot_id bigint [note: '[설치 슬롯 ID] 예약한 설치 슬롯. DIRECT_INSTALL만. CHECK에 쓰이므로 FK는 참조 동작(ON DELETE) 없이 생성']
-  desired_date date [note: '[희망 설치일] 고객 희망 설치일. DIRECT_INSTALL만']
-  install_date date [note: '[설치일] 확정 설치일 (일정 조율 후). DIRECT_INSTALL만']
-  install_time_slot varchar(2) [note: '[설치 시간대] AM/PM. CHECK: install_* 컬럼은 delivery_type = DIRECT_INSTALL일 때만 채움']
-  installer_name varchar(50) [note: '[설치 기사 이름] 배정된 설치 기사']
-  installer_phone_enc varchar(200) [note: '[설치 기사 연락처(암호화)] AES-256 암호문']
-  shipped_at datetime [note: '[출고일시]']
-  carry_check_status varchar(20) [not null, default: 'NOT_REQUIRED', note: '[반입 확인 상태] NOT_REQUIRED(택배·소형)/OK(통과)/NEEDS_CHECK(기본값으로만 판단·여유 50mm 미만 → 출고 전 기사 확인)/CONSULT(반입 불가 → 상담). 판단 대상은 FREIGHT·DIRECT_INSTALL 묶음만']
-  carry_method varchar(10) [note: '[반입 방법] ELEVATOR/STAIRS/LADDER 확정된 반입 방법. NOT_REQUIRED면 NULL. 사다리차가 새로 필요해지면 비용을 사전 안내(추가 결제는 상담)']
-  carry_checked_at datetime [note: '[반입 확인일시] 기사 확인 시각']
-  carry_check_memo varchar(300) [note: '[반입 확인 메모] 기사 확인 결과 (예: 엘리베이터 대형, 사다리차 불필요). 현장 반입 실패 시 회사 판단 오류면 무료 반품, 고객 입력 오류면 반품 배송비 고객 부담']
-  escrow_registered_at datetime [note: '[에스크로 송장 등록일시] 에스크로 결제(payment.is_escrow = Y)면 출고 시 PG에 송장을 등록한 시각. 등록해야 에스크로 정산·구매 확정이 진행됨']
+  desired_date date [note: '[배송 희망 설치일] 고객 희망 설치일. DIRECT_INSTALL만']
+  install_date date [note: '[배송 설치일] 확정 설치일 (일정 조율 후). DIRECT_INSTALL만']
+  install_time_slot varchar(2) [note: '[배송 설치 시간대] AM/PM. CHECK: install_* 컬럼은 delivery_type = DIRECT_INSTALL일 때만 채움']
+  installer_name varchar(50) [note: '[배송 설치 기사 이름] 배정된 설치 기사']
+  installer_phone_enc varchar(200) [note: '[배송 설치 기사 연락처(암호화)] AES-256 암호문']
+  shipped_at datetime [note: '[배송 출고일시]']
+  carry_check_status varchar(20) [not null, default: 'NOT_REQUIRED', note: '[배송 반입 확인 상태] NOT_REQUIRED(택배·소형)/OK(통과)/NEEDS_CHECK(기본값으로만 판단·여유 50mm 미만 → 출고 전 기사 확인)/CONSULT(반입 불가 → 상담). 판단 대상은 FREIGHT·DIRECT_INSTALL 묶음만']
+  carry_method varchar(10) [note: '[배송 반입 방법] ELEVATOR/STAIRS/LADDER 확정된 반입 방법. NOT_REQUIRED면 NULL. 사다리차가 새로 필요해지면 비용을 사전 안내(추가 결제는 상담)']
+  carry_checked_at datetime [note: '[배송 반입 확인일시] 기사 확인 시각']
+  carry_check_memo varchar(300) [note: '[배송 반입 확인 메모] 기사 확인 결과 (예: 엘리베이터 대형, 사다리차 불필요). 현장 반입 실패 시 회사 판단 오류면 무료 반품, 고객 입력 오류면 반품 배송비 고객 부담']
+  escrow_registered_at datetime [note: '[배송 에스크로 송장 등록일시] 에스크로 결제(payment.is_escrow = Y)면 출고 시 PG에 송장을 등록한 시각. 등록해야 에스크로 정산·구매 확정이 진행됨']
   delivered_at datetime [note: '[배송 완료일시] 배송·설치 완료. 이후 7일이 지나면 order_item 자동 구매 확정']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
-  updated_at datetime [note: '[수정일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[배송 등록일시]']
+  updated_at datetime [note: '[배송 수정일시]']
 
   indexes {
     order_id [name: 'ix_shipment_order']
@@ -1557,14 +1557,14 @@ Table shipment [note: '[배송 묶음] 배송 묶음. 같은 배송 정책이고
 }
 
 Table install_slot [note: '[설치 일정 슬롯] 설치배송 가능 일정 (권역 × 날짜 × 오전/오후). 고객은 주문서에서 출고 가능일 이후의 빈 슬롯 중 희망일을 고름. 예약은 booked_count < capacity 조건부 UPDATE (재고 차감과 같은 방식)'] {
-  slot_id bigint [pk, increment, note: '[슬롯 ID]']
+  slot_id bigint [pk, increment, note: '[설치 슬롯 ID]']
   zone_id bigint [not null, note: '[권역 ID]']
-  install_date date [not null, note: '[설치일]']
-  time_slot varchar(2) [not null, note: '[시간대] AM/PM']
-  capacity smallint [not null, note: '[가능 건수] 이 슬롯에 받을 수 있는 설치 건수 (기사 팀 수)']
-  booked_count smallint [not null, default: 0, note: '[예약 건수] 캐시. CHECK booked_count <= capacity. 주문 만료·취소 시 -1']
-  is_closed char(1) [not null, default: 'N', note: '[마감 여부] Y/N 휴무·마감']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  install_date date [not null, note: '[설치 가능 날짜]']
+  time_slot varchar(2) [not null, note: '[설치 슬롯 시간대] AM/PM']
+  capacity smallint [not null, note: '[설치 슬롯 가능 건수] 이 슬롯에 받을 수 있는 설치 건수 (기사 팀 수)']
+  booked_count smallint [not null, default: 0, note: '[설치 슬롯 예약 건수] 캐시. CHECK booked_count <= capacity. 주문 만료·취소 시 -1']
+  is_closed char(1) [not null, default: 'N', note: '[설치 슬롯 마감 여부] Y/N 휴무·마감']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[설치 슬롯 등록일시]']
 
   indexes {
     (zone_id, install_date, time_slot) [unique, name: 'uk_install_slot']
