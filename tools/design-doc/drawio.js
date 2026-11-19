@@ -82,58 +82,72 @@ function tableXml(spec, px, py, parent, color, gray) {
   return s;
 }
 
+// 관리자 감사 컬럼(created_by 등) → member_account 선은 고객 영역 밖에서 생략 (웹 ERD와 같은 기준)
+const showRef = (r) => !(r.parent === 'member_account' && AUDIT.has(r.ccol) && areaOf(groupOfTable(r.child)).prefix !== 'member');
+const groupOfTable = (t) => groups.find((g) => g.tables.some((x) => x.name === t)).name;
+
+// 페이지 하나: boxDefs = [{ id, label, names, keysOnly, color }] (상자 = 세부 영역), rels = 그릴 관계
+async function buildPage(viz, id, name, boxDefs, rels) {
+  const boxes = [];
+  for (const d of boxDefs) {
+    const specs = d.names.map((n) => tableSpec(n, d.keysOnly));
+    const edges = rels.filter((r) => d.names.includes(r.child) && d.names.includes(r.parent) && r.child !== r.parent).map((r) => [r.parent, r.child]);
+    const lay = await layoutCluster(viz, specs, edges);
+    boxes.push({ ...d, specs, lay, w: lay.w + PAD * 2, h: lay.h + PAD * 2 + LABEL });
+  }
+  const { pos } = gridPlace(boxes, { W: 1600, H: 1000, GAP: 40 });
+  let cells = '';
+  let count = 0;
+  boxes.forEach((b, i) => {
+    const [bx, by] = [Math.round(pos[i].x), Math.round(pos[i].y)];
+    cells += `<mxCell id="${x(b.id)}" value="${x(b.label)}" style="swimlane;startSize=${LABEL};container=1;collapsible=0;rounded=1;arcSize=4;fillColor=none;swimlaneFillColor=none;strokeColor=${b.keysOnly ? '#c3ccd5' : '#b9c7d6'};fontColor=${b.keysOnly ? '#7d8a96' : b.color};fontStyle=1;align=left;spacingLeft=10;html=1;" vertex="1" parent="1"><mxGeometry x="${bx}" y="${by}" width="${b.w}" height="${b.h}" as="geometry"/></mxCell>\n`;
+    b.specs.forEach((s) => {
+      const [tx, ty] = b.lay.pos[s.name] || [0, 0];
+      cells += tableXml(s, tx + PAD, ty + PAD + LABEL, b.id, b.color, b.keysOnly);
+      if (!b.keysOnly) count++;
+    });
+  });
+  // 관계선: 자식의 FK 줄 → 부모의 PK 줄 (까마귀발 = 여러 개, 세로줄 = 1, 동그라미 = 없을 수 있음)
+  rels.forEach((r, i) => {
+    const f = fieldOf(r.child, r.ccol);
+    const nullable = !f.not_null && !f.pk && !compositePk(tableMap[r.child]).includes(r.ccol);
+    const childEnd = r.oneToOne ? 'ERzeroToOne' : 'ERmany';
+    const parentEnd = nullable ? 'ERzeroToOne' : 'ERmandOne';
+    cells += `<mxCell id="e${i}_${x(r.child)}_${x(r.ccol)}" value="" style="edgeStyle=entityRelationEdgeStyle;html=1;rounded=0;startArrow=${childEnd};startFill=0;endArrow=${parentEnd};endFill=0;strokeColor=#7d8a96;" edge="1" parent="1" source="${x(r.child)}.${x(r.ccol)}" target="${x(r.parent)}.${x(r.pcol)}"><mxGeometry relative="1" as="geometry"/></mxCell>\n`;
+  });
+  const page = `<diagram id="${id}" name="${x(name)}"><mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/>\n${cells}</root></mxGraphModel></diagram>\n`;
+  return { page, count };
+}
+
 async function main() {
   await initViz();
   const viz = await require('@viz-js/viz').instance();
-  let pages = '';
-  let tableCount = 0;
+  const pages = [];
+
+  // 첫 페이지 "전체": 93개 테이블을 한 장에 (세부 영역 상자, 영역 색, 제목 "영역 · 세부 영역")
+  const allDefs = groups.map((g) => {
+    const a = areaOf(g.name);
+    return { id: `grp_${g.name}`, label: `${a.name} · ${gTitle(g)}`, names: g.tables.map((t) => t.name), keysOnly: false, color: a.color };
+  });
+  const all = await buildPage(viz, 'all', '전체', allDefs, refs.filter(showRef));
+  pages.push(all.page);
+
+  // 영역별 페이지 (다른 영역 테이블은 "다른 영역 참조" 상자에 PK만)
+  let areaCount = 0;
   for (const area of AREAS) {
     const gs = groups.filter((g) => areaOf(g.name).prefix === area.prefix);
     const inArea = new Set(gs.flatMap((g) => g.tables.map((t) => t.name)));
-    const hideAudit = area.prefix !== 'member';
-    const rels = refs.filter((r) => inArea.has(r.child) && !(hideAudit && r.parent === 'member_account' && AUDIT.has(r.ccol)));
+    const rels = refs.filter((r) => inArea.has(r.child) && showRef(r));
     const ext = [...new Set(rels.filter((r) => !inArea.has(r.parent)).map((r) => r.parent))];
-
-    // 상자(세부 영역 + 다른 영역 참조) 단위로 안쪽 배치
-    const boxes = [];
-    for (const g of gs) {
-      const names = g.tables.map((t) => t.name);
-      const specs = names.map((n) => tableSpec(n, false));
-      const edges = rels.filter((r) => names.includes(r.child) && names.includes(r.parent) && r.child !== r.parent).map((r) => [r.parent, r.child]);
-      const lay = await layoutCluster(viz, specs, edges);
-      boxes.push({ id: `grp_${g.name}`, label: gTitle(g), specs, lay, gray: false });
-    }
-    if (ext.length) {
-      const specs = ext.map((n) => tableSpec(n, true));
-      const lay = await layoutCluster(viz, specs, []);
-      boxes.push({ id: `grp_ext_${area.prefix}`, label: '다른 영역 참조 (PK만)', specs, lay, gray: true });
-    }
-    boxes.forEach((b) => { b.w = b.lay.w + PAD * 2; b.h = b.lay.h + PAD * 2 + LABEL; });
-    const { pos } = gridPlace(boxes, { W: 1600, H: 1000, GAP: 40 });
-
-    let cells = '';
-    boxes.forEach((b, i) => {
-      const [bx, by] = [Math.round(pos[i].x), Math.round(pos[i].y)];
-      cells += `<mxCell id="${x(b.id)}" value="${x(b.label)}" style="swimlane;startSize=${LABEL};container=1;collapsible=0;rounded=1;arcSize=4;fillColor=none;swimlaneFillColor=none;strokeColor=${b.gray ? '#c3ccd5' : '#b9c7d6'};fontColor=${b.gray ? '#7d8a96' : area.color};fontStyle=1;align=left;spacingLeft=10;html=1;" vertex="1" parent="1"><mxGeometry x="${bx}" y="${by}" width="${b.w}" height="${b.h}" as="geometry"/></mxCell>\n`;
-      b.specs.forEach((s) => {
-        const [tx, ty] = b.lay.pos[s.name] || [0, 0];
-        cells += tableXml(s, tx + PAD, ty + PAD + LABEL, b.id, area.color, b.gray);
-        if (!b.gray) tableCount++;
-      });
-    });
-    // 관계선: 자식의 FK 줄 → 부모의 PK 줄 (까마귀발 = 여러 개, 세로줄 = 1, 동그라미 = 없을 수 있음)
-    rels.forEach((r, i) => {
-      const f = fieldOf(r.child, r.ccol);
-      const nullable = !f.not_null && !f.pk && !compositePk(tableMap[r.child]).includes(r.ccol);
-      const childEnd = r.oneToOne ? 'ERzeroToOne' : 'ERmany';
-      const parentEnd = nullable ? 'ERzeroToOne' : 'ERmandOne';
-      cells += `<mxCell id="e${i}_${x(r.child)}_${x(r.ccol)}" value="" style="edgeStyle=entityRelationEdgeStyle;html=1;rounded=0;startArrow=${childEnd};startFill=0;endArrow=${parentEnd};endFill=0;strokeColor=#7d8a96;" edge="1" parent="1" source="${x(r.child)}.${x(r.ccol)}" target="${x(r.parent)}.${x(r.pcol)}"><mxGeometry relative="1" as="geometry"/></mxCell>\n`;
-    });
-    pages += `<diagram id="${area.prefix}" name="${x(area.name)}"><mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/>\n${cells}</root></mxGraphModel></diagram>\n`;
+    const defs = gs.map((g) => ({ id: `grp_${g.name}`, label: gTitle(g), names: g.tables.map((t) => t.name), keysOnly: false, color: area.color }));
+    if (ext.length) defs.push({ id: `grp_ext_${area.prefix}`, label: '다른 영역 참조 (PK만)', names: ext, keysOnly: true, color: area.color });
+    const p = await buildPage(viz, area.prefix, area.name, defs, rels);
+    pages.push(p.page);
+    areaCount += p.count;
   }
-  const xml = `<mxfile host="erd.dbml" agent="tools/design-doc/drawio.js" version="24.0.0">\n${pages}</mxfile>\n`;
+  const xml = `<mxfile host="erd.dbml" agent="tools/design-doc/drawio.js" version="24.0.0">\n${pages.join('')}</mxfile>\n`;
   fs.writeFileSync(out, xml, 'utf8');
-  console.log('draw.io', out, `(${(xml.length / 1024).toFixed(0)} KB, pages=${AREAS.length}, tables=${tableCount})`);
+  console.log('draw.io', out, `(${(xml.length / 1024).toFixed(0)} KB, pages=${pages.length}: 전체 ${all.count}개 + 영역별 ${areaCount}개)`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
