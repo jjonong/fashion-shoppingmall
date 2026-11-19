@@ -83,7 +83,7 @@ const makeHtml = () => {
     <tr><td>상태는 4개, 잠금은 상태가 아님</td><td>ACTIVE / DORMANT / SUSPENDED / WITHDRAWN. 30분 로그인 잠금은 일시적이라 <code>locked_until</code>로만 판단</td></tr>
     <tr><td>바뀌는 값은 이력 테이블로</td><td>상태 · 닉네임 · 비밀번호 · 약관 동의 · 로그인 시도를 모두 행으로 남겨 CS · 감사 · 제재 판단 근거로 쓴다</td></tr>
     <tr><td>탈퇴 = 삭제가 아니라 마스킹</td><td>주문 · 글 등 다른 테이블의 FK를 지키면서 개인정보만 지운다. 같은 이메일로 재가입 가능, 같은 사람(CI)은 30일 후(<code>withdrawn_identity</code>)</td></tr>
-    <tr><td>가구가 집에 들어가는지 DB로 판단</td><td>배송지에 현관문 · 엘리베이터 치수와 사다리차 진입 여부를 저장해 박스 치수(<code>sku_package</code>)와 비교. 방 치수(<code>member_room</code>)까지 이어서 확인</td></tr>
+    <tr><td>가구가 집에 들어가는지 DB로 판단</td><td>배송지에 현관문 · 엘리베이터 치수를 저장해 박스 치수(<code>sku_package</code>)와 비교. 방 치수(<code>member_room</code>)까지 이어서 확인</td></tr>
   </table>
 </section>
 

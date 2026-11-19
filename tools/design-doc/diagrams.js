@@ -71,17 +71,15 @@ module.exports = {
   C -- N --> X["배송 불가 안내<br/>(설치배송 제주 · 도서산간 등)"]
   C -- "Y 또는 행 없음" --> D["기본 배송비<br/>free_threshold 이상이면 0"]
   D --> E["권역 extra_fee 추가"]
-  E --> F{"엘리베이터 있음?<br/>address.has_elevator"}
-  F -- 있음 --> T["합계"]
-  F -- 없음 --> G{"floor_no ≥<br/>ladder_floor_from?"}
-  G -- 예 --> LA{"사다리차 진입 가능?<br/>address.ladder_truck_available"}
-  LA -- "Y 또는 모름" --> L["사다리차<br/>ladder_fee 추가"] --> T
-  LA -- N --> Q["배송 상담<br/>(주문 전 안내)"]
-  G -- 아니오 --> S["계단 운반비 추가<br/>stair_fee_per_floor × (floor_no − 1)"] --> T
+  E --> T["배송비 합계 shipment.fee_total<br/>= 기본 배송비 + 권역 추가비"]
   T --> R["출고 예정 = lead_days<br/>+ 권역 extra_lead_days"]
+  E -.-> F{"엘리베이터 없음 · 고층?<br/>address.has_elevator · floor_no"}
+  F -- 예 --> Q["현장 추가 비용 안내<br/>shipping_policy.onsite_fee_notice<br/>사다리차 · 계단 운반비는 고객 현장 정산<br/>(결제 금액에 포함 안 함)"]
   classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
-  class X,Q bad
+  classDef warn fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
+  class X bad
+  class Q warn
   class T,R good`,
   post: `flowchart LR
   post(("<b>post</b><br/>공통"))
@@ -199,7 +197,7 @@ module.exports = {
   PR --> R1["① 방별로 묶기 · room_id<br/>바닥 면적 점유율<br/>SKU 치수 ≤ member_room 치수"]
   R1 --> R2["② 반입 확인 (화물 · 설치배송만)<br/>입력값 없으면 주거형태 기본값 · 애매하면 기사 확인"]
   R2 -- "통과 · 정보 없음" --> R3["③ 배송 묶음 미리보기<br/>배송 정책 · 묶음배송별 그룹<br/>예상 배송비 · 출고 예정일"]
-  R2 -- 불가 --> W["반입 불가 경고<br/>사다리차 · 배송 상담 안내"] --> R3
+  R2 -- 불가 --> W["반입 어려움 경고<br/>사다리차 · 계단 운반 필요 가능<br/>(고객 부담 · 현장 정산 안내)"] --> R3
   R3 --> R4["함께 받기면<br/>모든 묶음 수령일 맞춤<br/>(이사 예정일 기본값)"]
   R4 --> R5["④ 제안<br/>함께 사면 좋은 상품 · product_relation ADDON<br/>부가 서비스 · 조립 어려움 · 2인 조립이면 조립 서비스"]
   R5 ==> OUT["주문서로"]
@@ -225,10 +223,9 @@ module.exports = {
   D --> E{"엘리베이터 · 계단<br/>통과?"}
   E -- "통과 (고객 입력값)" --> OK["OK"]
   E -- "통과 (기본값만 · 여유 작음)" --> NC["NEEDS_CHECK<br/>출고 전 기사 확인 전화"]
-  E -- 불가 --> L{"사다리차 가능?<br/>ladder_truck_available ≠ N<br/>floor_no ≥ ladder_floor_from"}
-  L -- 가능 --> LD["carry_method = LADDER<br/>ladder_fee"]
-  L -- 불가 --> CS["CONSULT<br/>배송 상담"]
-  NC --> M["확인 결과로 carry_method 확정<br/>carry_check_memo"]
+  E -- 불가 --> W["주문 전 경고<br/>사다리차 · 계단 운반 필요 가능<br/>(고객 부담 · 현장 정산)"] --> NC
+  NC --> M["해피콜로 carry_method 확정<br/>ELEVATOR · STAIRS · LADDER<br/>현장 정산 예상 금액 onsite_fee_estimate"]
+  M -- 사다리차로도 불가 --> CS["CONSULT<br/>배송 상담 · 취소"]
   classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
   classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733

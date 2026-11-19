@@ -71,8 +71,8 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **휴면**: 상태값만 쓴다 (사용자 확정, 2023년 개정으로 분리보관 의무 없음). `last_login_at` 기준 11개월에 안내(`dormant_notice_sent_at`), 1년 미접속이면 배치로 DORMANT, 로그인 + 본인 확인 시 ACTIVE. 분리보관 테이블은 만들지 않는다.
 - **정지**: 신고 승인·관리자 제재로 SUSPENDED, `suspended_until`이 지나면 배치로 ACTIVE.
 - **닉네임**: 2~12자 한글/영문/숫자/_ (앱 검증), `forbidden_word`(닉네임·글·댓글 공용 금칙어) 불가, 변경 후 30일간 재변경 불가(`nickname_changed_at`), 이전 닉네임은 `nickname_history`에 남겨 30일간 다른 회원 사용 불가(사칭 방지).
-- **배송지**: 주거형태 `building_type`(반입 기본값 근거), 층수·엘리베이터(사다리차 판단), 반입 치수(현관문 폭, 엘리베이터 문 폭·내부 깊이·높이, 사다리차 진입 가능 `ladder_truck_available`)는 **"우리 집이 다를 때"만 입력하는 선택값**, 배송 요청사항(주문 시 기본값으로 복사), 공동현관 비밀번호(암호화).
-- **반입 판단** (사용자 확정: 고객 입력 부담 최소화): 화물·설치배송 묶음만 판단(택배는 NOT_REQUIRED). 치수 = 고객 입력값 → 없으면 `carry_default_spec`(주거형태별 기본값). 기본값으로만 통과·여유 작음이면 NEEDS_CHECK → 출고 전 기사 확인 전화로 `shipment.carry_method`(ELEVATOR/STAIRS/LADDER) 확정, 불가면 CONSULT. 결과만 `shipment.carry_check_status`에 저장. "우리 집" 배송지는 `member_home.address_id`.
+- **배송지**: 주거형태 `building_type`(반입 기본값 근거), 층수·엘리베이터(반입 경고·해피콜 근거), 반입 치수(현관문 폭, 엘리베이터 문 폭·내부 깊이·높이)는 **"우리 집이 다를 때"만 입력하는 선택값**, 배송 요청사항(주문 시 기본값으로 복사), 공동현관 비밀번호(암호화).
+- **반입 판단** (사용자 확정: 고객 입력 부담 최소화): 화물·설치배송 묶음만 판단(택배는 NOT_REQUIRED). 치수 = 고객 입력값 → 없으면 `carry_default_spec`(주거형태별 기본값). 기본값으로만 통과·여유 작음이면 NEEDS_CHECK → 출고 전 기사 확인 전화(해피콜)로 `shipment.carry_method`(ELEVATOR/STAIRS/LADDER) 확정, 사다리차로도 불가면 CONSULT. **사다리차·계단 운반비는 업계 관행대로 주문 금액에 넣지 않고 고객이 현장에서 직접 정산**(사용자 확정): 주문 전에는 `shipping_policy.onsite_fee_notice`로 안내, 해피콜에서 안내한 예상 금액은 `shipment.onsite_fee_estimate`(CS 기록용). 결과만 `shipment.carry_check_status`에 저장. "우리 집" 배송지는 `member_home.address_id`.
 - **토큰**: `member_token.token_type` = EMAIL_VERIFY/PASSWORD_RESET/EMAIL_CHANGE(`new_email` 필수)/DORMANT_RELEASE.
 - **등급 산정**: 지금은 누적 구매액 기준(강등 없음). 최근 N개월 실적·등급 이력은 주문 영역에서 함께 설계.
 
@@ -119,7 +119,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **에스크로**: 현금성 결제에서 고객 선택(`payment.is_escrow`). 출고 시 PG에 송장 등록(`shipment.escrow_registered_at`)해야 정산·구매 확정 진행.
 
 ### 배송
-- **가구 배송**: `shipping_policy`(일반택배/화물/설치배송, 사다리차·계단 운반비, 출고 소요일, 오늘출발 마감) + `delivery_zone`(권역) + `delivery_zone_zipcode`(우편번호 범위, 겹치면 좁은 범위 우선) + `shipping_policy_zone`(권역별 배송 가능 여부·추가비·추가 소요일). 배송지 `address.floor_no`·`has_elevator`로 사다리차/계단비 판단. 계산 순서는 설계서의 "가구 배송비 계산 흐름" 참고.
+- **가구 배송**: `shipping_policy`(일반택배/화물/설치배송, 현장 추가 비용 안내 문구 `onsite_fee_notice`, 출고 소요일, 오늘출발 마감) + `delivery_zone`(권역) + `delivery_zone_zipcode`(우편번호 범위, 겹치면 좁은 범위 우선) + `shipping_policy_zone`(권역별 배송 가능 여부·추가비·추가 소요일). 배송비 = 기본 배송비 + 권역 추가비 (사다리차·계단비 미포함). 배송지 `address.floor_no`·`has_elevator`는 현장 추가 비용 안내·해피콜 근거. 계산 순서는 설계서의 "가구 배송비 계산 흐름" 참고.
 - **배송 묶음** `shipment`: 같은 배송 정책 + `is_bundle_allowed = Y`면 한 묶음. 택배·화물은 송장, 설치배송은 `install_slot`(권역 × 날짜 × AM/PM, `capacity`/`booked_count`)을 조건부 UPDATE로 예약 → 확정일·기사 배정. 설치 컬럼 CHECK에 `install_slot_id`가 들어가므로 FK는 참조 동작 없이.
 - **반입 판단**은 위 "회원 상태·닉네임 정책"의 반입 판단 항목 참고 (`carry_default_spec`은 배송 영역).
 

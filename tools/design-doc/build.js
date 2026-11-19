@@ -245,7 +245,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
   ${fig('로그인 처리 흐름', mm(D.login), '5회 실패 시 30분 잠금, 모든 시도를 기록. 잠금은 회원 상태가 아니라 locked_until로 판단')}
   ${fig('회원 상태 흐름', mm(D.mstatus), '전환할 때마다 member_status_history에 사유 · 처리자 · 근거 신고를 기록. 휴면은 상태값만 바꾸고 분리보관하지 않음(2023년 법 개정으로 의무 폐지)')}
   ${fig('탈퇴 처리', mm(D.withdraw), 'soft delete + 마스킹. 같은 이메일로 재가입 가능, 같은 사람(CI)은 30일 후 재가입')}
-  <div class="callout"><b>인테리어몰 특화</b> — member_home(주거형태 · 평수 · 가족형태 · 반려동물 · 이사 예정일)은 맞춤 추천과 집들이 작성 기본값에 쓰고, address_id로 "우리 집" 배송지와 연결한다. 배송지에는 층수 · 엘리베이터 여부와 <b>반입 경로 치수</b>(현관문 폭, 엘리베이터 문 폭 · 내부 깊이 · 높이, 사다리차 진입 가능 여부)를 둬서 sku_package 박스가 현관문 → 엘리베이터(또는 사다리차 · 계단) → 방문(member_room)을 통과하는지 주문 전에 확인한다. 배송 요청사항과 공동현관 비밀번호(암호화)도 저장한다. style은 회원 · 상품 · 커뮤니티 글이 함께 쓰는 공유 마스터다.</div>
+  <div class="callout"><b>인테리어몰 특화</b> — member_home(주거형태 · 평수 · 가족형태 · 반려동물 · 이사 예정일)은 맞춤 추천과 집들이 작성 기본값에 쓰고, address_id로 "우리 집" 배송지와 연결한다. 배송지에는 층수 · 엘리베이터 여부와 <b>반입 경로 치수</b>(현관문 폭, 엘리베이터 문 폭 · 내부 깊이 · 높이)를 둬서 sku_package 박스가 현관문 → 엘리베이터 → 방문(member_room)을 통과하는지 주문 전에 확인한다. 사다리차 · 계단 운반이 필요할지는 출고 전 해피콜에서 확인한다. 배송 요청사항과 공동현관 비밀번호(암호화)도 저장한다. style은 회원 · 상품 · 커뮤니티 글이 함께 쓰는 공유 마스터다.</div>
   <div class="callout"><b>마케팅 동의</b> — 광고성 정보 수신 동의는 member_terms_agreement(MARKETING_SMS · EMAIL · PUSH · KAKAO, 야간 21~08시는 MARKETING_NIGHT 별도)가 유일한 기준이다. member_notification_setting은 회원이 켜고 끄는 스위치이고, 광고성 알림(EVENT · PRICE_DROP)은 스위치 ON + 해당 채널 동의(+ 야간 동의)가 모두 있어야 보낸다. 동의 행은 철회 시 withdrawn_at만 채우고, 2년마다 수신 동의 사실을 안내한 시각을 reconfirm_notified_at에 남긴다(정보통신망법 시행령 62조).</div>
   <div class="callout"><b>닉네임 정책</b> — 2~12자 한글/영문/숫자/_ · forbidden_word 금칙어 불가 · 변경 후 30일간 재변경 불가(nickname_changed_at) · 이전 닉네임은 nickname_history에 남겨 30일간 다른 회원이 쓰지 못하게 해 사칭을 막고 신고 추적에 쓴다. 대소문자 · 악센트 무시 콜레이션이라 'Wood'와 'wood'는 같은 닉네임으로 본다.</div>
 </section>
@@ -304,7 +304,7 @@ ${erOf('cart')}
   <h2>7. 주문</h2>
   ${fig('주문 흐름', mm(D.orderflow), '재고는 주문 생성 시 차감하고, 30분 안에 결제되지 않으면 배치로 재고 · 설치 슬롯을 되돌린다. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않는다')}
   ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후 반품 · 교환은 다음 단계(클레임)')}
-  <div class="callout"><b>스냅샷</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수 · 사다리차 진입)는 order_address에, 배송비 내역(기본 · 권역 · 사다리차 · 계단)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다.</div>
+  <div class="callout"><b>스냅샷</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수)는 order_address에, 배송비 내역(기본 · 권역)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다.</div>
   <div class="callout"><b>할인 안분과 부분 취소</b> — 등급 할인(다음 단계의 쿠폰 · 포인트 포함)은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다.</div>
   <div class="callout"><b>부품 요청</b> — 구매한 조립식 상품의 누락 · 파손 부품은 주문 상품(order_item) 기준으로 part_request를 남기고, 요청 부품은 part_request_item에 담는다. 부품 목록과 조립 설명서는 상품 영역(product_part · assembly_step)에 있다(4장 조립식 부품 요청 흐름 참고).</div>
 </section>
@@ -321,10 +321,10 @@ ${erOf('payment')}
 
 <section class="page">
   <h2>9. 배송</h2>
-  ${fig('가구 배송비 계산 흐름', mm(D.shipfee), '배송지(고객 영역 address)의 우편번호 · 층수 · 엘리베이터와 상품 배송 정책으로 배송 가능 여부 · 비용 · 출고 예정일을 계산')}
-  <div class="callout"><b>가구 배송</b> — shipping_policy: 일반택배 / 화물택배 / 업체 직접 설치배송, 기본 · 무료조건 · 반품 · 교환 비용, 사다리차 · 계단 운반비, 출고 소요일, 오늘출발 마감 시각. 지역 차이는 delivery_zone(권역)과 shipping_policy_zone(권역별 가능 여부 · 추가비 · 추가 소요일)으로 처리한다. 상품마다 배송 정책을 고르고(product.shipping_policy_id), 박스 크기 · 무게는 상품 영역의 sku_package를 쓴다.</div>
+  ${fig('가구 배송비 계산 흐름', mm(D.shipfee), '배송지(고객 영역 address)의 우편번호와 상품 배송 정책으로 배송 가능 여부 · 배송비 · 출고 예정일을 계산. 층수 · 엘리베이터는 현장 추가 비용(사다리차 · 계단, 고객 현장 정산) 안내에만 쓴다')}
+  <div class="callout"><b>가구 배송</b> — shipping_policy: 일반택배 / 화물택배 / 업체 직접 설치배송, 기본 · 무료조건 · 반품 · 교환 비용, 현장 추가 비용 안내 문구(onsite_fee_notice), 출고 소요일, 오늘출발 마감 시각. 사다리차 · 계단 운반비는 가구 업계 관행대로 주문 금액에 넣지 않고 상세페이지 · 주문서에서 "고객 부담 · 현장 정산"으로 안내한다(배송비 = 기본 + 권역 추가비). 지역 차이는 delivery_zone(권역)과 shipping_policy_zone(권역별 가능 여부 · 추가비 · 추가 소요일)으로 처리한다. 상품마다 배송 정책을 고르고(product.shipping_policy_id), 박스 크기 · 무게는 상품 영역의 sku_package를 쓴다.</div>
   ${fig('반입 판단 — shipment.carry_check_status', mm(D.carry), '고객은 주거형태만 고르고, 치수를 모르면 기본값으로 추정한 뒤 애매하면 출고 전에 기사가 확인한다')}
-  <div class="callout"><b>반입 판단</b> — 대부분의 고객은 현관문 · 엘리베이터 치수를 모르므로 입력을 요구하지 않는다. 택배로 가는 조립식 · 소형 상품은 판단하지 않고(NOT_REQUIRED), 화물 · 설치배송만 판단한다. 치수는 고객이 입력한 값이 있으면 그 값을, 없으면 주거형태(address.building_type)의 기본값(carry_default_spec)을 쓴다. 기본값으로만 통과하거나 여유가 작으면 NEEDS_CHECK로 두고 출고 전 기사가 전화로 확인해 반입 방법(엘리베이터 · 계단 · 사다리차)을 확정한다. 현장 반입 실패는 회사 판단 오류면 무료 반품으로 처리한다.</div>
+  <div class="callout"><b>반입 판단</b> — 대부분의 고객은 현관문 · 엘리베이터 치수를 모르므로 입력을 요구하지 않는다. 택배로 가는 조립식 · 소형 상품은 판단하지 않고(NOT_REQUIRED), 화물 · 설치배송만 판단한다. 치수는 고객이 입력한 값이 있으면 그 값을, 없으면 주거형태(address.building_type)의 기본값(carry_default_spec)을 쓴다. 기본값으로만 통과하거나 여유가 작으면 NEEDS_CHECK로 두고, 통과가 어려우면 주문 전에 "사다리차 · 계단 운반이 필요할 수 있음(고객 부담 · 현장 정산)"을 경고한다. 출고 전 해피콜에서 반입 방법(엘리베이터 · 계단 · 사다리차)을 확정하고 안내한 현장 정산 예상 금액을 shipment.onsite_fee_estimate에 남긴다(우리 결제에는 포함하지 않음). 사다리차로도 안 되면 CONSULT(상담 · 취소). 현장 반입 실패는 회사 판단 오류면 무료 반품으로 처리한다.</div>
 </section>
 <section class="page">
   ${fig('설치배송 일정 예약 — install_slot', mm(D.install), '권역 × 날짜 × 오전/오후 슬롯에 하루 가능 건수(capacity)를 두고, 재고 차감과 같은 조건부 UPDATE로 초과 예약을 막는다')}
