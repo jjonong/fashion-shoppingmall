@@ -364,15 +364,19 @@ Table withdrawn_identity [note: '[탈퇴자 재가입 제한] 탈퇴 후 재가�
 Table category [note: '[카테고리] 카테고리 최대 4단계 (예: 가구 > 침대 > 침대프레임 > 수납침대)'] {
   category_id bigint [pk, increment, note: '[카테고리 ID]']
   parent_id bigint [note: '[상위 카테고리 ID] 최상위는 NULL']
+  category_code varchar(50) [not null, unique, note: '[카테고리 URL 코드] 주소에 쓰는 영문 소문자·하이픈 코드 (예: fabric-sofa). 이름이 바뀌어도 링크가 유지됨']
   name varchar(50) [not null, note: '[카테고리명]']
   depth tinyint [not null, note: '[카테고리 단계(깊이)] 1~4']
   sort_order smallint [not null, note: '[카테고리 정렬 순서]']
   icon_url varchar(500) [note: '[카테고리 아이콘 URL] 카테고리 아이콘 (가구/패브릭/조명/가전/주방/데코/수납/생활/반려동물)']
   notice_type_id bigint [note: '[기본 고시 품목 유형 ID] 이 카테고리 상품의 기본 고시 유형 (상품 등록 시 미리 선택). NULL이면 상위 카테고리 값']
+  default_shipping_policy_id bigint [note: '[기본 배송 정책 ID] 이 카테고리 상품의 기본 배송 정책 (상품 등록 시 미리 선택, 예: 소파 → 화물, 쿠션 → 택배). NULL이면 상위 카테고리 값. 실제 적용은 product.shipping_policy_id']
   is_active char(1) [not null, default: 'Y', note: '[카테고리 사용 여부] Y/N']
 
   indexes {
     (parent_id, name) [unique, name: 'uk_category_parent_name']
+    notice_type_id [name: 'ix_category_notice_type']
+    default_shipping_policy_id [name: 'ix_category_shipping_policy']
   }
 }
 
@@ -383,7 +387,7 @@ Table category [note: '[카테고리] 카테고리 최대 4단계 (예: 가구 >
 Table product [note: '[상품] 상품 (옵션 공통 정보)'] {
   product_id bigint [pk, increment, note: '[상품 ID]']
   category_id bigint [not null, note: '[카테고리 ID] 최하위 카테고리']
-  shipping_policy_id bigint [not null, note: '[배송 정책 ID]']
+  shipping_policy_id bigint [not null, note: '[배송 정책 ID] 기본값 category.default_shipping_policy_id, 상품별로 변경 가능']
   model_code varchar(30) [not null, unique, note: '[상품 모델 코드] 모델명/품번']
   name varchar(200) [not null, note: '[상품명] 검색용 FULLTEXT 인덱스 WITH PARSER ngram (DDL에서 생성, 한글 부분 일치)']
   product_type varchar(10) [not null, default: 'SINGLE', note: '[상품 유형] SINGLE/SET. SET은 product_set_item으로 구성 (예: 식탁 + 의자 4개)']
@@ -1697,6 +1701,7 @@ Ref: forbidden_word.created_by > member_account.member_id
 // 상품 - 분류
 Ref: category.parent_id > category.category_id
 Ref: category.notice_type_id > notice_type.notice_type_id
+Ref: category.default_shipping_policy_id > shipping_policy.policy_id
 
 // 상품 - 상품/옵션/SKU/포장/문의
 Ref: product.category_id > category.category_id

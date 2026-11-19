@@ -85,7 +85,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **옵션 구조**: `product` → `product_option_group`(색상/사이즈/구성, 상품마다 다름) → `product_option_value` → `product_sku`(값 조합). 조합은 `product_sku_option`(SKU당 그룹별 값 1개), 중복은 `option_key`(값 ID 오름차순 연결) + `UK(product_id, option_key)`. 옵션 없는 상품도 SKU 1개(`DEFAULT`). **SKU가 재고·장바구니·주문의 기준 단위**.
 - **가구 특화**: 치수(상품 대표 + SKU별), `assembly_type`(완제품/자가조립/기사 설치), `sale_type`(일반/예약/주문제작: 주문제작은 재고 차감 없음), SKU별 포장 박스(`sku_package`).
 - **재고**: `product_sku.stock` 하나로 관리(조건부 UPDATE로 차감, 낙관적 락 `version`), 모든 변경은 `stock_history`에 기록. 0 → 양수가 되면 `restock_request`(WAITING) 신청자에게 재입고 알림.
-- **상품정보제공고시**: 품목마다 법정 항목이 달라서 컬럼이 아닌 행 구조. `notice_type`(FURNITURE/BEDDING_CURTAIN/KITCHENWARE/HOME_APPLIANCE...) → `notice_item`(유형별 항목) → `product_notice`(상품별 유형, 1:1) + `product_notice_value`(항목 값). `category.notice_type_id`가 기본 유형. 필수 항목이 모두 있어야 ON_SALE. 항목 유형 일치는 앱 검증.
+- **상품정보제공고시**: 품목마다 법정 항목이 달라서 컬럼이 아닌 행 구조. `notice_type`(FURNITURE/BEDDING_CURTAIN/KITCHENWARE/HOME_APPLIANCE...) → `notice_item`(유형별 항목) → `product_notice`(상품별 유형, 1:1) + `product_notice_value`(항목 값). `category.notice_type_id`가 기본 유형(배송 정책도 같은 방식으로 `category.default_shipping_policy_id`가 기본값, 상품별 변경 가능). 필수 항목이 모두 있어야 ON_SALE. 항목 유형 일치는 앱 검증.
 - **상품 상태 흐름**: `DRAFT → ON_SALE ⇄ SOLD_OUT`, `STOPPED`. 품절 기준은 SKU 재고로 통일(전 SKU 0이면 시스템이 SOLD_OUT, changed_by NULL).
 - **자사몰 규모로 축소한 것 (사용자 확정)**: 창고별 실물 재고(`warehouse`, `sku_inventory`), 상품 검수 승인(`product_approval`), 검색 로그(`search_log`), MD 검색 키워드(`product_search_keyword`)는 뺐다. 다시 넣기 전에 사용자와 상의한다. 포트폴리오 초점은 **가구몰 특화 + 커뮤니티**.
 - **세트 상품**: `product_type='SET'`은 자체 SKU 없이 `product_set_item` 구성품 SKU를 각각 선택.
