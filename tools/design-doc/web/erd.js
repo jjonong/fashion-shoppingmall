@@ -112,6 +112,7 @@
     const T = D.tables[t];
     const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
         <td class="c-name">${esc(f.name)}</td>
+        <td class="c-lg">${esc(f.logical)}</td>
         <td class="c-type">${esc(f.type)}</td>
         <td class="c-key">${keyBadges(f)}</td>
         <td class="c-nn">${f.nn ? 'Y' : ''}</td>
@@ -124,13 +125,13 @@
     return `<section class="spec" id="spec-${t}">
       <header class="spec-h">
         <span class="no">${no}</span>
-        <h3>${t}</h3>
+        <h3>${t} <span class="lg">${esc(T.logical)}</span></h3>
         <span class="cnt">컬럼 ${T.fields.length}</span>
         <button class="icon-btn to-erd" data-erd="${t}">ERD에서 보기 ↑</button>
       </header>
       <p class="tnote">${esc(T.note)}</p>
       <div class="tbl-wrap"><table class="cols">
-        <thead><tr><th>컬럼</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead>
+        <thead><tr><th>컬럼</th><th>논리명</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <div class="spec-foot">
         ${idx ? `<div><h4>인덱스</h4><ul>${idx}</ul></div>` : ''}
@@ -302,16 +303,16 @@
     const T = D.tables[n.dataset.t];
     if (!T) return '';
     const G = D.groups[T.group];
-    let h = `<div class="tip-h"><code>${T.name}</code><span>${esc(G.title)}</span></div>
+    let h = `<div class="tip-h"><code>${T.name}</code> <b>${esc(T.logical)}</b><span>${esc(G.title)}</span></div>
       <p class="tip-note">${esc(T.note)}</p>`;
     if (tx && tx.dataset.col) {
       const f = T.fields.find((x) => x.name === tx.dataset.col);
-      h += `<div class="tip-col"><div><code>${esc(f.name)}</code> <span class="tip-type">${esc(f.type)}</span>${f.keys.map((k) => ` <span class="badge ${k}">${k}</span>`).join('')}</div>
+      h += `<div class="tip-col"><div><code>${esc(f.name)}</code> <b>${esc(f.logical)}</b> <span class="tip-type">${esc(f.type)}</span>${f.keys.map((k) => ` <span class="badge ${k}">${k}</span>`).join('')}</div>
         ${f.ref ? `<div class="tip-ref">→ ${esc(f.ref)}</div>` : ''}${f.note ? `<div>${esc(f.note)}</div>` : ''}</div>`;
     } else if (tx && tx.dataset.more) {
       const shown = new Set((n.dataset.shown || '').split(','));
       const rest = T.fields.filter((f) => !shown.has(f.name));
-      h += `<ul class="tip-list">${rest.slice(0, 14).map((f) => `<li><code>${esc(f.name)}</code>${f.note ? ` — ${esc(shortNote(f.note))}` : ''}</li>`).join('')}
+      h += `<ul class="tip-list">${rest.slice(0, 14).map((f) => `<li><code>${esc(f.name)}</code> ${esc(f.logical)}${f.note ? ` — ${esc(shortNote(f.note))}` : ''}</li>`).join('')}
         ${rest.length > 14 ? `<li class="tip-more">외 ${rest.length - 14}개</li>` : ''}</ul>`;
     } else {
       h += `<div class="tip-foot">컬럼 ${T.fields.length}개 · 컬럼에 올리면 컬럼 설명 · 누르면 ${T.group === (view && view.g) ? '아래 명세로 이동' : '해당 영역으로 이동'}</div>`;
@@ -396,9 +397,9 @@
     hits = [];
     Object.values(D.tables).forEach((T) => {
       const g = D.groups[T.group].title;
-      if (T.name.includes(s)) hits.push({ t: T.name, score: T.name.startsWith(s) ? 0 : 1, sub: g });
+      if (T.name.includes(s) || T.logical.includes(s)) hits.push({ t: T.name, score: T.name.startsWith(s) || T.logical.startsWith(s) ? 0 : 1, sub: `${T.logical} · ${g}` });
       else {
-        const cols = T.fields.filter((f) => f.name.includes(s)).map((f) => f.name);
+        const cols = T.fields.filter((f) => f.name.includes(s) || f.logical.includes(s)).map((f) => `${f.name}(${f.logical})`);
         if (cols.length) hits.push({ t: T.name, score: 2, sub: `${g} · 컬럼 ${cols.slice(0, 4).join(', ')}${cols.length > 4 ? ' …' : ''}` });
         else if (T.note.toLowerCase().includes(s)) hits.push({ t: T.name, score: 3, sub: `${g} · ${T.note.slice(0, 50)}` });
       }

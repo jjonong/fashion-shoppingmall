@@ -502,3 +502,8 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
   .cols .c-desc { grid-column: 1 / -1; min-width: 0; }
   .results { min-width: 0; }
 }
+
+/* 논리명 (한글 이름) */
+.cols .c-lg { white-space: nowrap; }
+.spec-h h3 .lg { font-weight: 500; color: var(--muted); font-size: .85em; margin-left: 4px; }
+.tip-h b { font-weight: 600; margin-left: 4px; }

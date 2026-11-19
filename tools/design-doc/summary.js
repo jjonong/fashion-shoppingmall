@@ -3,7 +3,7 @@
 //       node summary.js <in.dbml> <out.pdf> [미리보기 PNG 폴더]
 // 테이블 수·키·관계·ERD는 DBML에서 자동 생성, 설계 판단·정책 설명은 이 파일에 직접 쓴 문장이다.
 const path = require('path');
-const { ROOT, esc, noteOf, mm, fig, load, initViz, erSvg, head, mermaidInit, renderPdf } = require('./lib');
+const { ROOT, esc, noteOf, logicalOf, mm, fig, load, initViz, erSvg, head, mermaidInit, renderPdf } = require('./lib');
 const D = require('./diagrams');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
@@ -47,7 +47,7 @@ let no = 0;
 const tableRows = areaGroups.map((g) => `<tr class="grp"><td colspan="4">${esc(gTitle(g))} <small>${g.tables.length}개</small></td></tr>` +
   g.tables.map((x) => {
     const t = tableMap[x.name];
-    return `<tr><td class="num">${++no}</td><td class="mono b">${t.name}</td><td>${esc(noteOf(t.note))}</td><td class="mono sm">${keySummary(t)}</td></tr>`;
+    return `<tr><td class="num">${++no}</td><td class="mono b">${t.name}<br><span class="lg">${esc(logicalOf(t.note))}</span></td><td>${esc(noteOf(t.note))}</td><td class="mono sm">${keySummary(t)}</td></tr>`;
   }).join('')).join('');
 
 const makeHtml = () => {

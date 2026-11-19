@@ -7,7 +7,11 @@ const puppeteer = require('puppeteer-core');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const noteOf = (n) => (n && typeof n === 'object' ? n.value : n) || '';
+// note 앞의 [논리명]: 테이블·컬럼의 한글 이름. noteOf는 논리명을 뺀 설명, logicalOf는 논리명
+const rawNote = (n) => (n && typeof n === 'object' ? n.value : n) || '';
+const LOGICAL = /^\[([^\]]+)\]\s*/;
+const noteOf = (n) => rawNote(n).replace(LOGICAL, '');
+const logicalOf = (n) => (rawNote(n).match(LOGICAL) || [])[1] || '';
 const mm = (code, cls = '') => `<pre class="mermaid ${cls}">${esc(code)}</pre>`;
 const fig = (title, body, caption = '') =>
   `<figure class="fig"><figcaption><b>${title}</b>${caption ? ' — ' + caption : ''}</figcaption>${body}</figure>`;
@@ -76,8 +80,12 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null, clusters = null 
   graph [rankdir=LR, nodesep=0.28, ranksep=0.75, splines=spline, bgcolor="transparent", fontname="${F}", pad=0.1];
   node [shape=plain, fontname="${F}", fontsize=10];
   edge [color="#7d8a96", penwidth=1.1, arrowsize=0.75, dir=both];\n`;
+  const xesc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Graphviz(viz.js)는 한글 폭을 실제보다 좁게 계산해 옆 칸과 겹치므로, 한글 글자 수만큼 공백을 덧붙여 칸 폭을 맞춘다
+  const wide = (s) => '&nbsp;'.repeat(Math.ceil(((s || '').match(/[^\x00-\x7f]/g) || []).length * 1.4));
   const row = (port, name, type, key, opts = {}) =>
     `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="9.5">${opts.b ? '<B>' + name + '</B>' : name}</FONT></TD>` +
+    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8.5" COLOR="#3f4d5a">&nbsp;${xesc(opts.lg || '')}${wide(opts.lg)}</FONT></TD>` +
     `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#5d6d7e">${type}</FONT></TD>` +
     `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#B8860B' : '#2f6496'}"><B>${key}</B></FONT></TD></TR>`;
   const nodeDot = {};
@@ -85,10 +93,10 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null, clusters = null 
     const t = tableMap[name];
     const kf = keyFields(t);
     const others = t.fields.length - kf.length;
-    let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#FBF6E9' : 'white' })).join('');
-    if (others > 0) rows += `<TR><TD COLSPAN="3" ALIGN="LEFT" BGCOLOR="#F5F8FB"><FONT POINT-SIZE="8" COLOR="#8795A1">+ ${others} columns</FONT></TD></TR>`;
+    let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#FBF6E9' : 'white', lg: logicalOf(f.note) })).join('');
+    if (others > 0) rows += `<TR><TD COLSPAN="4" ALIGN="LEFT" BGCOLOR="#F5F8FB"><FONT POINT-SIZE="8" COLOR="#8795A1">+ ${others} columns</FONT></TD></TR>`;
     nodeDot[name] = `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
-      <TR><TD COLSPAN="3" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${name}&nbsp;&nbsp;&nbsp;</B></FONT></TD></TR>${rows}</TABLE>>];\n`;
+      <TR><TD COLSPAN="4" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${name}&nbsp;</B></FONT><FONT COLOR="#dce8f4" POINT-SIZE="9.5">&nbsp;${xesc(logicalOf(t.note))}${wide(logicalOf(t.note))}</FONT></TD></TR>${rows}</TABLE>>];\n`;
   }
   // 영역 전체 ERD: 세부 영역(TableGroup)마다 묶음 상자로 감싼다
   (clusters || []).forEach((c) => {
@@ -101,7 +109,7 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null, clusters = null 
     const t = tableMap[name];
     const pk = t.fields.filter((f) => f.pk || compositePk(t).includes(f.name));
     dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#a3afba">
-      <TR><TD COLSPAN="3" BGCOLOR="#a3afba"><FONT COLOR="white" POINT-SIZE="10"><B>&nbsp;${name}&nbsp;&nbsp;&nbsp;</B></FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#F5F7F9' })).join('')}</TABLE>>];\n`;
+      <TR><TD COLSPAN="4" BGCOLOR="#a3afba"><FONT COLOR="white" POINT-SIZE="10"><B>&nbsp;${name}&nbsp;</B></FONT><FONT COLOR="white" POINT-SIZE="9">&nbsp;${xesc(logicalOf(t.note))}${wide(logicalOf(t.note))}</FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#F5F7F9', lg: logicalOf(f.note) })).join('')}</TABLE>>];\n`;
   }
   for (const r of rels) {
     const f = fieldOf(r.child, r.ccol);
@@ -234,4 +242,4 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('PDF', outPdf);
 }
 
-module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };
+module.exports = { ROOT, esc, noteOf, logicalOf, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };

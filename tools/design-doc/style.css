@@ -152,3 +152,8 @@ table.sum-tables tr { page-break-inside: avoid; }
 td.mono { font-family: Consolas, monospace; }
 td.b { font-weight: bold; white-space: nowrap; }
 td.sm { font-size: 7.4pt; line-height: 1.5; }
+
+/* 논리명 (한글 이름) */
+table.cols td.lg { white-space: nowrap; color: #1f3b57; }
+section.tbl h4 .lg { margin-left: 8px; font-weight: normal; color: #3f4d5a; font-size: 0.92em; }
+table.sum-tables .lg { font-family: 'Malgun Gothic', sans-serif; font-weight: normal; color: #3f4d5a; font-size: 0.95em; }

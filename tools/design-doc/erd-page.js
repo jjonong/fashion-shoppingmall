@@ -5,7 +5,7 @@
 //       node erd-page.js <in.dbml> <out.html>
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, load, initViz, erSvg, dotSvg, AUDIT, groupDesc, AREAS, areaOf } = require('./lib');
+const { ROOT, esc, noteOf, logicalOf, load, initViz, erSvg, dotSvg, AUDIT, groupDesc, AREAS, areaOf } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const out = process.argv[3] || path.join(ROOT, 'docs', 'erd', 'index.html');
@@ -23,6 +23,7 @@ function tableData(t) {
   return {
     name: t.name,
     group: groupOf[t.name],
+    logical: logicalOf(t.note),
     note: noteOf(t.note),
     fields: t.fields.map((f) => {
       const keys = [];
@@ -37,6 +38,7 @@ function tableData(t) {
         def: fmtDefault(f.dbdefault),
         inc: !!f.increment,
         ref: fk[`${t.name}.${f.name}`] || '',
+        logical: logicalOf(f.note),
         note: noteOf(f.note),
       };
     }),
@@ -82,7 +84,7 @@ function overallSvg() {
     label="${stage.name} · ${gTitle(g)}"; fontname="${F}"; fontsize=17; fontcolor="${line}";
     style="rounded,filled"; fillcolor="${fill}"; color="${line}"; penwidth=1.2; margin=10;
     node [color="${line}"];
-    ${g.tables.map((t) => t.name).join('; ')};
+    ${g.tables.map((t) => `${t.name} [label="${t.name}\\n${logicalOf(tableMap[t.name].note)}"]`).join('; ')};
   }
 `;
   });
@@ -172,7 +174,7 @@ async function main() {
   <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>인테리어몰 ERD</span></a>
   <span class="meta">MySQL 8.0 · 테이블 ${data.counts.tables} · 관계 ${data.counts.refs}</span>
   <div class="search">
-    <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, stock)" autocomplete="off" aria-label="테이블·컬럼 검색">
+    <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
     <div id="results" class="results" hidden></div>
   </div>
 </header>

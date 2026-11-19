@@ -5,7 +5,7 @@
 // Chrome 경로가 다르면 환경변수 CHROME_PATH로 지정
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, mm, fig, load, initViz, erSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf } = require('./lib');
+const { ROOT, esc, noteOf, logicalOf, mm, fig, load, initViz, erSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const outPdf = process.argv[3] || path.join(ROOT, 'docs', 'DB_설계서.pdf');
@@ -57,16 +57,16 @@ function tableHtml(t, no) {
     let note = esc(noteOf(f.note));
     if (ref) note = `<span class="ref">→ ${esc(ref)}</span>${note ? '<br>' + note : ''}`;
     if (f.increment) note = `<span class="ref">AUTO_INCREMENT</span>${note ? '<br>' + note : ''}`;
-    return `<tr><td class="c">${f.name}</td><td class="t">${esc(f.type.type_name).toUpperCase()}</td>
+    return `<tr><td class="c">${f.name}</td><td class="lg">${esc(logicalOf(f.note))}</td><td class="t">${esc(f.type.type_name).toUpperCase()}</td>
       <td class="kc">${keys.join(' ')}</td><td class="nn">${f.not_null || f.pk || cpk.includes(f.name) ? 'Y' : ''}</td>
       <td class="d">${esc(fmtDefault(f.dbdefault))}</td><td>${note}</td></tr>`;
   }).join('');
   const idx = (t.indexes || []).filter((i) => !i.pk).map((i) =>
     `<li><code>${esc(i.name || '')}</code> ${i.unique ? '<b>UNIQUE</b> ' : ''}(${esc(i.columns.map((c) => c.value).join(', '))})${i.note ? ' — ' + esc(noteOf(i.note)) : ''}</li>`).join('');
   const pkLine = cpk.length > 1 ? `<li><b>복합 PK</b> (${cpk.join(', ')})</li>` : '';
-  return `<section class="tbl"><h4><span class="no">${no}</span>${t.name}</h4>
+  return `<section class="tbl"><h4><span class="no">${no}</span>${t.name}<span class="lg">${esc(logicalOf(t.note))}</span></h4>
     <p class="tnote">${esc(noteOf(t.note))}</p>
-    <table class="cols"><thead><tr><th>컬럼</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="cols"><thead><tr><th>컬럼</th><th>논리명</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead><tbody>${rows}</tbody></table>
     ${pkLine || idx ? `<ul class="idx">${pkLine}${idx}</ul>` : ''}</section>`;
 }
 
