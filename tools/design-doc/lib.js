@@ -65,7 +65,8 @@ const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 
 // ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
 // tables: 그릴 테이블 이름 배열. 이 테이블들이 참조하는 다른 테이블은 회색(PK만)으로 함께 그린다.
 // leftOf: { hub, tables } — hub 테이블을 참조하는 자식 중 tables에 든 것은 hub 왼쪽에 배치 (허브형 배치)
-function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
+// clusters: [{ name, label, tables }] — 테이블을 세부 영역 상자로 묶는다 (영역 전체 ERD용)
+function erDot(ctx, tables, { hideAudit = false, leftOf = null, clusters = null } = {}) {
   const { tableMap, refs, fieldOf, compositePk, baseType, keyFields, keyMark } = ctx;
   const inner = new Set(tables);
   const rels = refs.filter((r) => inner.has(r.child) && !(hideAudit && r.parent === 'member_account' && AUDIT.has(r.ccol)));
@@ -79,15 +80,23 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
     `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="9.5">${opts.b ? '<B>' + name + '</B>' : name}</FONT></TD>` +
     `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#5d6d7e">${type}</FONT></TD>` +
     `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#B8860B' : '#2f6496'}"><B>${key}</B></FONT></TD></TR>`;
+  const nodeDot = {};
   for (const name of inner) {
     const t = tableMap[name];
     const kf = keyFields(t);
     const others = t.fields.length - kf.length;
     let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#FBF6E9' : 'white' })).join('');
     if (others > 0) rows += `<TR><TD COLSPAN="3" ALIGN="LEFT" BGCOLOR="#F5F8FB"><FONT POINT-SIZE="8" COLOR="#8795A1">+ ${others} columns</FONT></TD></TR>`;
-    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
+    nodeDot[name] = `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
       <TR><TD COLSPAN="3" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${name}&nbsp;&nbsp;&nbsp;</B></FONT></TD></TR>${rows}</TABLE>>];\n`;
   }
+  // 영역 전체 ERD: 세부 영역(TableGroup)마다 묶음 상자로 감싼다
+  (clusters || []).forEach((c) => {
+    dot += `  subgraph cluster_${c.name} {\n    label="${c.label}"; labeljust=l; fontsize=13; fontcolor="#2f6496"; style="rounded"; color="#b9c7d6"; penwidth=1.2; margin=12;\n`;
+    c.tables.forEach((n) => { dot += '  ' + nodeDot[n]; delete nodeDot[n]; });
+    dot += '  }\n';
+  });
+  dot += Object.values(nodeDot).join('');
   for (const name of ext) {
     const t = tableMap[name];
     const pk = t.fields.filter((f) => f.pk || compositePk(t).includes(f.name));
@@ -114,8 +123,8 @@ let VIZ = null;
 async function initViz() { VIZ = await require('@viz-js/viz').instance(); }
 // DOT 문자열 → SVG (전체 구조도 등 erDot을 쓰지 않는 도식용)
 function dotSvg(dot, engine = 'dot') { return VIZ.renderString(dot, { format: 'svg', engine }).replace(/^[\s\S]*?(<svg)/, '$1'); }
-function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null } = {}) {
-  const { dot, ext } = erDot(ctx, tables, { hideAudit, leftOf });
+function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null, clusters = null } = {}) {
+  const { dot, ext } = erDot(ctx, tables, { hideAudit, leftOf, clusters });
   let best = null;
   for (const dir of leftOf ? ['LR'] : ['LR', 'TB']) {
     const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');

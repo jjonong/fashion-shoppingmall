@@ -108,7 +108,7 @@ function overallSvg() {
 async function main() {
   await initViz();
   const data = {
-    stages: STAGES.map((s) => ({ ...s, groups: groups.filter((g) => areaOf(g.name).prefix === s.prefix).map((g) => g.name) })),
+    stages: STAGES.map((s) => ({ ...s, all: `${s.prefix}__all`, groups: groups.filter((g) => areaOf(g.name).prefix === s.prefix).map((g) => g.name) })),
     groups: {},
     tables: {},
     counts: { tables: S.tables.length, refs: refs.length, groups: groups.length },
@@ -125,6 +125,29 @@ async function main() {
       hideAudit,
     };
     svgs.push(`<template id="svg-${g.name}">${svg}</template>`);
+  });
+  // 영역 전체 ERD: 영역의 모든 테이블을 세부 영역(TableGroup) 상자로 묶어 한 장에
+  AREAS.forEach((a) => {
+    const gs = groups.filter((g) => areaOf(g.name).prefix === a.prefix);
+    const key = `${a.prefix}__all`;
+    const tables = gs.flatMap((g) => g.tables.map((t) => t.name));
+    const hideAudit = a.prefix !== 'member';
+    const { svg, ext } = erSvg(ctx, tables, { hideAudit, W: 1100, H: 680, clusters: gs.map((g) => ({ name: g.name, label: gTitle(g), tables: g.tables.map((t) => t.name) })) });
+    const clean = svg
+      .replace(/^<div class="gv">|<\/div>$/g, '')
+      .replace(/ width="[\d.]+pt" height="[\d.]+pt"/, '')
+      .replace(/ id="/g, ` id="${key}_`)
+      .replace(/<title>G<\/title>/, '');
+    data.groups[key] = {
+      title: `${a.name} 전체`,
+      full: `${a.name} - 전체`,
+      desc: `${a.name} 영역의 테이블 ${tables.length}개를 한 장에 모았습니다. 묶음 상자는 세부 영역이고, 상자 제목을 누르면 그 세부 영역으로 이동합니다.`,
+      tables,
+      ext,
+      hideAudit,
+      area: true,
+    };
+    svgs.push(`<template id="svg-${key}">${clean}</template>`);
   });
   S.tables.forEach((t) => (data.tables[t.name] = tableData(t)));
   svgs.push(`<template id="svg-__all">${overallSvg()}</template>`);

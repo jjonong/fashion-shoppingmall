@@ -194,6 +194,9 @@ button { font: inherit; color: inherit; }
 .g-item:hover { background: var(--panel-2); text-decoration: none; }
 .g-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .g-item .n { color: var(--muted); font-size: 12px; font-weight: 400; }
+.g-item.g-all { font-weight: 600; }
+.g-card.g-all { padding: 8px 12px; margin-bottom: 10px; color: var(--c); }
+.stage-col h2 a { color: inherit; }
 .t-list { margin: 2px 0 8px 14px; padding-left: 8px; border-left: 2px solid var(--line); }
 .t-list a {
   display: block;

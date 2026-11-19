@@ -43,6 +43,7 @@
     D.stages.forEach((s, i) => {
       const n = s.groups.reduce((a, g) => a + D.groups[g].tables.length, 0);
       h += `<div class="stage"><div class="stage-h"><span class="dot" style="background:var(--s${i + 1})"></span>${esc(s.name)}<span class="n">${n}개</span></div>`;
+      h += `<a class="g-item g-all${s.all === cur.g ? ' on' : ''}" href="#g=${s.all}"><span>전체 보기</span><span class="n">${n}</span></a>`;
       s.groups.forEach((g) => {
         const G = D.groups[g];
         const on = g === cur.g;
@@ -64,7 +65,7 @@
     let cols = '';
     D.stages.forEach((s, i) => {
       const n = s.groups.reduce((a, g) => a + D.groups[g].tables.length, 0);
-      cols += `<section class="stage-col" style="--c:var(--s${i + 1})"><h2>${esc(s.name)}<span>${n}개 테이블</span></h2>`;
+      cols += `<section class="stage-col" style="--c:var(--s${i + 1})"><h2><a href="#g=${s.all}">${esc(s.name)}</a><span>${n}개 테이블</span></h2><a class="g-card g-all" href="#g=${s.all}"><b>${esc(s.name)} 전체 ERD 보기 →</b></a>`;
       s.groups.forEach((g) => {
         const G = D.groups[g];
         cols += `<a class="g-card" href="#g=${g}"><b>${esc(G.title)} <span class="n" style="color:var(--muted);font-weight:400">· ${G.tables.length}</span></b>
@@ -282,7 +283,11 @@
     const n = e.target.closest && e.target.closest('g.node');
     // 이 영역 테이블은 아래 명세로, 회색(다른 영역) 테이블은 그 영역으로 이동
     const cl = !n && e.target.closest && e.target.closest('g.cluster');
-    if (n && n.dataset.t && D.tables[n.dataset.t]) go(D.tables[n.dataset.t].group, n.dataset.t);
+    if (n && n.dataset.t && D.tables[n.dataset.t]) {
+      // 지금 보는 ERD(영역 전체 포함)에 있는 테이블이면 그 자리의 명세로, 아니면 그 테이블의 세부 영역으로
+      const here = cur.g && D.groups[cur.g] && D.groups[cur.g].tables.includes(n.dataset.t);
+      go(here ? cur.g : D.tables[n.dataset.t].group, n.dataset.t);
+    }
     else if (cl && cl.dataset.g && D.groups[cl.dataset.g]) go(cl.dataset.g, null);
     else if (e.target.closest && e.target.closest('.canvas')) highlight(null);
   });
