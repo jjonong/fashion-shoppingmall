@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 고객 20개 + 상품 35개 + 커뮤니티 12개 + 장바구니 4개 + 주문 7개 + 결제 3개 + 배송 7개 + 혜택 5개 = 93개 테이블
+// 고객 20개 + 상품 33개 + 커뮤니티 12개 + 장바구니 4개 + 주문 7개 + 결제 3개 + 배송 7개 + 혜택 5개 = 91개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -11,7 +11,7 @@ Project interior_mall {
   database_type: 'MySQL'
   Note: '''
   인테리어 가구몰 + 커뮤니티 포트폴리오 DB (MySQL 8.0, InnoDB, utf8mb4 / utf8mb4_0900_ai_ci)
-  - 여러 브랜드 가구/소품을 자사가 직접 판매 (입점사 정산 없음)
+  - 자사 브랜드(PB) 가구/소품을 직접 판매 (입점 판매자·정산 없음)
   - 커뮤니티 글(사진/집들이/매거진)에 상품을 태그해서 스토어로 연결
   - 이름은 소문자 snake_case, PK는 BIGINT AUTO_INCREMENT
   - 상태값은 VARCHAR + CHECK, Y/N은 CHAR(1) + CHECK
@@ -358,20 +358,8 @@ Table withdrawn_identity [note: '[탈퇴자 재가입 제한] 탈퇴 후 재가�
 }
 
 // =====================================================================
-// 상품 - 분류/브랜드
+// 상품 - 분류
 // =====================================================================
-
-Table brand [note: '[브랜드]'] {
-  brand_id bigint [pk, increment, note: '[브랜드 ID]']
-  name_ko varchar(100) [not null, note: '[브랜드 한글명]']
-  name_en varchar(100) [not null, unique, note: '[브랜드 영문명]']
-  logo_url varchar(500) [note: '[브랜드 로고 URL]']
-  description varchar(1000) [note: '[브랜드 소개]']
-  status varchar(20) [not null, default: 'ACTIVE', note: '[브랜드 상태] ACTIVE/HIDDEN']
-  like_count int [not null, default: 0, note: '[브랜드 좋아요 수] 캐시']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[브랜드 등록일시]']
-  updated_at datetime [note: '[브랜드 수정일시]']
-}
 
 Table category [note: '[카테고리] 카테고리 최대 4단계 (예: 가구 > 침대 > 침대프레임 > 수납침대)'] {
   category_id bigint [pk, increment, note: '[카테고리 ID]']
@@ -394,7 +382,6 @@ Table category [note: '[카테고리] 카테고리 최대 4단계 (예: 가구 >
 
 Table product [note: '[상품] 상품 (옵션 공통 정보)'] {
   product_id bigint [pk, increment, note: '[상품 ID]']
-  brand_id bigint [not null, note: '[브랜드 ID]']
   category_id bigint [not null, note: '[카테고리 ID] 최하위 카테고리']
   shipping_policy_id bigint [not null, note: '[배송 정책 ID]']
   model_code varchar(30) [not null, unique, note: '[상품 모델 코드] 모델명/품번']
@@ -432,7 +419,6 @@ Table product [note: '[상품] 상품 (옵션 공통 정보)'] {
 
   indexes {
     (category_id, status, sale_price) [name: 'ix_product_category']
-    (brand_id, status) [name: 'ix_product_brand']
     (status, sales_count) [name: 'ix_product_best', note: 'sales_count DESC']
     shipping_policy_id [name: 'ix_product_shipping']
     created_by [name: 'ix_product_created_by']
@@ -620,17 +606,6 @@ Table product_home_fit [note: '[상품 주거 적합 조건] 상품이 잘 맞�
   indexes {
     (product_id, fit_type, fit_code) [pk]
     (fit_type, fit_code) [name: 'ix_phf_fit', note: '조건으로 상품 찾기']
-  }
-}
-
-Table member_brand_preference [note: '[회원 선호 브랜드] 회원 선호(팔로우) 브랜드'] {
-  member_id bigint [not null, note: '[브랜드 선호 회원 ID]']
-  brand_id bigint [not null, note: '[브랜드 ID]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[선호 브랜드 등록일시]']
-
-  indexes {
-    (member_id, brand_id) [pk]
-    brand_id [name: 'ix_mbp_brand']
   }
 }
 
@@ -1607,18 +1582,16 @@ Table coupon [note: '[쿠폰] 관리자가 만드는 쿠폰의 틀. 종류(상�
   }
 }
 
-Table coupon_target [note: '[쿠폰 적용 대상] 상품 쿠폰을 적용할 상품·브랜드·카테고리 (하위 카테고리 포함). 행이 없으면 전 상품. is_exclude = Y면 제외 대상 (예: 소파 카테고리 10%, 단 특정 브랜드 제외). CHECK: product_id·brand_id·category_id 중 정확히 하나만 채움 → 이 세 FK는 참조 동작(ON DELETE) 없이 생성'] {
+Table coupon_target [note: '[쿠폰 적용 대상] 상품 쿠폰을 적용할 상품·카테고리 (하위 카테고리 포함). 행이 없으면 전 상품. is_exclude = Y면 제외 대상 (예: 소파 카테고리 10%, 단 특정 상품 제외). CHECK: product_id·category_id 중 정확히 하나만 채움 → 이 두 FK는 참조 동작(ON DELETE) 없이 생성'] {
   target_id bigint [pk, increment, note: '[쿠폰 적용 대상 ID]']
   coupon_id bigint [not null, note: '[쿠폰 ID]']
   product_id bigint [note: '[쿠폰 적용 상품 ID]']
-  brand_id bigint [note: '[쿠폰 적용 브랜드 ID]']
   category_id bigint [note: '[쿠폰 적용 카테고리 ID] 하위 카테고리까지 적용']
   is_exclude char(1) [not null, default: 'N', note: '[쿠폰 적용 제외 여부] Y면 이 대상은 할인에서 제외']
 
   indexes {
     coupon_id [name: 'ix_coupon_target_coupon']
     product_id [name: 'ix_coupon_target_product', note: '상품 상세에서 받을 수 있는 쿠폰 찾기']
-    brand_id [name: 'ix_coupon_target_brand']
     category_id [name: 'ix_coupon_target_category']
   }
 }
@@ -1721,12 +1694,11 @@ Ref: member_status_history.report_id > report.report_id
 Ref: nickname_history.member_id > member_account.member_id
 Ref: forbidden_word.created_by > member_account.member_id
 
-// 상품 - 분류/브랜드
+// 상품 - 분류
 Ref: category.parent_id > category.category_id
 Ref: category.notice_type_id > notice_type.notice_type_id
 
 // 상품 - 상품/옵션/SKU/포장/문의
-Ref: product.brand_id > brand.brand_id
 Ref: product.category_id > category.category_id
 Ref: product.shipping_policy_id > shipping_policy.policy_id
 Ref: product_option_group.product_id > product.product_id
@@ -1760,8 +1732,6 @@ Ref: stock_history.sku_id > product_sku.sku_id
 Ref: price_history.product_id > product.product_id
 Ref: product_style.product_id > product.product_id
 Ref: product_style.style_id > style.style_id
-Ref: member_brand_preference.member_id > member_account.member_id
-Ref: member_brand_preference.brand_id > brand.brand_id
 Ref: stock_history.created_by > member_account.member_id
 Ref: price_history.changed_by > member_account.member_id
 Ref: restock_request.member_id > member_account.member_id
@@ -1901,7 +1871,6 @@ Ref: coupon.target_grade_id > member_grade.grade_id
 Ref: coupon.created_by > member_account.member_id
 Ref: coupon_target.coupon_id > coupon.coupon_id
 Ref: coupon_target.product_id > product.product_id
-Ref: coupon_target.brand_id > brand.brand_id
 Ref: coupon_target.category_id > category.category_id
 Ref: coupon_code.coupon_id > coupon.coupon_id
 Ref: coupon_code.used_member_id > member_account.member_id
@@ -1952,8 +1921,7 @@ TableGroup member_lifecycle [note: '고객 - 상태/닉네임/탈퇴 정책'] {
   withdrawn_identity
 }
 
-TableGroup product_classification [note: '상품 - 분류/브랜드'] {
-  brand
+TableGroup product_classification [note: '상품 - 분류'] {
   category
 }
 
@@ -1978,7 +1946,6 @@ TableGroup product_notice_info [note: '상품 - 정보제공고시 (품목별 �
 TableGroup product_link_history [note: '상품 - 연결/추천/재고/알림'] {
   product_style
   product_home_fit
-  member_brand_preference
   stock_history
   price_history
   restock_request

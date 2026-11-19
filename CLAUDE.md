@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **인테리어 가구몰 + 커뮤니티** 포트폴리오 프로젝트 (오늘의집 벤치마킹: 스토어 + 고객 사진/집들이 + 브랜드 매거진). 현재는 **DB 설계 단계**로, 애플리케이션 코드·빌드·테스트 명령은 아직 없다. 모든 산출물은 `docs/`에 있다.
 
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`. (Oracle에서 전환함. Oracle 버전은 `docs/archive_oracle/`)
-- 판매 방식: 여러 브랜드 상품을 **자사가 직접 판매** (입점 판매자·정산 없음). 사용자가 확정한 사항이므로 오픈마켓 구조로 바꾸지 않는다. 브랜드·업체는 실제 업체가 아닌 가상 데이터로 채운다.
+- 판매 방식: **자사 브랜드(PB) 상품만 직접 판매** (입점 판매자·정산·브랜드 구분 없음, 사용자 확정). 오픈마켓 구조로 바꾸지 않는다. 브랜드 테이블(`brand`, `member_brand_preference`)은 이 결정으로 뺐으므로 다시 넣기 전에 사용자와 상의한다. 업체·상품은 실제가 아닌 가상 데이터로 채운다.
 - 커뮤니티 범위: 자사몰은 대형 플랫폼만큼 사용자가 모이지 않으므로 **구매 고객 사진·집들이 + 운영자 매거진으로 축소** (사용자 확정). 팔로우·차단·해시태그·댓글 좋아요·스크랩 폴더·질문과답변(상품 문의와 중복)은 의도적으로 뺐다. 다시 넣기 전에 사용자와 상의한다.
-- 영역 8개 (쇼핑 흐름 순, 사용자 확정): 고객(20) + 상품(35) + 커뮤니티(12) + 장바구니(4) + 주문(7) + 결제(3) + 배송(7) + 혜택(5) = **93개 테이블**. 예전 "1~4단계" 표기는 쓰지 않는다.
+- 영역 8개 (쇼핑 흐름 순, 사용자 확정): 고객(20) + 상품(33) + 커뮤니티(12) + 장바구니(4) + 주문(7) + 결제(3) + 배송(7) + 혜택(5) = **91개 테이블**. 예전 "1~4단계" 표기는 쓰지 않는다.
 - **다음 단계(구매 리뷰, 포인트, 반품·교환 클레임, 등급 산정 기준)는 대기 중.** 사용자가 요청하기 전에는 테이블을 추가하지 않는다. `stock_history.ref_type = CLAIM`의 `ref_id`와 주문 금액의 `point_used_amount`(지금은 0)가 다음 단계와 연결될 자리. 포인트를 만들면 '혜택' 영역(`benefit_`)에 둔다.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
@@ -17,12 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 파일 | 역할 |
 |---|---|
-| `docs/erd.dbml` | **기준 원본(source of truth)**. 93개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 24개. https://dbdiagram.io/d 에 붙여넣어 확인 |
+| `docs/erd.dbml` | **기준 원본(source of truth)**. 91개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 24개. https://dbdiagram.io/d 에 붙여넣어 확인 |
 | `docs/DB_설계서.pdf` | `erd.dbml`에서 생성한 설계서 (표지, 전체 구조, 설계 원칙, 흐름도, 영역별 ERD, 테이블 명세, FK 목록). **모든 페이지 A4 세로** (사용자 요청, 가로 페이지 섞지 않음). 직접 수정 불가, 설계가 바뀌면 `tools/design-doc`에서 `npm run pdf`로 다시 생성 |
 | `docs/고객_설계_요약.pdf` | 고객 영역 요약본 (약 8쪽: 한눈에 보기·핵심 결정, 고객 전체 ERD, 테이블 요약표, 설계 과정, 보안, 생명주기, 정책·향후 검토). 전체 설계서가 길어서 사용자가 요청한 별도 문서. `npm run summary`로 생성 |
 | `docs/erd/index.html` | ERD 웹페이지 (GitHub Pages: https://jjonong.github.io/interior-shoppingmall/erd/). 영역 이름(고객·상품 등)을 누르면 그 영역 전체 ERD(세부 영역별 ERD를 상자로 격자 배치, `lib.areaSvg`) + 세부 영역별 ERD + 테이블 클릭 시 전체 컬럼·인덱스·관계, 검색. 단일 HTML(외부 라이브러리 없음). 직접 수정 불가, `npm run erd`로 생성. Pages 소스는 main 브랜치 `/docs` (`docs/.nojekyll`로 Jekyll 생략). **테이블 드래그 배치**: 끌어 옮기면 연결선이 따라오고 배치는 브라우저(localStorage `erd-layout-v1`)에 저장, "배치 초기화"·"배치 내보내기", "draw.io에서 열기"(Pages에서만) |
 | `docs/erd-layout.json` | (선택) 웹페이지 공유 배치. 웹페이지 "배치 내보내기"로 받은 파일을 여기 두고 `npm run erd`하면 모든 사람에게 같은 배치. 화면키 → {노드키(영역 전체 화면은 `그룹/테이블`): [dx, dy]}. 설계 변경으로 자동 배치가 달라지면 어긋날 수 있음 → 다시 내보내기 |
-| `docs/erd.drawio` | draw.io(diagrams.net) 파일. 첫 페이지 "전체"(93개 한 장, 영역 색) + 영역별 페이지 8개(다른 영역은 PK만 회색), 논리명 · 물리명 · 타입 · 키 전체 컬럼, 세부 영역 상자, 관계선. 직접 수정 불가, `npm run drawio`로 생성. **한 방향**: draw.io에서 옮기거나 꾸민 내용은 `erd.dbml`에 반영되지 않음 (사용자 확정: draw.io는 보조, 원본은 dbml) |
+| `docs/erd.drawio` | draw.io(diagrams.net) 파일. 첫 페이지 "전체"(91개 한 장, 영역 색) + 영역별 페이지 8개(다른 영역은 PK만 회색), 논리명 · 물리명 · 타입 · 키 전체 컬럼, 세부 영역 상자, 관계선. 직접 수정 불가, `npm run drawio`로 생성. **한 방향**: draw.io에서 옮기거나 꾸민 내용은 `erd.dbml`에 반영되지 않음 (사용자 확정: draw.io는 보조, 원본은 dbml) |
 | `docs/archive_fashion/` | 이전 패션몰 설계 (Oracle). 참고용, 갱신하지 않음 |
 | `docs/archive_oracle/` | 인테리어몰 Oracle 버전 (MySQL 전환 직전). 참고용, 갱신하지 않음 |
 
@@ -127,7 +127,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **반입 판단**은 위 "회원 상태·닉네임 정책"의 반입 판단 항목 참고 (`carry_default_spec`은 배송 영역).
 
 ### 혜택 (쿠폰)
-- **구조** (사용자 확정): `coupon`(쿠폰 정의) → `coupon_target`(상품 쿠폰 적용 대상: 상품·브랜드·카테고리 중 하나, `is_exclude`로 제외 지정, CHECK → FK 참조 동작 없이) / `coupon_code`(PUBLIC 공용·SINGLE 1회용) → `member_coupon`(회원 쿠폰함, 발급 1건 = 1행) → `coupon_use`(주문 적용 1건 = 1행, 복원해도 이력 유지).
+- **구조** (사용자 확정): `coupon`(쿠폰 정의) → `coupon_target`(상품 쿠폰 적용 대상: 상품·카테고리 중 하나, `is_exclude`로 제외 지정, CHECK → FK 참조 동작 없이) / `coupon_code`(PUBLIC 공용·SINGLE 1회용) → `member_coupon`(회원 쿠폰함, 발급 1건 = 1행) → `coupon_use`(주문 적용 1건 = 1행, 복원해도 이력 유지).
 - **종류·중복**: PRODUCT(주문 상품 한 줄에 1장, `uk_coupon_use_item`) + ORDER(주문당 1장) + SHIPPING(주문당 1장, 배송 묶음 하나에 적용, `ux_coupon_use_order` 함수 기반) 동시 사용. 배송비 쿠폰은 `shipping_delivery_type`으로 "설치배송비 무료" 같은 가구 특화 쿠폰.
 - **발급**: DOWNLOAD / AUTO(SIGNUP·BIRTHDAY·GRADE_UP, 가입 쿠폰은 `verified_only` 본인인증 회원만, 생일 쿠폰은 연도별 쿠폰 행) / CODE / **REWARD(커뮤니티 활동 보상: 집들이 발행, 구매 인증 사진 발행)**. 보상은 `member_coupon.reward_post_id` + UK(coupon_id, reward_post_id)로 글마다 1장, 글이 BLINDED·DELETED되면 미사용 쿠폰 REVOKED. 총 한도는 `issued_count` 조건부 UPDATE.
 - **금액**: 상품·주문 쿠폰 → `order_item.coupon_discount_amount`(주문 쿠폰은 상품 금액 비율로 안분) 합계가 `orders.coupon_discount_amount`. 배송비 쿠폰 → `shipment.coupon_discount_amount`, 합계 `orders.shipping_coupon_discount_amount`. `fee_total`은 할인 전 금액.
