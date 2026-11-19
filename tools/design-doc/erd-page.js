@@ -5,7 +5,7 @@
 //       node erd-page.js <in.dbml> <out.html>
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, logicalOf, load, initViz, erSvg, dotSvg, AUDIT, groupDesc, AREAS, areaOf } = require('./lib');
+const { ROOT, esc, noteOf, logicalOf, areaSvg, load, initViz, erSvg, dotSvg, AUDIT, groupDesc, AREAS, areaOf } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const out = process.argv[3] || path.join(ROOT, 'docs', 'erd', 'index.html');
@@ -134,7 +134,7 @@ async function main() {
     const key = `${a.prefix}__all`;
     const tables = gs.flatMap((g) => g.tables.map((t) => t.name));
     const hideAudit = a.prefix !== 'member';
-    const { svg, ext } = erSvg(ctx, tables, { hideAudit, W: 1100, H: 680, clusters: gs.map((g) => ({ name: g.name, label: gTitle(g), tables: g.tables.map((t) => t.name) })) });
+    const { svg, ext } = areaSvg(ctx, gs.map((g) => ({ name: g.name, label: gTitle(g), tables: g.tables.map((t) => t.name) })), { hideAudit, W: 1100, H: 680 });
     const clean = svg
       .replace(/^<div class="gv">|<\/div>$/g, '')
       .replace(/ width="[\d.]+pt" height="[\d.]+pt"/, '')

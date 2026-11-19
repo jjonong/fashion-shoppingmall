@@ -69,8 +69,7 @@ const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 
 // ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
 // tables: 그릴 테이블 이름 배열. 이 테이블들이 참조하는 다른 테이블은 회색(PK만)으로 함께 그린다.
 // leftOf: { hub, tables } — hub 테이블을 참조하는 자식 중 tables에 든 것은 hub 왼쪽에 배치 (허브형 배치)
-// clusters: [{ name, label, tables }] — 테이블을 세부 영역 상자로 묶는다 (영역 전체 ERD용)
-function erDot(ctx, tables, { hideAudit = false, leftOf = null, clusters = null } = {}) {
+function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   const { tableMap, refs, fieldOf, compositePk, baseType, keyFields, keyMark } = ctx;
   const inner = new Set(tables);
   const rels = refs.filter((r) => inner.has(r.child) && !(hideAudit && r.parent === 'member_account' && AUDIT.has(r.ccol)));
@@ -98,12 +97,6 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null, clusters = null 
     nodeDot[name] = `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
       <TR><TD COLSPAN="4" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${name}&nbsp;</B></FONT><FONT COLOR="#dce8f4" POINT-SIZE="9.5">&nbsp;${xesc(logicalOf(t.note))}${wide(logicalOf(t.note))}</FONT></TD></TR>${rows}</TABLE>>];\n`;
   }
-  // 영역 전체 ERD: 세부 영역(TableGroup)마다 묶음 상자로 감싼다
-  (clusters || []).forEach((c) => {
-    dot += `  subgraph cluster_${c.name} {\n    label="${c.label}"; labeljust=l; fontsize=13; fontcolor="#2f6496"; style="rounded"; color="#b9c7d6"; penwidth=1.2; margin=12;\n`;
-    c.tables.forEach((n) => { dot += '  ' + nodeDot[n]; delete nodeDot[n]; });
-    dot += '  }\n';
-  });
   dot += Object.values(nodeDot).join('');
   for (const name of ext) {
     const t = tableMap[name];
@@ -131,8 +124,8 @@ let VIZ = null;
 async function initViz() { VIZ = await require('@viz-js/viz').instance(); }
 // DOT 문자열 → SVG (전체 구조도 등 erDot을 쓰지 않는 도식용)
 function dotSvg(dot, engine = 'dot') { return VIZ.renderString(dot, { format: 'svg', engine }).replace(/^[\s\S]*?(<svg)/, '$1'); }
-function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null, clusters = null } = {}) {
-  const { dot, ext } = erDot(ctx, tables, { hideAudit, leftOf, clusters });
+function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null } = {}) {
+  const { dot, ext } = erDot(ctx, tables, { hideAudit, leftOf });
   let best = null;
   for (const dir of leftOf ? ['LR'] : ['LR', 'TB']) {
     const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');
@@ -144,6 +137,60 @@ function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null
   const { w, h, k } = best;
   const svg = best.svg.replace(/width="[\d.]+pt"/, `width="${(w * k).toFixed(1)}pt"`).replace(/height="[\d.]+pt"/, `height="${(h * k).toFixed(1)}pt"`);
   return { svg: `<div class="gv">${svg}</div>`, ext };
+}
+
+// 영역 전체 ERD: 세부 영역(TableGroup)마다 따로 그린 ERD를 상자에 담아 격자로 배치한다.
+// 한 장의 Graphviz 그래프로 그리면 member_account 같은 허브의 자식이 한 줄에 몰려 세로로 아주 길어지므로,
+// 세부 영역 사이의 관계는 각 상자 안의 회색 참조 테이블(PK만)로 보여 준다 (세부 영역 ERD와 같은 방식).
+// clusters: [{ name, label, tables }], W x H(pt) 화면 비율에 가장 크게 들어가는 열 수를 고른다
+function areaSvg(ctx, clusters, { hideAudit = false, W = 1100, H = 680 } = {}) {
+  const PAD = 12, LABEL = 22, GAP = 18;
+  const ext = new Set();
+  const all = new Set(clusters.flatMap((c) => c.tables));
+  const parts = clusters.map((c, i) => {
+    const { dot, ext: e } = erDot(ctx, c.tables, { hideAudit });
+    e.filter((t) => !all.has(t)).forEach((t) => ext.add(t));
+    // 각 묶음은 좌→우 / 위→아래 중 덜 길쭉한 쪽
+    let best = null;
+    for (const dir of ['LR', 'TB']) {
+      const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');
+      const w = parseFloat(s.match(/width="([\d.]+)pt"/)[1]);
+      const h = parseFloat(s.match(/height="([\d.]+)pt"/)[1]);
+      const score = Math.max(w / h, h / w);
+      if (!best || score < best.score) best = { s, w, h, score };
+    }
+    // 묶음마다 id 접두사를 달아 겹치지 않게 하고, 바깥 svg 안에 넣을 수 있도록 크기 속성을 뺀다
+    const inner = best.s
+      .replace(/ id="/g, ` id="c${i}_`)
+      .replace(/<svg[^>]*?(viewBox="[^"]+")[^>]*>/, (m, vb) => `<svg ${vb} @XYWH@>`);
+    return { c, inner, w: best.w + PAD * 2, h: best.h + PAD * 2 + LABEL };
+  });
+  // 열 수 1~5개 중 W x H에 가장 크게 들어가는 배치 (묶음 순서대로 행 단위 배치)
+  let best = null;
+  for (let n = 1; n <= Math.min(5, parts.length); n++) {
+    const colW = Array(n).fill(0);
+    parts.forEach((p, i) => (colW[i % n] = Math.max(colW[i % n], p.w)));
+    const rows = [];
+    parts.forEach((p, i) => { const r = Math.floor(i / n); rows[r] = Math.max(rows[r] || 0, p.h); });
+    const tw = colW.reduce((a, b) => a + b, 0) + GAP * (n - 1);
+    const th = rows.reduce((a, b) => a + b, 0) + GAP * (rows.length - 1);
+    const k = Math.min(W / tw, H / th);
+    if (!best || k > best.k) best = { n, colW, rows, tw, th, k };
+  }
+  const { n, colW, rows, tw, th } = best;
+  let body = '';
+  parts.forEach((p, i) => {
+    const col = i % n, row = Math.floor(i / n);
+    const x = colW.slice(0, col).reduce((a, b) => a + b, 0) + GAP * col;
+    const y = rows.slice(0, row).reduce((a, b) => a + b, 0) + GAP * row;
+    const iw = p.w - PAD * 2, ih = p.h - PAD * 2 - LABEL;
+    body += `<g class="cluster"><title>cluster_${p.c.name}</title>
+<rect x="${x}" y="${y}" width="${p.w}" height="${p.h}" rx="8" fill="none" stroke="#b9c7d6" stroke-width="1.2"/>
+<text x="${x + PAD}" y="${y + 17}" font-family="Malgun Gothic" font-size="13" fill="#2f6496">${p.c.label}</text></g>
+${p.inner.replace('@XYWH@', `x="${x + PAD}" y="${y + PAD + LABEL}" width="${iw}" height="${ih}"`)}\n`;
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${tw.toFixed(1)}pt" height="${th.toFixed(1)}pt" viewBox="0 0 ${tw.toFixed(1)} ${th.toFixed(1)}">\n${body}</svg>`;
+  return { svg, ext: [...ext] };
 }
 
 // 영역 7개: TableGroup 이름 접두사로 구분 (쇼핑 흐름 순서). 전체 설계서와 ERD 웹페이지 공용
@@ -242,4 +289,4 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('PDF', outPdf);
 }
 
-module.exports = { ROOT, esc, noteOf, logicalOf, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };
+module.exports = { ROOT, esc, noteOf, logicalOf, areaSvg, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };
