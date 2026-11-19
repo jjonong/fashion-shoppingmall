@@ -11,7 +11,10 @@ const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const outPdf = process.argv[3] || path.join(ROOT, 'docs', 'DB_설계서.pdf');
 const previewDir = process.argv[4];
 const ctx = load(src);
-const { S, tableMap, groups, groupOf, refs, fk, compositePk } = ctx;
+const { S, tableMap, groups, groupOf, refs, fk, compositePk, fieldOf } = ctx;
+// 구조 설계 단계라 논리명(한글)을 앞에, 물리명은 보조로 표시
+const tLg = (t) => logicalOf(tableMap[t].note) || t;
+const fLg = (t, c) => logicalOf(fieldOf(t, c).note) || c;
 
 // ---------- 전체 구조도 (HTML 카드 + 영역 간 연결 표) ----------
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
@@ -21,7 +24,7 @@ function overview() {
     const gs = groups.filter((g) => areaOf(g.name).prefix === p);
     const n = gs.reduce((a, g) => a + g.tables.length, 0);
     return `<div class="ov-col ${cls}"><div class="ov-head">${name}<span>${n}개</span></div>
-      ${gs.map((g) => `<div class="ov-card"><b>${esc(gTitle(g))}</b><div class="chips">${g.tables.map((t) => `<span>${t.name}</span>`).join('')}</div></div>`).join('')}
+      ${gs.map((g) => `<div class="ov-card"><b>${esc(gTitle(g))}</b><div class="chips">${g.tables.map((t) => `<span>${esc(tLg(t.name))} <i>${t.name}</i></span>`).join('')}</div></div>`).join('')}
     </div>`;
   }).join('');
   const agg = {};
@@ -29,7 +32,7 @@ function overview() {
     const a = groupOf[r.child], b = groupOf[r.parent];
     if (a === b || b === 'member_basic') return; // member_account 참조는 거의 전 영역이라 생략
     const k = `${a}|${b}`;
-    (agg[k] ||= new Set()).add(`${r.child}.${r.ccol} → ${r.parent}`);
+    (agg[k] ||= new Set()).add(`${esc(tLg(r.child))}.${esc(fLg(r.child, r.ccol))} → ${esc(tLg(r.parent))} <i>(${r.child}.${r.ccol} → ${r.parent})</i>`);
   });
   const gByName = Object.fromEntries(groups.map((g) => [g.name, g]));
   const rows = Object.entries(agg).map(([k, set]) => {
@@ -57,16 +60,16 @@ function tableHtml(t, no) {
     let note = esc(noteOf(f.note));
     if (ref) note = `<span class="ref">→ ${esc(ref)}</span>${note ? '<br>' + note : ''}`;
     if (f.increment) note = `<span class="ref">AUTO_INCREMENT</span>${note ? '<br>' + note : ''}`;
-    return `<tr><td class="c">${f.name}</td><td class="lg">${esc(logicalOf(f.note))}</td><td class="t">${esc(f.type.type_name).toUpperCase()}</td>
+    return `<tr><td class="lg">${esc(logicalOf(f.note))}</td><td class="c">${f.name}</td><td class="t">${esc(f.type.type_name).toUpperCase()}</td>
       <td class="kc">${keys.join(' ')}</td><td class="nn">${f.not_null || f.pk || cpk.includes(f.name) ? 'Y' : ''}</td>
       <td class="d">${esc(fmtDefault(f.dbdefault))}</td><td>${note}</td></tr>`;
   }).join('');
   const idx = (t.indexes || []).filter((i) => !i.pk).map((i) =>
     `<li><code>${esc(i.name || '')}</code> ${i.unique ? '<b>UNIQUE</b> ' : ''}(${esc(i.columns.map((c) => c.value).join(', '))})${i.note ? ' — ' + esc(noteOf(i.note)) : ''}</li>`).join('');
   const pkLine = cpk.length > 1 ? `<li><b>복합 PK</b> (${cpk.join(', ')})</li>` : '';
-  return `<section class="tbl"><h4><span class="no">${no}</span>${t.name}<span class="lg">${esc(logicalOf(t.note))}</span></h4>
+  return `<section class="tbl"><h4><span class="no">${no}</span>${esc(logicalOf(t.note) || t.name)}<span class="phys">${t.name}</span></h4>
     <p class="tnote">${esc(noteOf(t.note))}</p>
-    <table class="cols"><thead><tr><th>컬럼</th><th>논리명</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="cols"><thead><tr><th>논리명</th><th>물리명</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead><tbody>${rows}</tbody></table>
     ${pkLine || idx ? `<ul class="idx">${pkLine}${idx}</ul>` : ''}</section>`;
 }
 
@@ -147,7 +150,7 @@ const specHtml = groups.map((g, gi) => `
     ${g.tables.map((x) => tableHtml(tableMap[x.name], ++no)).join('')}
   </div>`).join('');
 
-const relRows = refs.map((r) => `<tr><td>${r.child}.${r.ccol}</td><td class="c">${r.oneToOne ? '1 : 1' : 'N : 1'}</td><td>${r.parent}.${r.pcol}</td></tr>`).join('');
+const relRows = refs.map((r) => `<tr><td>${esc(tLg(r.child))}.${esc(fLg(r.child, r.ccol))}<br><i>${r.child}.${r.ccol}</i></td><td class="c">${r.oneToOne ? '1 : 1' : 'N : 1'}</td><td>${esc(tLg(r.parent))}.${esc(fLg(r.parent, r.pcol))}<br><i>${r.parent}.${r.pcol}</i></td></tr>`).join('');
 const stageCount = (p) => groups.filter((g) => areaOf(g.name).prefix === p).reduce((a, g) => a + g.tables.length, 0);
 
 const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}

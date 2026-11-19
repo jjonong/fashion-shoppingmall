@@ -82,9 +82,10 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   const xesc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   // Graphviz(viz.js)는 한글 폭을 실제보다 좁게 계산해 옆 칸과 겹치므로, 한글 글자 수만큼 공백을 덧붙여 칸 폭을 맞춘다
   const wide = (s) => '&nbsp;'.repeat(Math.ceil(((s || '').match(/[^\x00-\x7f]/g) || []).length * 1.4));
+  // 구조 설계 단계라 논리명(한글)을 앞에 크게, 물리명은 뒤에 작은 회색 고정폭으로
   const row = (port, name, type, key, opts = {}) =>
-    `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="9.5">${opts.b ? '<B>' + name + '</B>' : name}</FONT></TD>` +
-    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8.5" COLOR="#3f4d5a">&nbsp;${xesc(opts.lg || '')}${wide(opts.lg)}</FONT></TD>` +
+    `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="9.5" COLOR="#1f2d3a">${opts.b ? '<B>' + xesc(opts.lg || name) + '</B>' : xesc(opts.lg || name)}${wide(opts.lg)}</FONT></TD>` +
+    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#7d8a96">${name}</FONT></TD>` +
     `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#5d6d7e">${type}</FONT></TD>` +
     `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#B8860B' : '#2f6496'}"><B>${key}</B></FONT></TD></TR>`;
   const nodeDot = {};
@@ -95,14 +96,14 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
     let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#FBF6E9' : 'white', lg: logicalOf(f.note) })).join('');
     if (others > 0) rows += `<TR><TD COLSPAN="4" ALIGN="LEFT" BGCOLOR="#F5F8FB"><FONT POINT-SIZE="8" COLOR="#8795A1">+ ${others} columns</FONT></TD></TR>`;
     nodeDot[name] = `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
-      <TR><TD COLSPAN="4" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${name}&nbsp;</B></FONT><FONT COLOR="#dce8f4" POINT-SIZE="9.5">&nbsp;${xesc(logicalOf(t.note))}${wide(logicalOf(t.note))}</FONT></TD></TR>${rows}</TABLE>>];\n`;
+      <TR><TD COLSPAN="4" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="11"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#c9d9ea" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${rows}</TABLE>>];\n`;
   }
   dot += Object.values(nodeDot).join('');
   for (const name of ext) {
     const t = tableMap[name];
     const pk = t.fields.filter((f) => f.pk || compositePk(t).includes(f.name));
     dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#a3afba">
-      <TR><TD COLSPAN="4" BGCOLOR="#a3afba"><FONT COLOR="white" POINT-SIZE="10"><B>&nbsp;${name}&nbsp;</B></FONT><FONT COLOR="white" POINT-SIZE="9">&nbsp;${xesc(logicalOf(t.note))}${wide(logicalOf(t.note))}</FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#F5F7F9', lg: logicalOf(f.note) })).join('')}</TABLE>>];\n`;
+      <TR><TD COLSPAN="4" BGCOLOR="#a3afba"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#eef2f6" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#F5F7F9', lg: logicalOf(f.note) })).join('')}</TABLE>>];\n`;
   }
   for (const r of rels) {
     const f = fieldOf(r.child, r.ccol);

@@ -84,7 +84,7 @@ function overallSvg() {
     label="${stage.name} · ${gTitle(g)}"; fontname="${F}"; fontsize=17; fontcolor="${line}";
     style="rounded,filled"; fillcolor="${fill}"; color="${line}"; penwidth=1.2; margin=10;
     node [color="${line}"];
-    ${g.tables.map((t) => `${t.name} [label="${t.name}\\n${logicalOf(tableMap[t.name].note)}"]`).join('; ')};
+    ${g.tables.map((t) => `${t.name} [label="${logicalOf(tableMap[t.name].note) || t.name}\\n${t.name}"]`).join('; ')};
   }
 `;
   });

@@ -47,7 +47,7 @@ let no = 0;
 const tableRows = areaGroups.map((g) => `<tr class="grp"><td colspan="4">${esc(gTitle(g))} <small>${g.tables.length}개</small></td></tr>` +
   g.tables.map((x) => {
     const t = tableMap[x.name];
-    return `<tr><td class="num">${++no}</td><td class="mono b">${t.name}<br><span class="lg">${esc(logicalOf(t.note))}</span></td><td>${esc(noteOf(t.note))}</td><td class="mono sm">${keySummary(t)}</td></tr>`;
+    return `<tr><td class="num">${++no}</td><td class="b">${esc(logicalOf(t.note) || t.name)}<br><span class="phys">${t.name}</span></td><td>${esc(noteOf(t.note))}</td><td class="mono sm">${keySummary(t)}</td></tr>`;
   }).join('')).join('');
 
 const makeHtml = () => {

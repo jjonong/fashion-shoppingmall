@@ -505,5 +505,12 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
 
 /* 논리명 (한글 이름) */
 .cols .c-lg { white-space: nowrap; }
-.spec-h h3 .lg { font-weight: 500; color: var(--muted); font-size: .85em; margin-left: 4px; }
-.tip-h b { font-weight: 600; margin-left: 4px; }
+/* 논리명 우선: 물리명은 작은 회색 고정폭 */
+code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); font-weight: 400; background: none; padding: 0; }
+.spec-h h3 code.phys { margin-left: 4px; }
+.cols .c-lg { font-weight: 600; }
+.cols .c-name { font-weight: 400 !important; color: var(--muted); font-size: .9em; }
+.tip-h b { font-weight: 700; }
+/* 논리명(한글) 목록은 일반 글꼴로 */
+.t-list a, .chips span, .jump a, .results .r-name, .tip-ref { font-family: inherit; }
+.spec-h h3 { font-family: inherit; }

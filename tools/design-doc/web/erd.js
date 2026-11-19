@@ -49,7 +49,7 @@
         const on = g === cur.g;
         h += `<a class="g-item${on ? ' on' : ''}" href="#g=${g}"><span>${esc(G.title)}</span><span class="n">${G.tables.length}</span></a>`;
         if (on) {
-          h += `<div class="t-list">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" class="${t === cur.t ? 'on' : ''}">${t}</a>`).join('')}</div>`;
+          h += `<div class="t-list">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" class="${t === cur.t ? 'on' : ''}" title="${t}">${esc(tLg(t))}</a>`).join('')}</div>`;
         }
       });
       h += '</div>';
@@ -69,7 +69,7 @@
       s.groups.forEach((g) => {
         const G = D.groups[g];
         cols += `<a class="g-card" href="#g=${g}"><b>${esc(G.title)} <span class="n" style="color:var(--muted);font-weight:400">· ${G.tables.length}</span></b>
-          <p>${esc(G.desc)}</p><div class="chips">${G.tables.map((t) => `<span>${t}</span>`).join('')}</div></a>`;
+          <p>${esc(G.desc)}</p><div class="chips">${G.tables.map((t) => `<span title="${t}">${esc(tLg(t))}</span>`).join('')}</div></a>`;
       });
       cols += '</section>';
     });
@@ -105,14 +105,18 @@
 
   // ---------- 영역 화면: ERD + 테이블 명세 ----------
   let view = null; // { svg, w, h, canvas, zoomEl, g }
-  const link = (name, col) => `<a href="#g=${D.tables[name].group}&t=${name}"><code>${name}</code></a>${col ? `<code>.${esc(col)}</code>` : ''}`;
+  // 구조 설계 단계라 논리명(한글)을 앞에, 물리명은 작은 회색 고정폭으로
+  const tLg = (t) => (D.tables[t] && D.tables[t].logical) || t;
+  const fLg = (t, c) => { const f = D.tables[t] && D.tables[t].fields.find((x) => x.name === c); return (f && f.logical) || c; };
+  const phys = (s) => `<code class="phys">${esc(s)}</code>`;
+  const link = (name, col) => `<a href="#g=${D.tables[name].group}&t=${name}">${esc(tLg(name))}${col ? '.' + esc(fLg(name, col)) : ''}</a> ${phys(name + (col ? '.' + col : ''))}`;
   const keyBadges = (f) => f.keys.map((k) => `<span class="badge ${k}">${k}</span>`).join('') + (f.inc ? '<span class="badge AI">AI</span>' : '');
 
   function specCard(t, no) {
     const T = D.tables[t];
     const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
+        <td class="c-lg">${esc(f.logical || f.name)}</td>
         <td class="c-name">${esc(f.name)}</td>
-        <td class="c-lg">${esc(f.logical)}</td>
         <td class="c-type">${esc(f.type)}</td>
         <td class="c-key">${keyBadges(f)}</td>
         <td class="c-nn">${f.nn ? 'Y' : ''}</td>
@@ -125,13 +129,13 @@
     return `<section class="spec" id="spec-${t}">
       <header class="spec-h">
         <span class="no">${no}</span>
-        <h3>${t} <span class="lg">${esc(T.logical)}</span></h3>
+        <h3>${esc(tLg(t))} ${phys(t)}</h3>
         <span class="cnt">컬럼 ${T.fields.length}</span>
         <button class="icon-btn to-erd" data-erd="${t}">ERD에서 보기 ↑</button>
       </header>
       <p class="tnote">${esc(T.note)}</p>
       <div class="tbl-wrap"><table class="cols">
-        <thead><tr><th>컬럼</th><th>논리명</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead>
+        <thead><tr><th>논리명</th><th>물리명</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <div class="spec-foot">
         ${idx ? `<div><h4>인덱스</h4><ul>${idx}</ul></div>` : ''}
@@ -150,7 +154,7 @@
         <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span></h1>
         <p>${esc(G.desc)}</p>
         ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → member_account 선 생략' : ''}</p>` : ''}
-        <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}">${t}</a>`).join('')}</nav>
+        <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" title="${t}">${esc(tLg(t))}</a>`).join('')}</nav>
       </div>
       ${toolbarHtml('테이블·컬럼에 마우스를 올리면 설명 · 테이블을 누르면 아래 명세로 이동 · 드래그로 이동 · Ctrl + 휠로 확대')}
       <div class="canvas" id="canvas"><div class="pad"></div></div>
@@ -190,7 +194,9 @@
       const texts = [...n.querySelectorAll('text')];
       texts.forEach((tx) => {
         const name = tx.textContent.trim();
-        if (T.fields.some((x) => x.name === name)) tx.dataset.col = name;
+        const byName = T.fields.find((x) => x.name === name);
+        const byLg = !byName && name && T.fields.find((x) => x.logical === name);
+        if (byName || byLg) tx.dataset.col = (byName || byLg).name;
         else if (/^\+ \d+ columns$/.test(name)) tx.dataset.more = '1';
       });
       n.dataset.shown = texts.filter((tx) => tx.dataset.col).map((tx) => tx.dataset.col).join(',');
@@ -303,16 +309,16 @@
     const T = D.tables[n.dataset.t];
     if (!T) return '';
     const G = D.groups[T.group];
-    let h = `<div class="tip-h"><code>${T.name}</code> <b>${esc(T.logical)}</b><span>${esc(G.title)}</span></div>
+    let h = `<div class="tip-h"><b>${esc(tLg(T.name))}</b> ${phys(T.name)}<span>${esc(G.title)}</span></div>
       <p class="tip-note">${esc(T.note)}</p>`;
     if (tx && tx.dataset.col) {
       const f = T.fields.find((x) => x.name === tx.dataset.col);
-      h += `<div class="tip-col"><div><code>${esc(f.name)}</code> <b>${esc(f.logical)}</b> <span class="tip-type">${esc(f.type)}</span>${f.keys.map((k) => ` <span class="badge ${k}">${k}</span>`).join('')}</div>
-        ${f.ref ? `<div class="tip-ref">→ ${esc(f.ref)}</div>` : ''}${f.note ? `<div>${esc(f.note)}</div>` : ''}</div>`;
+      h += `<div class="tip-col"><div><b>${esc(f.logical || f.name)}</b> ${phys(f.name)} <span class="tip-type">${esc(f.type)}</span>${f.keys.map((k) => ` <span class="badge ${k}">${k}</span>`).join('')}</div>
+        ${f.ref ? `<div class="tip-ref">→ ${esc(tLg(f.ref.split('.')[0]))}.${esc(fLg(f.ref.split('.')[0], f.ref.split('.')[1]))} ${phys(f.ref)}</div>` : ''}${f.note ? `<div>${esc(f.note)}</div>` : ''}</div>`;
     } else if (tx && tx.dataset.more) {
       const shown = new Set((n.dataset.shown || '').split(','));
       const rest = T.fields.filter((f) => !shown.has(f.name));
-      h += `<ul class="tip-list">${rest.slice(0, 14).map((f) => `<li><code>${esc(f.name)}</code> ${esc(f.logical)}${f.note ? ` — ${esc(shortNote(f.note))}` : ''}</li>`).join('')}
+      h += `<ul class="tip-list">${rest.slice(0, 14).map((f) => `<li>${esc(f.logical || f.name)} ${phys(f.name)}${f.note ? ` — ${esc(shortNote(f.note))}` : ''}</li>`).join('')}
         ${rest.length > 14 ? `<li class="tip-more">외 ${rest.length - 14}개</li>` : ''}</ul>`;
     } else {
       h += `<div class="tip-foot">컬럼 ${T.fields.length}개 · 컬럼에 올리면 컬럼 설명 · 누르면 ${T.group === (view && view.g) ? '아래 명세로 이동' : '해당 영역으로 이동'}</div>`;
@@ -397,9 +403,9 @@
     hits = [];
     Object.values(D.tables).forEach((T) => {
       const g = D.groups[T.group].title;
-      if (T.name.includes(s) || T.logical.includes(s)) hits.push({ t: T.name, score: T.name.startsWith(s) || T.logical.startsWith(s) ? 0 : 1, sub: `${T.logical} · ${g}` });
+      if (T.name.includes(s) || T.logical.includes(s)) hits.push({ t: T.name, score: T.name.startsWith(s) || T.logical.startsWith(s) ? 0 : 1, sub: g });
       else {
-        const cols = T.fields.filter((f) => f.name.includes(s) || f.logical.includes(s)).map((f) => `${f.name}(${f.logical})`);
+        const cols = T.fields.filter((f) => f.name.includes(s) || f.logical.includes(s)).map((f) => f.logical || f.name);
         if (cols.length) hits.push({ t: T.name, score: 2, sub: `${g} · 컬럼 ${cols.slice(0, 4).join(', ')}${cols.length > 4 ? ' …' : ''}` });
         else if (T.note.toLowerCase().includes(s)) hits.push({ t: T.name, score: 3, sub: `${g} · ${T.note.slice(0, 50)}` });
       }
@@ -408,7 +414,7 @@
     hits = hits.slice(0, 40);
     hitOn = 0;
     results.innerHTML = hits.length
-      ? hits.map((h, i) => `<button data-i="${i}" class="${i === 0 ? 'on' : ''}"><span class="r-name">${h.t}</span><span class="r-sub">${esc(h.sub)}</span></button>`).join('')
+      ? hits.map((h, i) => `<button data-i="${i}" class="${i === 0 ? 'on' : ''}"><span class="r-name">${esc(tLg(h.t))} ${phys(h.t)}</span><span class="r-sub">${esc(h.sub)}</span></button>`).join('')
       : '<div class="empty">일치하는 테이블이 없습니다</div>';
     results.hidden = false;
   }
