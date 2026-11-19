@@ -143,6 +143,31 @@ function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null
 // 영역 전체 ERD: 세부 영역(TableGroup)마다 따로 그린 ERD를 상자에 담아 격자로 배치한다.
 // 한 장의 Graphviz 그래프로 그리면 member_account 같은 허브의 자식이 한 줄에 몰려 세로로 아주 길어지므로,
 // 세부 영역 사이의 관계는 각 상자 안의 회색 참조 테이블(PK만)로 보여 준다 (세부 영역 ERD와 같은 방식).
+// 상자 여러 개(parts: [{w, h}])를 순서대로 격자에 놓는다. 열 수 1~5개 중 W x H 비율에 가장 크게 들어가는 쪽
+// 반환: 각 상자의 왼쪽 위 좌표 pos[i] = {x, y}, 전체 크기 tw x th (영역 전체 ERD와 draw.io 파일 공용)
+function gridPlace(parts, { W = 1100, H = 680, GAP = 18 } = {}) {
+  let best = null;
+  for (let n = 1; n <= Math.min(5, parts.length); n++) {
+    const colW = Array(n).fill(0);
+    parts.forEach((p, i) => (colW[i % n] = Math.max(colW[i % n], p.w)));
+    const rows = [];
+    parts.forEach((p, i) => { const r = Math.floor(i / n); rows[r] = Math.max(rows[r] || 0, p.h); });
+    const tw = colW.reduce((a, b) => a + b, 0) + GAP * (n - 1);
+    const th = rows.reduce((a, b) => a + b, 0) + GAP * (rows.length - 1);
+    const k = Math.min(W / tw, H / th);
+    if (!best || k > best.k) best = { n, colW, rows, tw, th, k };
+  }
+  const { n, colW, rows, tw, th } = best;
+  const pos = parts.map((p, i) => {
+    const col = i % n, row = Math.floor(i / n);
+    return {
+      x: colW.slice(0, col).reduce((a, b) => a + b, 0) + GAP * col,
+      y: rows.slice(0, row).reduce((a, b) => a + b, 0) + GAP * row,
+    };
+  });
+  return { pos, tw, th };
+}
+
 // clusters: [{ name, label, tables }], W x H(pt) 화면 비율에 가장 크게 들어가는 열 수를 고른다
 function areaSvg(ctx, clusters, { hideAudit = false, W = 1100, H = 680 } = {}) {
   const PAD = 12, LABEL = 22, GAP = 18;
@@ -163,27 +188,14 @@ function areaSvg(ctx, clusters, { hideAudit = false, W = 1100, H = 680 } = {}) {
     // 묶음마다 id 접두사를 달아 겹치지 않게 하고, 바깥 svg 안에 넣을 수 있도록 크기 속성을 뺀다
     const inner = best.s
       .replace(/ id="/g, ` id="c${i}_`)
-      .replace(/<svg[^>]*?(viewBox="[^"]+")[^>]*>/, (m, vb) => `<svg ${vb} @XYWH@>`);
+      // data-cluster: 웹페이지 드래그 배치의 노드 키(묶음/테이블), overflow: 상자 밖으로 끌어도 잘리지 않게
+      .replace(/<svg[^>]*?(viewBox="[^"]+")[^>]*>/, (m, vb) => `<svg ${vb} data-cluster="${c.name}" overflow="visible" @XYWH@>`);
     return { c, inner, w: best.w + PAD * 2, h: best.h + PAD * 2 + LABEL };
   });
-  // 열 수 1~5개 중 W x H에 가장 크게 들어가는 배치 (묶음 순서대로 행 단위 배치)
-  let best = null;
-  for (let n = 1; n <= Math.min(5, parts.length); n++) {
-    const colW = Array(n).fill(0);
-    parts.forEach((p, i) => (colW[i % n] = Math.max(colW[i % n], p.w)));
-    const rows = [];
-    parts.forEach((p, i) => { const r = Math.floor(i / n); rows[r] = Math.max(rows[r] || 0, p.h); });
-    const tw = colW.reduce((a, b) => a + b, 0) + GAP * (n - 1);
-    const th = rows.reduce((a, b) => a + b, 0) + GAP * (rows.length - 1);
-    const k = Math.min(W / tw, H / th);
-    if (!best || k > best.k) best = { n, colW, rows, tw, th, k };
-  }
-  const { n, colW, rows, tw, th } = best;
+  const { pos, tw, th } = gridPlace(parts, { W, H, GAP });
   let body = '';
   parts.forEach((p, i) => {
-    const col = i % n, row = Math.floor(i / n);
-    const x = colW.slice(0, col).reduce((a, b) => a + b, 0) + GAP * col;
-    const y = rows.slice(0, row).reduce((a, b) => a + b, 0) + GAP * row;
+    const { x, y } = pos[i];
     const iw = p.w - PAD * 2, ih = p.h - PAD * 2 - LABEL;
     body += `<g class="cluster"><title>cluster_${p.c.name}</title>
 <rect x="${x}" y="${y}" width="${p.w}" height="${p.h}" rx="8" fill="none" stroke="#b9c7d6" stroke-width="1.2"/>
@@ -293,4 +305,4 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('PDF', outPdf);
 }
 
-module.exports = { ROOT, esc, noteOf, logicalOf, areaSvg, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };
+module.exports = { ROOT, esc, noteOf, logicalOf, areaSvg, gridPlace, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };

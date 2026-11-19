@@ -516,3 +516,9 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
 /* 논리명(한글) 목록은 일반 글꼴로 */
 .t-list a, .chips span, .jump a, .results .r-name, .tip-ref { font-family: inherit; }
 .spec-h h3 { font-family: inherit; }
+
+/* 테이블 드래그 배치 */
+.canvas g.node { cursor: grab; }
+.canvas.drag-node, .canvas.drag-node g.node { cursor: grabbing; user-select: none; }
+.toolbar .sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+.toolbar a.icon-btn { text-decoration: none; color: inherit; }

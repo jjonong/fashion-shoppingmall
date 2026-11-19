@@ -8,6 +8,10 @@
   const stageOf = (g) => D.stages.findIndex((s) => g.startsWith(s.prefix + '_'));
   const stageColor = (g) => `var(--s${stageOf(g) + 1})`;
   const PT = 4 / 3; // Graphviz pt → px
+  // draw.io에서 열기: GitHub Pages(http)에서만. 이 페이지(…/erd/) 옆의 ../erd.drawio를 diagrams.net이 직접 불러옴
+  const DRAWIO = /^https?:$/.test(location.protocol)
+    ? 'https://app.diagrams.net/#U' + encodeURIComponent(new URL('../erd.drawio', location.href).href)
+    : '';
 
   let cur = { g: null, t: null };
   const zoomOf = {}; // 영역별 확대 비율 유지
@@ -86,7 +90,7 @@
       <h2 class="ov-h">전체 구조 <span>${D.counts.tables}개 테이블 · 영역별 묶음</span></h2>
       <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(고객 · 상품 · 커뮤니티 · 장바구니 · 주문 · 결제 · 배송 · 혜택), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
       <div class="ov-erd">
-        ${toolbarHtml('테이블·영역에 마우스를 올리면 설명 · 누르면 그 영역으로 이동 · 드래그로 이동 · Ctrl + 휠로 확대')}
+        ${toolbarHtml('테이블을 끌어 옮기기 · 빈 곳을 끌어 화면 이동 · 누르면 그 영역으로 · Ctrl + 휠로 확대')}
         <div class="canvas" id="canvas"><div class="pad"></div></div>
       </div>
       <h2 class="ov-h">영역별 보기</h2>
@@ -96,6 +100,7 @@
         <li>선 끝 모양: 까마귀발 = 여러 개(N), 세로줄 = 반드시 1개, 동그라미 = 없을 수 있음(0).</li>
         <li>회색 테이블은 다른 영역에 있는 참조 대상입니다 (PK만 표시).</li>
         <li>고객 외 영역 ERD에서는 관리자 감사 컬럼(created_by 등) → member_account 선을 생략했습니다. 상세 패널에는 FK로 표시됩니다.</li>
+        <li>테이블을 끌어 옮긴 배치는 이 브라우저에 저장됩니다. <b>배치 내보내기</b>로 받은 <code>erd-layout.json</code>을 <code>docs/</code>에 넣으면 모든 사람에게 같은 배치로 보입니다. 설계가 바뀌어 배치가 어긋나면 <b>배치 초기화</b>를 누르세요.</li>
         <li>원본: <code>docs/erd.dbml</code> (dbdiagram.io 형식). 이 페이지는 <code>tools/design-doc</code>의 <code>npm run erd</code>로 생성됩니다.</li>
       </ul></div>
     </div>`;
@@ -156,7 +161,7 @@
         ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → member_account 선 생략' : ''}</p>` : ''}
         <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" title="${t}">${esc(tLg(t))}</a>`).join('')}</nav>
       </div>
-      ${toolbarHtml('테이블·컬럼에 마우스를 올리면 설명 · 테이블을 누르면 아래 명세로 이동 · 드래그로 이동 · Ctrl + 휠로 확대')}
+      ${toolbarHtml('테이블을 끌어 옮기기 · 빈 곳을 끌어 화면 이동 · 누르면 아래 명세로 · Ctrl + 휠로 확대')}
       <div class="canvas" id="canvas"><div class="pad"></div></div>
       <div class="specs"><h2 class="specs-h">테이블 명세</h2>${G.tables.map((t, i) => specCard(t, i + 1)).join('')}</div>
     </div>`;
@@ -170,6 +175,10 @@
         <button class="icon-btn" data-z="in" aria-label="확대">+</button>
         <button class="icon-btn" data-z="fit">화면 맞춤</button>
         <button class="icon-btn" data-z="one">100%</button>
+        <span class="sep"></span>
+        <button class="icon-btn" data-z="reset" title="이 화면에서 옮긴 배치를 지우고 공유·자동 배치로">배치 초기화</button>
+        <button class="icon-btn" data-z="export" title="옮긴 배치를 erd-layout.json으로 받기 (docs/에 넣으면 모두에게 같은 배치)">배치 내보내기</button>
+        ${DRAWIO ? `<a class="icon-btn" href="${DRAWIO}" target="_blank" rel="noopener" title="같은 ERD를 draw.io에서 열어 자유롭게 편집 (원본 erd.dbml에는 반영되지 않음)">draw.io에서 열기</a>` : ''}
         <span class="hint">${hint}</span>
       </div>`;
   }
@@ -208,7 +217,111 @@
     });
     // 브라우저 기본 툴팁(SVG title) 대신 마우스 팝업을 쓰므로 제거
     svg.querySelectorAll('title').forEach((ti) => ti.remove());
+    initLayout(svg, key);
     if (zoomOf[key]) setZoom(zoomOf[key]); else fit();
+  }
+
+  // ---------- 테이블 드래그 배치 ----------
+  // 배치 = 화면(영역)별 { 노드키: [dx, dy] } (Graphviz 자동 배치에서 옮긴 거리, SVG 좌표)
+  // 내 브라우저(localStorage)가 우선, 없으면 공유 배치(docs/erd-layout.json → D.layout), 둘 다 없으면 자동 배치
+  const LKEY = 'erd-layout-v1';
+  let localLayout = {};
+  try { localLayout = JSON.parse(localStorage.getItem(LKEY) || '{}') || {}; } catch (e) { localLayout = {}; }
+  const saveLocalLayout = () => { try { localStorage.setItem(LKEY, JSON.stringify(localLayout)); } catch (e) { /* 저장 불가(사생활 보호 모드 등)면 이번 화면에서만 유지 */ } };
+  const layoutOf = (key) => localLayout[key] || (D.layout && D.layout[key]) || {};
+  // 영역 전체 화면은 같은 테이블이 여러 상자에 회색으로 나오므로 "묶음/테이블"로 구분
+  const nodeKey = (n) => { const o = n.ownerSVGElement; const c = o && o.getAttribute('data-cluster'); return (c ? c + '/' : '') + n.dataset.t; };
+  const ptsOf = (d) => (d.match(/-?[\d.]+/g) || []).map(Number).reduce((a, v, i, arr) => (i % 2 ? a : a.concat([[v, arr[i + 1]]])), []);
+  const center = (el) => { const b = el.getBBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+  const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+
+  function initLayout(svg, key) {
+    view.vb0 = [svg.viewBox.baseVal.x, svg.viewBox.baseVal.y, view.w, view.h];
+    const nodesOf = new Map(); // 같은 svg(묶음) 안에서 테이블 이름 → 노드
+    svg.querySelectorAll('g.node').forEach((n) => {
+      n._d = [0, 0];
+      n._edges = [];
+      const o = n.ownerSVGElement;
+      if (!nodesOf.has(o)) nodesOf.set(o, {});
+      nodesOf.get(o)[n.dataset.t] = n;
+    });
+    svg.querySelectorAll('g.edge').forEach((e) => {
+      const path = e.querySelector('path');
+      const map = nodesOf.get(e.ownerSVGElement) || {};
+      const na = map[e.dataset.a], nb = map[e.dataset.b];
+      if (!path || !na || !nb) return;
+      const pts = ptsOf(path.getAttribute('d'));
+      if (pts.length < 4) return;
+      e._path = path;
+      e._pts = [pts[0], pts[1], pts[pts.length - 2], pts[pts.length - 1]];
+      // 선의 시작점이 어느 테이블 쪽인지 (Graphviz가 방향을 뒤집어 그리는 경우 대비)
+      const ca = center(na), cb = center(nb);
+      const flip = dist(e._pts[0], cb) + dist(e._pts[3], ca) < dist(e._pts[0], ca) + dist(e._pts[3], cb);
+      e._s = flip ? nb : na;
+      e._t = flip ? na : nb;
+      // 화살표 모양(까마귀발·동그라미·세로줄)은 가까운 끝을 따라 움직임
+      e._parts = [...e.children].filter((c) => c !== path && c.tagName !== 'title').map((c) => {
+        const p = center(c);
+        return { el: c, end: dist(p, e._pts[0]) <= dist(p, e._pts[3]) ? 's' : 't' };
+      });
+      na._edges.push(e);
+      if (nb !== na) nb._edges.push(e);
+    });
+    const L = layoutOf(key);
+    svg.querySelectorAll('g.node').forEach((n) => { const d = L[nodeKey(n)]; if (d) moveNode(n, d[0], d[1]); });
+    growViewBox();
+  }
+  function moveNode(n, dx, dy) {
+    n._d = [dx, dy];
+    if (dx || dy) n.setAttribute('transform', `translate(${dx} ${dy})`); else n.removeAttribute('transform');
+    n._edges.forEach(redrawEdge);
+  }
+  function redrawEdge(e) {
+    const s = e._s._d, t = e._t._d;
+    if (e._s === e._t) { // 자기 참조 선은 통째로
+      e.setAttribute('transform', `translate(${s[0]} ${s[1]})`);
+      return;
+    }
+    const [p0, p1, p2, p3] = e._pts;
+    const f = (p, o) => `${(p[0] + o[0]).toFixed(1)},${(p[1] + o[1]).toFixed(1)}`;
+    e._path.setAttribute('d', `M${f(p0, s)}C${f(p1, s)} ${f(p2, t)} ${f(p3, t)}`);
+    e._parts.forEach(({ el, end }) => { const o = end === 's' ? s : t; el.setAttribute('transform', `translate(${o[0]} ${o[1]})`); });
+  }
+  // 옮긴 테이블이 그림 밖으로 나가면 viewBox를 넓혀 잘리지 않게
+  function growViewBox() {
+    const svg = view.svg, [x0, y0, w0, h0] = view.vb0;
+    let b;
+    try { b = svg.getBBox(); } catch (e) { return; }
+    // svg.getBBox()는 viewBox와 같은 좌표계 (Graphviz의 g.graph translate 반영됨)
+    const x = Math.min(x0, b.x - 8), y = Math.min(y0, b.y - 8);
+    const w = Math.max(x0 + w0, b.x + b.width + 8) - x, h = Math.max(y0 + h0, b.y + b.height + 8) - y;
+    svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+    view.w = w;
+    view.h = h;
+    if (zoomOf[view.g]) setZoom(zoomOf[view.g]);
+  }
+  function resetLayout() {
+    if (!view) return;
+    delete localLayout[view.g];
+    saveLocalLayout();
+    // 공유 배치(없으면 자동 배치) 위치로 되돌리고 그림 범위도 원래대로
+    const L = layoutOf(view.g);
+    view.svg.querySelectorAll('g.node').forEach((n) => { if (n._edges) { const d = L[nodeKey(n)] || [0, 0]; moveNode(n, d[0], d[1]); } });
+    const [x, y, w, h] = view.vb0;
+    view.svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+    view.w = w;
+    view.h = h;
+    growViewBox();
+  }
+  function exportLayout() {
+    const all = Object.assign({}, D.layout || {}, localLayout);
+    const blob = new Blob([JSON.stringify(all, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'erd-layout.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
   // 긴 설명은 첫 문장(마침표·괄호 전)까지만
   function shortNote(s) {
@@ -252,6 +365,8 @@
     }
     const b = e.target.closest('[data-z]');
     if (!b || !view) return;
+    if (b.dataset.z === 'reset') return resetLayout();
+    if (b.dataset.z === 'export') return exportLayout();
     const z = zoomOf[view.g];
     const c = view.canvas;
     manual[view.g] = b.dataset.z !== 'fit';
@@ -268,24 +383,50 @@
     zoomAt(zoomOf[view.g] * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX - r.left, e.clientY - r.top);
   }, { passive: false });
 
-  // 드래그 이동 (조금만 움직이면 클릭으로 처리)
+  // 드래그: 테이블 위에서 끌면 테이블 이동(배치 저장), 빈 곳에서 끌면 화면 이동. 조금만 움직이면 클릭으로 처리
   let drag = null;
   main.addEventListener('pointerdown', (e) => {
     const c = e.target.closest('.canvas');
     if (!c || e.button !== 0) return;
-    drag = { c, x: e.clientX, y: e.clientY, sl: c.scrollLeft, st: c.scrollTop, moved: false };
+    const n = view && e.target.closest('g.node');
+    if (n && n._edges) {
+      e.preventDefault(); // 끄는 동안 페이지 글자가 선택되지 않게
+      drag = { c, node: n, x: e.clientX, y: e.clientY, d0: n._d.slice(), moved: false };
+    }
+    else drag = { c, x: e.clientX, y: e.clientY, sl: c.scrollLeft, st: c.scrollTop, moved: false };
   });
   window.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 4) { drag.moved = true; drag.c.classList.add('drag'); }
-    if (drag.moved) { drag.c.scrollLeft = drag.sl - dx; drag.c.scrollTop = drag.st - dy; }
+    if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 4) {
+      drag.moved = true;
+      drag.c.classList.add(drag.node ? 'drag-node' : 'drag');
+      hideTip();
+    }
+    if (!drag.moved) return;
+    if (drag.node) {
+      const k = PT * zoomOf[view.g]; // 화면 px → SVG 좌표
+      moveNode(drag.node, drag.d0[0] + dx / k, drag.d0[1] + dy / k);
+    } else {
+      drag.c.scrollLeft = drag.sl - dx;
+      drag.c.scrollTop = drag.st - dy;
+    }
   });
   window.addEventListener('pointerup', (e) => {
     if (!drag) return;
     const d = drag;
     drag = null;
-    d.c.classList.remove('drag');
+    d.c.classList.remove('drag', 'drag-node');
+    if (d.moved && d.node) {
+      // 옮긴 배치 저장 (이 화면 전체를 내 브라우저에 기록: 공유 배치 위에 덮어씀)
+      const L = Object.assign({}, layoutOf(view.g));
+      const [x, y] = d.node._d.map((v) => Math.round(v * 10) / 10);
+      if (x || y) L[nodeKey(d.node)] = [x, y]; else delete L[nodeKey(d.node)];
+      localLayout[view.g] = L;
+      saveLocalLayout();
+      growViewBox();
+      return;
+    }
     if (d.moved) return;
     const n = e.target.closest && e.target.closest('g.node');
     // 이 영역 테이블은 아래 명세로, 회색(다른 영역) 테이블은 그 영역으로 이동

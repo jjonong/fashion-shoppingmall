@@ -114,6 +114,12 @@ async function main() {
     groups: {},
     tables: {},
     counts: { tables: S.tables.length, refs: refs.length, groups: groups.length },
+    // 공유 배치: 웹페이지 "배치 내보내기"로 받은 docs/erd-layout.json (없으면 자동 배치)
+    layout: (() => {
+      const f = path.join(ROOT, 'docs', 'erd-layout.json');
+      if (!fs.existsSync(f)) return {};
+      try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { console.warn('erd-layout.json 읽기 실패:', e.message); return {}; }
+    })(),
   };
   const svgs = [];
   groups.forEach((g, i) => {

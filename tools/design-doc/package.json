@@ -7,8 +7,9 @@
     "check": "node check.js",
     "pdf": "node check.js && node build.js",
     "summary": "node check.js && node summary.js",
-    "all": "node check.js && node build.js && node summary.js && node erd-page.js",
-    "erd": "node check.js && node erd-page.js"
+    "all": "node check.js && node build.js && node summary.js && node erd-page.js && node drawio.js",
+    "erd": "node check.js && node erd-page.js",
+    "drawio": "node check.js && node drawio.js"
   },
   "dependencies": {
     "@dbml/core": "12.0.0",
