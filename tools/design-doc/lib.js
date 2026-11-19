@@ -129,6 +129,19 @@ function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null
   return { svg: `<div class="gv">${svg}</div>`, ext };
 }
 
+// 영역 7개: TableGroup 이름 접두사로 구분 (쇼핑 흐름 순서). 전체 설계서와 ERD 웹페이지 공용
+// color/fill은 ERD 웹페이지 전체 구조도 색 (화면 CSS --s1~--s7과 같은 순서)
+const AREAS = [
+  { prefix: 'member', name: '고객', color: '#2f8f6b', fill: '#EEF7F2', desc: '회원 · 프로필 · 주거정보 · 약관 · 보안 · 상태' },
+  { prefix: 'product', name: '상품', color: '#2f6496', fill: '#EDF3F9', desc: '옵션 · SKU · 포장 · 재고 · 필터 · 조립식 · 부가 서비스' },
+  { prefix: 'community', name: '커뮤니티', color: '#b5562f', fill: '#FBF1EC', desc: '고객 집사진 · 집들이 · 브랜드 매거진' },
+  { prefix: 'cart', name: '장바구니', color: '#a67c00', fill: '#FBF6E6', desc: '회원·비회원 장바구니 · 인테리어 플랜' },
+  { prefix: 'order', name: '주문', color: '#7a5bb5', fill: '#F3EFFA', desc: '주문 · 주문 상품 상태 · 부품 요청' },
+  { prefix: 'payment', name: '결제', color: '#b5407a', fill: '#FBEFF5', desc: 'PG 결제 · 부분 환불 · 현금영수증' },
+  { prefix: 'delivery', name: '배송', color: '#2b8a94', fill: '#EAF6F7', desc: '배송 정책 · 권역 · 반입 · 배송 묶음 · 설치 일정' },
+];
+const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
+
 // 영역(TableGroup)별 설명: 전체 설계서와 ERD 웹페이지 공용
 const groupDesc = {
   member_basic: '회원 계정, 커뮤니티 프로필, 주거 정보, 배송지(가구 반입 경로 치수 포함). 거의 모든 영역이 member_account를 작성자·관리자로 참조한다.',
@@ -136,22 +149,23 @@ const groupDesc = {
   member_security: '로그인 이력, 1회용 토큰, 기기별 세션, 비밀번호 이력, 관리자 개인정보 접근 기록. 로그·세션은 보관 기간이 지나면 배치로 삭제.',
   member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어, 탈퇴 후 30일 재가입 제한.',
   product_classification: '브랜드와 4단계 카테고리.',
-  product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조와 이미지, 고시정보, 상품 문의.',
+  product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조, SKU 포장 박스(화물 운임·반입 판단 근거), 이미지, 상품 문의.',
   product_notice_info: '상품정보제공고시 품목 유형(가구·침구·주방·가전)별 항목 마스터와 상품별 값.',
-  product_delivery:'가구 배송 정책, 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, SKU 포장 박스, 주거형태별 반입 기본값.',
-  product_assembly: '조립식 상품의 부품 목록(설명서 표기·단품 구매 가능 여부)과 단계별 조립 설명서(단계마다 쓰는 부품).',
   product_link_history: '스타일·주거 조건 연결(맞춤 추천), 선호 브랜드, 재고 원장, 가격 이력, 재입고 알림 신청.',
   product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어.',
   product_composition_operation: '연관·세트 상품, 상품 상태 이력.',
+  product_assembly: '조립식 상품의 부품 목록(설명서 표기·단품 구매 가능 여부)과 단계별 조립 설명서(단계마다 쓰는 부품).',
+  product_addon: '폐가구 수거·조립 같은 부가 서비스 마스터와 상품별 제공 서비스(상품별 금액). 고객이 고른 서비스는 장바구니·주문 영역에 있다.',
   community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
   community_reaction: '스타일 분류, 댓글, 좋아요, 스크랩(글 저장 + 상품 찜).',
   community_operation: '신고와 앱 내 알림함.',
-  order_cart: '회원·비회원 장바구니(로그인 시 합치기, 담은 가격·가격 인하 알림, 방별 묶음, 집들이·플랜 유입)와 인테리어 플랜(방·스타일·예산 + 후보 비교 → 장바구니로).',
-  order_core: '주문(요약 상태·금액 스냅샷·이사일 함께 받기), 배송지 스냅샷(반입 경로 포함), 주문 상품(상품별 상태·할인 안분·설치 위치·유입 글), 상태 이력.',
-  order_addon: '폐가구 수거·조립 같은 부가 서비스 마스터, 상품별 제공 서비스, 장바구니·주문 상품에서 고른 서비스(주문은 금액 스냅샷).',
+  cart_core: '회원·비회원 장바구니(로그인 시 합치기, 담은 가격·가격 인하 알림, 방별 묶음, 집들이·플랜 유입)와 상품별로 고른 부가 서비스.',
+  cart_plan: '인테리어 플랜(방·스타일·예산 보드)과 후보 상품(CANDIDATE 비교 → CHOSEN 확정 → 장바구니로).',
+  order_core: '주문(요약 상태·금액 스냅샷·이사일 함께 받기), 배송지 스냅샷(반입 경로 포함), 주문 상품(상품별 상태·할인 안분·설치 위치·유입 글), 상태 이력, 부가 서비스 스냅샷.',
   order_part: '구매한 조립식 상품의 누락·파손 부품 무료 요청과 부품 추가 구매.',
-  order_payment: 'PG 결제(카드·간편결제·실시간 계좌이체·가상계좌, 에스크로), 결제 취소·부분 환불(가상계좌는 환불 계좌), 현금영수증 발급·취소 이력.',
-  order_delivery: '배송 묶음(배송비 내역·송장·설치 일정)과 권역별 설치 가능 슬롯.',
+  payment_core: 'PG 결제(카드·간편결제·실시간 계좌이체·가상계좌, 에스크로), 결제 취소·부분 환불(가상계좌는 환불 계좌), 현금영수증 발급·취소 이력.',
+  delivery_policy: '가구 배송 정책(택배·화물·설치배송, 사다리차·계단비), 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, 주거형태별 반입 기본값.',
+  delivery_shipment: '배송 묶음(배송비 내역·송장·반입 확인·설치 일정)과 권역별 설치 가능 슬롯.',
 };
 
 // ---------- HTML 머리말 / Mermaid 초기화 ----------
@@ -211,4 +225,4 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('PDF', outPdf);
 }
 
-module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc };
+module.exports = { ROOT, esc, noteOf, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };

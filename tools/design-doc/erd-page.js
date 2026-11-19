@@ -5,19 +5,15 @@
 //       node erd-page.js <in.dbml> <out.html>
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, load, initViz, erSvg, dotSvg, AUDIT, groupDesc } = require('./lib');
+const { ROOT, esc, noteOf, load, initViz, erSvg, dotSvg, AUDIT, groupDesc, AREAS, areaOf } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const out = process.argv[3] || path.join(ROOT, 'docs', 'erd', 'index.html');
 const ctx = load(src);
 const { S, tableMap, groups, groupOf, refs, fk, compositePk } = ctx;
 
-const STAGES = [
-  { prefix: 'member', name: '1단계 고객' },
-  { prefix: 'product', name: '2단계 상품' },
-  { prefix: 'community', name: '3단계 커뮤니티' },
-  { prefix: 'order', name: '4단계 주문' },
-];
+// 영역(고객·상품·커뮤니티·장바구니·주문·결제·배송)은 lib.AREAS 기준
+const STAGES = AREAS.map(({ prefix, name }) => ({ prefix, name }));
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 const fmtDefault = (d) => (!d ? '' : d.type === 'expression' ? d.value : d.type === 'string' ? `'${d.value}'` : String(d.value));
 
@@ -71,12 +67,6 @@ function groupSvg(g, i) {
 
 // ---------- 전체 구조도 (개요 화면) ----------
 // 테이블 이름만 있는 작은 상자를 영역(TableGroup)별 묶음으로 배치. 관리자 감사 컬럼(created_by 등) 선은 생략
-const STAGE_COLOR = {
-  member: ['#2f8f6b', '#EEF7F2'],
-  product: ['#2f6496', '#EDF3F9'],
-  community: ['#b5562f', '#FBF1EC'],
-  order: ['#7a5bb5', '#F3EFFA'],
-};
 function overallSvg() {
   const F = 'Malgun Gothic';
   let dot = `digraph ALL {
@@ -85,8 +75,9 @@ function overallSvg() {
   edge [color="#9aa7b4", penwidth=1, arrowsize=0.7, arrowhead=crow];
 `;
   groups.forEach((g) => {
-    const stage = STAGES.find((x) => g.name.startsWith(x.prefix));
-    const [line, fill] = STAGE_COLOR[stage.prefix];
+    const stage = areaOf(g.name);
+    if (!stage) throw new Error(`영역 접두사가 없는 TableGroup: ${g.name}`);
+    const { color: line, fill } = stage;
     dot += `  subgraph cluster_${g.name} {
     label="${stage.name} · ${gTitle(g)}"; fontname="${F}"; fontsize=17; fontcolor="${line}";
     style="rounded,filled"; fillcolor="${fill}"; color="${line}"; penwidth=1.2; margin=10;
@@ -117,7 +108,7 @@ function overallSvg() {
 async function main() {
   await initViz();
   const data = {
-    stages: STAGES.map((s) => ({ ...s, groups: groups.filter((g) => g.name.startsWith(s.prefix)).map((g) => g.name) })),
+    stages: STAGES.map((s) => ({ ...s, groups: groups.filter((g) => areaOf(g.name).prefix === s.prefix).map((g) => g.name) })),
     groups: {},
     tables: {},
     counts: { tables: S.tables.length, refs: refs.length, groups: groups.length },

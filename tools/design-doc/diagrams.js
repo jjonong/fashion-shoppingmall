@@ -128,7 +128,7 @@ module.exports = {
   class Y,P good
   class N1,N2,N3 bad`,
   recommend: `flowchart LR
-  subgraph IN["회원 정보 (1단계)"]
+  subgraph IN["회원 정보 (고객)"]
     direction TB
     H["<b>member_home</b><br/>주거형태 · 평수 · 가족 · 반려동물"]
     R["<b>member_room</b> · <b>address</b><br/>방 치수 · 방문 폭<br/>현관문 · 엘리베이터 치수"]

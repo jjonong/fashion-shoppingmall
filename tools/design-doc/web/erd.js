@@ -5,7 +5,7 @@
   const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const side = $('#side'), main = $('#main'), q = $('#q'), results = $('#results');
 
-  const stageOf = (g) => D.stages.findIndex((s) => g.startsWith(s.prefix));
+  const stageOf = (g) => D.stages.findIndex((s) => g.startsWith(s.prefix + '_'));
   const stageColor = (g) => `var(--s${stageOf(g) + 1})`;
   const PT = 4 / 3; // Graphviz pt → px
 
@@ -83,7 +83,7 @@
         <div class="stat"><b>MySQL 8.0</b><span>InnoDB · utf8mb4</span></div>
       </div>
       <h2 class="ov-h">전체 구조 <span>${D.counts.tables}개 테이블 · 영역별 묶음</span></h2>
-      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 단계(고객 · 상품 · 커뮤니티 · 주문), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
+      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(고객 · 상품 · 커뮤니티 · 장바구니 · 주문 · 결제 · 배송), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
       <div class="ov-erd">
         ${toolbarHtml('테이블·영역에 마우스를 올리면 설명 · 누르면 그 영역으로 이동 · 드래그로 이동 · Ctrl + 휠로 확대')}
         <div class="canvas" id="canvas"><div class="pad"></div></div>
@@ -94,7 +94,7 @@
         <li>각 영역 ERD에는 키 컬럼(PK·FK·UK)만 보이고, 나머지는 <b>+ N columns</b>로 줄여 표시합니다. 테이블을 누르면 전체 컬럼이 나옵니다.</li>
         <li>선 끝 모양: 까마귀발 = 여러 개(N), 세로줄 = 반드시 1개, 동그라미 = 없을 수 있음(0).</li>
         <li>회색 테이블은 다른 영역에 있는 참조 대상입니다 (PK만 표시).</li>
-        <li>상품·커뮤니티 ERD에서는 관리자 감사 컬럼(created_by 등) → member_account 선을 생략했습니다. 상세 패널에는 FK로 표시됩니다.</li>
+        <li>고객 외 영역 ERD에서는 관리자 감사 컬럼(created_by 등) → member_account 선을 생략했습니다. 상세 패널에는 FK로 표시됩니다.</li>
         <li>원본: <code>docs/erd.dbml</code> (dbdiagram.io 형식). 이 페이지는 <code>tools/design-doc</code>의 <code>npm run erd</code>로 생성됩니다.</li>
       </ul></div>
     </div>`;

@@ -1,4 +1,4 @@
-// 영역별 요약 설계서 (A4 세로, 몇 쪽 분량). 현재: 1단계 고객
+// 영역별 요약 설계서 (A4 세로, 몇 쪽 분량). 현재: 고객
 // 사용: npm run summary            (기본: ../../docs/erd.dbml → ../../docs/고객_설계_요약.pdf)
 //       node summary.js <in.dbml> <out.pdf> [미리보기 PNG 폴더]
 // 테이블 수·키·관계·ERD는 DBML에서 자동 생성, 설계 판단·정책 설명은 이 파일에 직접 쓴 문장이다.
@@ -58,7 +58,7 @@ const makeHtml = () => {
 
 <section class="sum-sheet">
   <div class="sum-head">
-    <div class="eyebrow">DESIGN SUMMARY · 1단계 고객</div>
+    <div class="eyebrow">DESIGN SUMMARY · 고객</div>
     <h1>고객 영역 설계 요약</h1>
     <p>인테리어 가구몰 DB · MySQL 8.0 · 원본 docs/erd.dbml · 전체 명세는 DB_설계서.pdf</p>
   </div>
@@ -168,7 +168,7 @@ const makeHtml = () => {
     <tr><td>관리자 계정 분리</td><td>지금은 <code>role</code>로 구분. 권한 세분화 · 2단계 인증 · IP 제한이 필요하면 <code>admin_user</code> 계열로 분리 (상품 쪽 관리자 FK도 변경)</td></tr>
     <tr><td>앱 푸시 기기 토큰</td><td>PUSH 알림 채널은 있지만 FCM/APNs 토큰 저장 테이블 없음 → <code>member_device</code></td></tr>
     <tr><td>휴대폰 인증번호 · 애플 로그인</td><td>SMS 인증번호 시도 횟수 제한 테이블, 애플 탈퇴 시 토큰 revoke용 refresh token 암호화 저장</td></tr>
-    <tr><td>등급 산정 기준</td><td>지금은 누적 구매액이라 등급이 내려가지 않음 → 최근 N개월 실적 + 등급 변경 이력 (주문 단계에서 함께 설계)</td></tr>
+    <tr><td>등급 산정 기준</td><td>지금은 누적 구매액이라 등급이 내려가지 않음 → 최근 N개월 실적 + 등급 변경 이력 (주문 영역에서 함께 설계)</td></tr>
   </table>
 </section>
 

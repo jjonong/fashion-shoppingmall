@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 1단계 고객 20개 + 2단계 상품 38개 + 3단계 커뮤니티 12개 + 4단계 주문 18개 = 88개 테이블
+// 고객 20개 + 상품 35개 + 커뮤니티 12개 + 장바구니 4개 + 주문 7개 + 결제 3개 + 배송 7개 = 88개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -21,7 +21,7 @@ Project interior_mall {
 }
 
 // =====================================================================
-// 1단계: 고객 - 회원 기본
+// 고객 - 회원 기본
 // =====================================================================
 
 Table member_grade [note: '회원 등급 (혜택을 DB에서 바로 변경)'] {
@@ -155,7 +155,7 @@ Table address [note: '배송지 (회원당 여러 개, 기본 배송지는 1개)
 }
 
 // =====================================================================
-// 1단계: 고객 - 약관 / 알림 / 취향
+// 고객 - 약관/알림/취향
 // =====================================================================
 
 Table terms [note: '약관 (버전 관리)'] {
@@ -216,7 +216,7 @@ Table member_style [note: '회원 선호 스타일'] {
 }
 
 // =====================================================================
-// 1단계: 고객 - 보안
+// 고객 - 보안
 // =====================================================================
 
 Table login_history [note: '로그인 시도 이력 (이상 로그인 탐지, 새 기기 알림). 1년 보관 후 배치로 삭제'] {
@@ -297,7 +297,7 @@ Table privacy_access_log [note: '관리자 개인정보 접근 기록 (개인정
 }
 
 // =====================================================================
-// 1단계: 고객 - 상태 / 닉네임 정책
+// 고객 - 상태/닉네임/탈퇴 정책
 // =====================================================================
 
 Table member_status_history [note: '회원 상태 변경 이력 (가입·휴면·정지·탈퇴 전환 사유와 처리자)'] {
@@ -359,7 +359,7 @@ Table withdrawn_identity [note: '탈퇴 후 재가입 제한. 탈퇴 시 member_
 }
 
 // =====================================================================
-// 2단계: 상품 - 분류 / 브랜드 / 배송
+// 상품 - 분류/브랜드
 // =====================================================================
 
 Table brand [note: '브랜드'] {
@@ -389,26 +389,8 @@ Table category [note: '카테고리 최대 4단계 (예: 가구 > 침대 > 침�
   }
 }
 
-Table shipping_policy [note: '배송 정책. 가구는 배송 방식과 비용이 상품마다 크게 다름'] {
-  policy_id bigint [pk, increment]
-  name varchar(100) [not null, note: '예: 대형가구 설치배송(수도권)']
-  delivery_type varchar(20) [not null, note: 'PARCEL(일반택배)/FREIGHT(화물택배)/DIRECT_INSTALL(업체 직접 설치배송)']
-  shipping_fee bigint [not null, default: 0, note: '기본 배송비']
-  free_threshold bigint [note: '이 금액 이상 무료배송 (권역 추가비·양중비는 별도). NULL이면 조건 없음']
-  ladder_floor_from smallint [note: '엘리베이터가 없을 때 이 층 이상이면 사다리차. NULL이면 사다리차 대상 아님 (소형 택배)']
-  ladder_fee bigint [not null, default: 0, note: '사다리차 비용']
-  stair_fee_per_floor bigint [not null, default: 0, note: '엘리베이터 없이 계단으로 옮길 때 층당 비용 (2층부터, 사다리차 기준 층 미만)']
-  return_fee bigint [not null, note: '반품 배송비 (편도)']
-  exchange_fee bigint [not null, note: '교환 배송비 (왕복)']
-  lead_days smallint [not null, note: '결제 후 출고까지 소요일. 주문제작 가구는 길다']
-  same_day_cutoff varchar(5) [note: '오늘출발 마감 시각 HH24:MI. NULL이면 오늘출발 아님']
-  is_bundle_allowed char(1) [not null, default: 'Y', note: '다른 상품과 묶음배송 가능 여부']
-  is_active char(1) [not null, default: 'Y']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
 // =====================================================================
-// 2단계: 상품 - 상품 → 옵션 → SKU
+// 상품 - 상품/옵션/SKU/포장/문의
 // =====================================================================
 
 Table product [note: '상품 (옵션 공통 정보)'] {
@@ -456,51 +438,6 @@ Table product [note: '상품 (옵션 공통 정보)'] {
     shipping_policy_id [name: 'ix_product_shipping']
     created_by [name: 'ix_product_created_by']
     updated_by [name: 'ix_product_updated_by']
-  }
-}
-
-Table notice_type [note: '상품정보제공고시 품목 유형. 가구·침구·주방용품·가전은 법정 표시 항목이 서로 다름'] {
-  notice_type_id bigint [pk, increment]
-  type_code varchar(30) [not null, unique, note: 'FURNITURE(가구)/BEDDING_CURTAIN(침구류·커튼)/KITCHENWARE(주방용품)/HOME_APPLIANCE(가정용 전기제품)/SEASONAL_APPLIANCE(계절가전)/ETC(기타 재화)']
-  name_ko varchar(50) [not null]
-  sort_order smallint [not null]
-}
-
-Table notice_item [note: '품목 유형별 고시 항목. 고시가 바뀌면 행 추가·비활성으로 대응 (컬럼 변경 없음)'] {
-  item_id bigint [pk, increment]
-  notice_type_id bigint [not null]
-  item_code varchar(30) [not null, note: 'MATERIAL/COMPONENTS/SIZE/MANUFACTURER/ORIGIN/KC_CERT/DELIVERY_INSTALL_FEE/RATED_VOLTAGE/POWER_CONSUMPTION/FOOD_CONTACT_MATERIAL...']
-  name_ko varchar(100) [not null, note: '화면 표시 항목명 (예: 정격전압·소비전력)']
-  guide varchar(300) [note: '작성 안내 (예: 구성품별 제조국이 다르면 모두 기재)']
-  is_required char(1) [not null, default: 'Y', note: 'Y/N']
-  is_active char(1) [not null, default: 'Y']
-  sort_order smallint [not null]
-
-  indexes {
-    (notice_type_id, item_code) [unique, name: 'uk_notice_item']
-  }
-}
-
-Table product_notice [note: '상품정보제공고시 헤더 (product와 1:1). 항목 값은 product_notice_value에 행으로 저장'] {
-  product_id bigint [pk, note: 'product와 1:1']
-  notice_type_id bigint [not null, note: '기본값 category.notice_type_id. 바꾸면 기존 값 행 삭제 후 새 항목으로 입력']
-  updated_by bigint [note: '관리자']
-  updated_at datetime
-
-  indexes {
-    notice_type_id [name: 'ix_product_notice_type']
-    updated_by [name: 'ix_product_notice_updated_by']
-  }
-}
-
-Table product_notice_value [note: '상품별 고시 항목 값. item의 유형 = product_notice.notice_type_id (앱 검증). 필수 항목이 모두 채워져야 ON_SALE 가능'] {
-  product_id bigint [not null]
-  item_id bigint [not null]
-  content varchar(1000) [not null, note: '해당 없으면 "해당 없음"']
-
-  indexes {
-    (product_id, item_id) [pk]
-    item_id [name: 'ix_pnv_item']
   }
 }
 
@@ -614,7 +551,56 @@ Table product_qna [note: '상품 문의 (구매 전에도 작성 가능)'] {
 }
 
 // =====================================================================
-// 2단계: 상품 - 연결 / 이력
+// 상품 - 정보제공고시 (품목별 항목)
+// =====================================================================
+
+Table notice_type [note: '상품정보제공고시 품목 유형. 가구·침구·주방용품·가전은 법정 표시 항목이 서로 다름'] {
+  notice_type_id bigint [pk, increment]
+  type_code varchar(30) [not null, unique, note: 'FURNITURE(가구)/BEDDING_CURTAIN(침구류·커튼)/KITCHENWARE(주방용품)/HOME_APPLIANCE(가정용 전기제품)/SEASONAL_APPLIANCE(계절가전)/ETC(기타 재화)']
+  name_ko varchar(50) [not null]
+  sort_order smallint [not null]
+}
+
+Table notice_item [note: '품목 유형별 고시 항목. 고시가 바뀌면 행 추가·비활성으로 대응 (컬럼 변경 없음)'] {
+  item_id bigint [pk, increment]
+  notice_type_id bigint [not null]
+  item_code varchar(30) [not null, note: 'MATERIAL/COMPONENTS/SIZE/MANUFACTURER/ORIGIN/KC_CERT/DELIVERY_INSTALL_FEE/RATED_VOLTAGE/POWER_CONSUMPTION/FOOD_CONTACT_MATERIAL...']
+  name_ko varchar(100) [not null, note: '화면 표시 항목명 (예: 정격전압·소비전력)']
+  guide varchar(300) [note: '작성 안내 (예: 구성품별 제조국이 다르면 모두 기재)']
+  is_required char(1) [not null, default: 'Y', note: 'Y/N']
+  is_active char(1) [not null, default: 'Y']
+  sort_order smallint [not null]
+
+  indexes {
+    (notice_type_id, item_code) [unique, name: 'uk_notice_item']
+  }
+}
+
+Table product_notice [note: '상품정보제공고시 헤더 (product와 1:1). 항목 값은 product_notice_value에 행으로 저장'] {
+  product_id bigint [pk, note: 'product와 1:1']
+  notice_type_id bigint [not null, note: '기본값 category.notice_type_id. 바꾸면 기존 값 행 삭제 후 새 항목으로 입력']
+  updated_by bigint [note: '관리자']
+  updated_at datetime
+
+  indexes {
+    notice_type_id [name: 'ix_product_notice_type']
+    updated_by [name: 'ix_product_notice_updated_by']
+  }
+}
+
+Table product_notice_value [note: '상품별 고시 항목 값. item의 유형 = product_notice.notice_type_id (앱 검증). 필수 항목이 모두 채워져야 ON_SALE 가능'] {
+  product_id bigint [not null]
+  item_id bigint [not null]
+  content varchar(1000) [not null, note: '해당 없으면 "해당 없음"']
+
+  indexes {
+    (product_id, item_id) [pk]
+    item_id [name: 'ix_pnv_item']
+  }
+}
+
+// =====================================================================
+// 상품 - 연결/추천/재고/알림
 // =====================================================================
 
 Table product_style [note: '상품 인테리어 스타일 태그 (1단계 style 재사용)'] {
@@ -624,6 +610,17 @@ Table product_style [note: '상품 인테리어 스타일 태그 (1단계 style 
   indexes {
     (product_id, style_id) [pk]
     style_id [name: 'ix_product_style_style']
+  }
+}
+
+Table product_home_fit [note: '상품이 잘 맞는 주거 조건 (MD 지정). member_home·member_room과 매칭해 맞춤 추천'] {
+  product_id bigint [not null]
+  fit_type varchar(20) [not null, note: 'HOUSING(주거형태)/FAMILY(가족형태)/PET(반려동물)/SPACE(공간)']
+  fit_code varchar(20) [not null, note: 'member_home·post_image와 같은 코드 (ONE_ROOM, WITH_KIDS, PET_FRIENDLY, BEDROOM...)']
+
+  indexes {
+    (product_id, fit_type, fit_code) [pk]
+    (fit_type, fit_code) [name: 'ix_phf_fit', note: '조건으로 상품 찾기']
   }
 }
 
@@ -670,17 +667,6 @@ Table price_history [note: '가격 변경 이력 (가격 인하 알림 근거)']
   }
 }
 
-Table product_home_fit [note: '상품이 잘 맞는 주거 조건 (MD 지정). member_home·member_room과 매칭해 맞춤 추천'] {
-  product_id bigint [not null]
-  fit_type varchar(20) [not null, note: 'HOUSING(주거형태)/FAMILY(가족형태)/PET(반려동물)/SPACE(공간)']
-  fit_code varchar(20) [not null, note: 'member_home·post_image와 같은 코드 (ONE_ROOM, WITH_KIDS, PET_FRIENDLY, BEDROOM...)']
-
-  indexes {
-    (product_id, fit_type, fit_code) [pk]
-    (fit_type, fit_code) [name: 'ix_phf_fit', note: '조건으로 상품 찾기']
-  }
-}
-
 Table restock_request [note: '재입고 알림 신청 (SKU 단위). 재고가 0 → 양수가 되면 WAITING 신청자에게 발송'] {
   request_id bigint [pk, increment]
   member_id bigint [not null]
@@ -696,7 +682,7 @@ Table restock_request [note: '재입고 알림 신청 (SKU 단위). 재고가 0 
 }
 
 // =====================================================================
-// 2단계: 상품 - 검색 / 필터
+// 상품 - 검색/필터
 // =====================================================================
 
 Table color_family [note: '컬러 계열 마스터. 상품 필터 칩으로 노출'] {
@@ -775,43 +761,7 @@ Table search_synonym [note: '검색 동의어 (쇼파 → 소파, 행거 → 옷
 }
 
 // =====================================================================
-// 2단계: 상품 - 가구 배송 (권역별 배송 가능 여부·추가비)
-// =====================================================================
-
-Table delivery_zone [note: '배송 권역. 설치배송 가능 지역과 추가 배송비를 판단하는 단위'] {
-  zone_id bigint [pk, increment]
-  zone_code varchar(20) [not null, unique, note: 'METRO(수도권)/CHUNGCHEONG/GANGWON/HONAM/YEONGNAM/JEJU/ISLAND(도서산간)']
-  name_ko varchar(30) [not null]
-  sort_order smallint [not null]
-}
-
-Table delivery_zone_zipcode [note: '우편번호 범위 → 권역. 배송지 zipcode로 권역을 찾는다'] {
-  range_id bigint [pk, increment]
-  zone_id bigint [not null]
-  zip_from char(5) [not null]
-  zip_to char(5) [not null, note: 'CHECK zip_from <= zip_to. 범위가 겹치면 더 좁은 범위(도서산간)를 우선 적용']
-
-  indexes {
-    (zip_from, zip_to) [name: 'ix_zone_zipcode_range']
-    zone_id [name: 'ix_zone_zipcode_zone']
-  }
-}
-
-Table shipping_policy_zone [note: '배송 정책별 권역 설정. 행이 없는 권역은 기본 배송비로 배송'] {
-  policy_id bigint [not null]
-  zone_id bigint [not null]
-  is_available char(1) [not null, default: 'Y', note: 'N이면 배송 불가 (예: 설치배송은 제주·도서산간 불가)']
-  extra_fee bigint [not null, default: 0, note: '권역 추가 배송비']
-  extra_lead_days smallint [not null, default: 0, note: '권역 추가 소요일']
-
-  indexes {
-    (policy_id, zone_id) [pk]
-    zone_id [name: 'ix_policy_zone_zone']
-  }
-}
-
-// =====================================================================
-// 2단계: 상품 - 구성
+// 상품 - 구성/상태 이력
 // =====================================================================
 
 Table product_relation [note: '연관 상품'] {
@@ -857,7 +807,79 @@ Table product_status_history [note: '상품 상태 변경 이력 (판매중지 �
 }
 
 // =====================================================================
-// 3단계: 커뮤니티 - 글 (구매 고객 콘텐츠 + 브랜드 매거진)
+// 상품 - 조립식 (부품/조립 설명서)
+// =====================================================================
+
+Table product_part [note: '조립식 상품 부품 목록 (설명서 표기 기준). 누락·파손 부품 요청과 단품 구매의 기준'] {
+  part_id bigint [pk, increment]
+  product_id bigint [not null]
+  sku_id bigint [note: '옵션마다 다른 부품이면 그 SKU (예: 색상별 판재). NULL이면 모든 옵션 공통']
+  part_code varchar(30) [not null, note: '설명서 표기 (예: A, B, 볼트 M6×30)']
+  name varchar(100) [not null, note: '예: 측판(좌), 선반, 캠볼트']
+  quantity smallint [not null, note: '상품 1개에 들어가는 수량']
+  image_url varchar(500)
+  is_orderable char(1) [not null, default: 'Y', note: 'Y/N 단품 구매·요청 가능']
+  unit_price bigint [not null, default: 0, note: '추가 구매(PURCHASE) 단가']
+  sort_order smallint [not null]
+
+  indexes {
+    (product_id, part_code) [unique, name: 'uk_product_part']
+    sku_id [name: 'ix_product_part_sku']
+  }
+}
+
+Table assembly_step [note: '단계별 조립 설명서. 단계 순서대로 이미지·영상·설명을 보여 주고, 각 단계에서 쓰는 부품은 assembly_step_part'] {
+  step_id bigint [pk, increment]
+  product_id bigint [not null]
+  step_no smallint [not null, note: '1부터']
+  title varchar(100) [not null, note: '예: 측판과 바닥판 연결']
+  description text
+  image_url varchar(500)
+  video_url varchar(500)
+
+  indexes {
+    (product_id, step_no) [unique, name: 'uk_assembly_step']
+  }
+}
+
+Table assembly_step_part [note: '조립 단계에서 쓰는 부품 (설명서 화면의 부품 표시, 부품 요청 시 "몇 단계에서 쓰는 부품" 안내)'] {
+  step_id bigint [not null]
+  part_id bigint [not null]
+  quantity smallint [not null, default: 1]
+
+  indexes {
+    (step_id, part_id) [pk]
+    part_id [name: 'ix_asp_part']
+  }
+}
+
+// =====================================================================
+// 상품 - 부가 서비스 (폐가구 수거/조립)
+// =====================================================================
+
+Table addon_service [note: '부가 서비스 마스터. 가구 배송 기사가 방문할 때 함께 하는 유료 서비스'] {
+  service_id bigint [pk, increment]
+  service_type varchar(20) [not null, note: 'DISPOSAL(폐가구 수거)/ASSEMBLY(조립 서비스)']
+  name varchar(50) [not null, unique, note: '예: 침대 수거, 소파 수거, 수납장 조립']
+  description varchar(500)
+  fee bigint [not null, note: '기본 금액 (1개당)']
+  is_active char(1) [not null, default: 'Y']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table product_addon_service [note: '상품별 제공 부가 서비스. ASSEMBLY는 product.assembly_type = SELF인 상품만, DISPOSAL은 기사가 방문하는 배송(FREIGHT·DIRECT_INSTALL)만 (앱 검증)'] {
+  product_id bigint [not null]
+  service_id bigint [not null]
+  fee_override bigint [note: '이 상품에서의 금액. NULL이면 addon_service.fee']
+
+  indexes {
+    (product_id, service_id) [pk]
+    service_id [name: 'ix_pas_service']
+  }
+}
+
+// =====================================================================
+// 커뮤니티 - 글 (사진/집들이/매거진)
 // =====================================================================
 
 Table post [note: '커뮤니티 글 공통. 유형별 추가 정보는 *_detail 테이블 (슈퍼타입/서브타입). 자사몰 규모에 맞춰 고객 사진·집들이와 운영자 매거진만 운영'] {
@@ -973,7 +995,7 @@ Table magazine_detail [note: '브랜드 매거진 상세 (post와 1:1). 운영�
 }
 
 // =====================================================================
-// 3단계: 커뮤니티 - 분류 / 반응
+// 커뮤니티 - 분류/반응/스크랩
 // =====================================================================
 
 Table post_style [note: '글의 인테리어 스타일 (1단계 style 재사용 → 같은 기준으로 글과 상품 추천)'] {
@@ -1034,7 +1056,7 @@ Table scrap [note: '스크랩 = 글 저장 + 상품 찜. 대상은 post 또는 p
 }
 
 // =====================================================================
-// 3단계: 커뮤니티 - 운영
+// 커뮤니티 - 신고/알림
 // =====================================================================
 
 Table report [note: '신고 (글/댓글/회원). 대상 컬럼 중 정확히 하나만 채움 (CHECK). 승인되면 회원 정지는 member_status_history로 기록'] {
@@ -1086,7 +1108,7 @@ Table notification [note: '알림함 (앱 내 알림 목록). 발송 여부는 m
 }
 
 // =====================================================================
-// 4단계: 주문 - 장바구니
+// 장바구니 - 장바구니/부가 서비스 선택
 // =====================================================================
 
 Table cart_item [note: '장바구니 (회원 + 비회원). SKU 단위. 방(room_id)별로 묶어 보고, 집들이 글(source_post_id)·인테리어 플랜(plan_id)에서 담았으면 유입을 남긴다. 담은 시점 가격(added_price)으로 가격 변동을 표시하고 가격 인하 알림 근거로 쓴다. 회원 행은 90일, 비회원 행은 30일 지나면 배치 삭제'] {
@@ -1118,6 +1140,21 @@ Table cart_item [note: '장바구니 (회원 + 비회원). SKU 단위. 방(room_
     updated_at [name: 'ix_cart_item_updated', note: '오래된 장바구니 삭제 배치']
   }
 }
+
+Table cart_item_addon [note: '장바구니 상품에 고른 부가 서비스'] {
+  cart_item_id bigint [not null]
+  service_id bigint [not null]
+  quantity smallint [not null, default: 1, note: 'CHECK 1 <= quantity <= cart_item.quantity (앱 검증). 예: 의자 4개 중 2개 수거']
+
+  indexes {
+    (cart_item_id, service_id) [pk]
+    service_id [name: 'ix_cart_item_addon_service']
+  }
+}
+
+// =====================================================================
+// 장바구니 - 인테리어 플랜
+// =====================================================================
 
 Table interior_plan [note: '인테리어 플랜 (공간 꾸미기 보드). 방·스타일·예산을 정하고 후보 상품을 모아 비교 → 확정한 상품을 한 번에 장바구니로. 가구는 바로 사지 않고 조합하다가 한꺼번에 사는 구매 패턴에 맞춤. 합계·예산 대비·방 치수 확인은 저장하지 않고 계산'] {
   plan_id bigint [pk, increment]
@@ -1160,7 +1197,7 @@ Table interior_plan_item [note: '플랜에 담은 상품. 같은 자리의 후�
 }
 
 // =====================================================================
-// 4단계: 주문 - 주문 / 주문 상품
+// 주문 - 주문/주문 상품
 // =====================================================================
 
 Table orders [note: '주문 (order는 MySQL 예약어라 orders). 상태는 주문 상품(order_item)별로 관리하고 여기는 요약. 금액은 주문 시점 스냅샷'] {
@@ -1277,8 +1314,62 @@ Table order_item_status_history [note: '주문 상품 상태 변경 이력 (CS �
   }
 }
 
+Table order_item_addon [note: '주문 상품의 부가 서비스 (주문 시점 이름·금액 스냅샷). 주문 상품을 취소하면 함께 환불'] {
+  order_item_addon_id bigint [pk, increment]
+  order_item_id bigint [not null]
+  service_id bigint [not null]
+  service_name varchar(50) [not null, note: '스냅샷']
+  unit_fee bigint [not null, note: '스냅샷 (fee_override 또는 fee)']
+  quantity smallint [not null, note: 'CHECK quantity >= 1']
+  amount bigint [not null, note: 'unit_fee × quantity']
+
+  indexes {
+    (order_item_id, service_id) [unique, name: 'uk_order_item_addon']
+    service_id [name: 'ix_order_item_addon_service']
+  }
+}
+
 // =====================================================================
-// 4단계: 주문 - 결제
+// 주문 - 부품 요청 (누락/파손/추가 구매)
+// =====================================================================
+
+Table part_request [note: '조립식 상품 부품 요청. 누락(MISSING)·파손(DAMAGED)은 구매 확정 후 30일까지 무료 발송, 추가 구매(PURCHASE)는 is_orderable 부품만 유료 (결제 흐름은 다음 단계에서 정교화)'] {
+  request_id bigint [pk, increment]
+  member_id bigint [not null]
+  order_item_id bigint [not null, note: '부품이 필요한 구매 상품']
+  request_type varchar(20) [not null, note: 'MISSING/DAMAGED/PURCHASE']
+  status varchar(20) [not null, default: 'REQUESTED', note: 'REQUESTED/APPROVED/SHIPPED/REJECTED']
+  photo_url varchar(500) [note: '파손 사진 (DAMAGED는 필수, 앱 검증)']
+  amount bigint [not null, default: 0, note: 'PURCHASE만 SUM(part.unit_price × 수량), MISSING·DAMAGED는 0']
+  carrier_code varchar(20)
+  tracking_no varchar(50)
+  reject_reason varchar(500)
+  handled_by bigint [note: '처리 관리자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  handled_at datetime
+  shipped_at datetime
+
+  indexes {
+    (member_id, created_at) [name: 'ix_part_request_member']
+    order_item_id [name: 'ix_part_request_item']
+    (status, created_at) [name: 'ix_part_request_status', note: '처리 대기 목록']
+    handled_by [name: 'ix_part_request_handled_by']
+  }
+}
+
+Table part_request_item [note: '요청한 부품과 수량'] {
+  request_id bigint [not null]
+  part_id bigint [not null]
+  quantity smallint [not null, note: 'CHECK quantity >= 1']
+
+  indexes {
+    (request_id, part_id) [pk]
+    part_id [name: 'ix_pri_part']
+  }
+}
+
+// =====================================================================
+// 결제 - 결제/환불/현금영수증
 // =====================================================================
 
 Table payment [note: '결제 (PG 결제 시도마다 1행, 실패 포함). 주문당 PAID는 1건. 카드·간편결제·실시간 계좌이체·가상계좌. 현금성 결제(TRANSFER, VIRTUAL_ACCOUNT)는 현금영수증(cash_receipt) 대상이고 에스크로를 고를 수 있음'] {
@@ -1358,7 +1449,72 @@ Table cash_receipt [note: '현금영수증 발급·취소 이력 (현금성 결�
 }
 
 // =====================================================================
-// 4단계: 주문 - 배송 (배송 묶음, 설치 일정)
+// 배송 - 배송 정책/권역/반입 기본값
+// =====================================================================
+
+Table shipping_policy [note: '배송 정책. 가구는 배송 방식과 비용이 상품마다 크게 다름'] {
+  policy_id bigint [pk, increment]
+  name varchar(100) [not null, note: '예: 대형가구 설치배송(수도권)']
+  delivery_type varchar(20) [not null, note: 'PARCEL(일반택배)/FREIGHT(화물택배)/DIRECT_INSTALL(업체 직접 설치배송)']
+  shipping_fee bigint [not null, default: 0, note: '기본 배송비']
+  free_threshold bigint [note: '이 금액 이상 무료배송 (권역 추가비·양중비는 별도). NULL이면 조건 없음']
+  ladder_floor_from smallint [note: '엘리베이터가 없을 때 이 층 이상이면 사다리차. NULL이면 사다리차 대상 아님 (소형 택배)']
+  ladder_fee bigint [not null, default: 0, note: '사다리차 비용']
+  stair_fee_per_floor bigint [not null, default: 0, note: '엘리베이터 없이 계단으로 옮길 때 층당 비용 (2층부터, 사다리차 기준 층 미만)']
+  return_fee bigint [not null, note: '반품 배송비 (편도)']
+  exchange_fee bigint [not null, note: '교환 배송비 (왕복)']
+  lead_days smallint [not null, note: '결제 후 출고까지 소요일. 주문제작 가구는 길다']
+  same_day_cutoff varchar(5) [note: '오늘출발 마감 시각 HH24:MI. NULL이면 오늘출발 아님']
+  is_bundle_allowed char(1) [not null, default: 'Y', note: '다른 상품과 묶음배송 가능 여부']
+  is_active char(1) [not null, default: 'Y']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table shipping_policy_zone [note: '배송 정책별 권역 설정. 행이 없는 권역은 기본 배송비로 배송'] {
+  policy_id bigint [not null]
+  zone_id bigint [not null]
+  is_available char(1) [not null, default: 'Y', note: 'N이면 배송 불가 (예: 설치배송은 제주·도서산간 불가)']
+  extra_fee bigint [not null, default: 0, note: '권역 추가 배송비']
+  extra_lead_days smallint [not null, default: 0, note: '권역 추가 소요일']
+
+  indexes {
+    (policy_id, zone_id) [pk]
+    zone_id [name: 'ix_policy_zone_zone']
+  }
+}
+
+Table delivery_zone [note: '배송 권역. 설치배송 가능 지역과 추가 배송비를 판단하는 단위'] {
+  zone_id bigint [pk, increment]
+  zone_code varchar(20) [not null, unique, note: 'METRO(수도권)/CHUNGCHEONG/GANGWON/HONAM/YEONGNAM/JEJU/ISLAND(도서산간)']
+  name_ko varchar(30) [not null]
+  sort_order smallint [not null]
+}
+
+Table delivery_zone_zipcode [note: '우편번호 범위 → 권역. 배송지 zipcode로 권역을 찾는다'] {
+  range_id bigint [pk, increment]
+  zone_id bigint [not null]
+  zip_from char(5) [not null]
+  zip_to char(5) [not null, note: 'CHECK zip_from <= zip_to. 범위가 겹치면 더 좁은 범위(도서산간)를 우선 적용']
+
+  indexes {
+    (zip_from, zip_to) [name: 'ix_zone_zipcode_range']
+    zone_id [name: 'ix_zone_zipcode_zone']
+  }
+}
+
+Table carry_default_spec [note: '주거형태별 반입 기본값. 고객이 현관문·엘리베이터 치수를 입력하지 않으면 이 값으로 반입 여부를 추정 (관리자가 데이터로 조정). 기본값으로만 통과하면 shipment.carry_check_status = NEEDS_CHECK → 출고 전 기사 확인'] {
+  building_type varchar(20) [pk, note: 'APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC (address.building_type과 같은 코드)']
+  has_elevator_default char(1) [not null, note: 'Y/N 이 유형의 일반적인 엘리베이터 유무 (빌라·주택은 N)']
+  entrance_door_width_mm int [not null, note: '표준 현관문 유효 폭']
+  elevator_door_width_mm int [note: '표준 엘리베이터 문 폭']
+  elevator_inner_depth_mm int [note: '표준 엘리베이터 내부 깊이']
+  elevator_inner_height_mm int [note: '표준 엘리베이터 내부 높이']
+  note varchar(300) [note: '근거·주의 (예: 2000년 이전 아파트는 엘리베이터가 작을 수 있음)']
+  updated_at datetime
+}
+
+// =====================================================================
+// 배송 - 배송 묶음/설치 일정
 // =====================================================================
 
 Table shipment [note: '배송 묶음. 같은 배송 정책이고 is_bundle_allowed = Y면 한 묶음, 아니면 상품마다 따로. 배송비 계산 결과와 설치배송 일정을 스냅샷으로 저장. orders.receive_together = Y면 모든 묶음의 출고를 가장 늦은 출고 가능일(또는 희망 수령일)에 맞춰 같은 날 도착하게 함'] {
@@ -1416,158 +1572,10 @@ Table install_slot [note: '설치배송 가능 일정 (권역 × 날짜 × 오�
 }
 
 // =====================================================================
-// 4단계: 주문 - 부가 서비스 (폐가구 수거, 조립)
+// 관계 (> 다대일, - 일대일). 자식(FK 컬럼) 테이블의 영역 기준
 // =====================================================================
 
-Table addon_service [note: '부가 서비스 마스터. 가구 배송 기사가 방문할 때 함께 하는 유료 서비스'] {
-  service_id bigint [pk, increment]
-  service_type varchar(20) [not null, note: 'DISPOSAL(폐가구 수거)/ASSEMBLY(조립 서비스)']
-  name varchar(50) [not null, unique, note: '예: 침대 수거, 소파 수거, 수납장 조립']
-  description varchar(500)
-  fee bigint [not null, note: '기본 금액 (1개당)']
-  is_active char(1) [not null, default: 'Y']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table product_addon_service [note: '상품별 제공 부가 서비스. ASSEMBLY는 product.assembly_type = SELF인 상품만, DISPOSAL은 기사가 방문하는 배송(FREIGHT·DIRECT_INSTALL)만 (앱 검증)'] {
-  product_id bigint [not null]
-  service_id bigint [not null]
-  fee_override bigint [note: '이 상품에서의 금액. NULL이면 addon_service.fee']
-
-  indexes {
-    (product_id, service_id) [pk]
-    service_id [name: 'ix_pas_service']
-  }
-}
-
-Table cart_item_addon [note: '장바구니 상품에 고른 부가 서비스'] {
-  cart_item_id bigint [not null]
-  service_id bigint [not null]
-  quantity smallint [not null, default: 1, note: 'CHECK 1 <= quantity <= cart_item.quantity (앱 검증). 예: 의자 4개 중 2개 수거']
-
-  indexes {
-    (cart_item_id, service_id) [pk]
-    service_id [name: 'ix_cart_item_addon_service']
-  }
-}
-
-Table order_item_addon [note: '주문 상품의 부가 서비스 (주문 시점 이름·금액 스냅샷). 주문 상품을 취소하면 함께 환불'] {
-  order_item_addon_id bigint [pk, increment]
-  order_item_id bigint [not null]
-  service_id bigint [not null]
-  service_name varchar(50) [not null, note: '스냅샷']
-  unit_fee bigint [not null, note: '스냅샷 (fee_override 또는 fee)']
-  quantity smallint [not null, note: 'CHECK quantity >= 1']
-  amount bigint [not null, note: 'unit_fee × quantity']
-
-  indexes {
-    (order_item_id, service_id) [unique, name: 'uk_order_item_addon']
-    service_id [name: 'ix_order_item_addon_service']
-  }
-}
-
-// =====================================================================
-// 2단계: 상품 - 반입 기본값 / 조립식 (부품, 조립 설명서)
-// =====================================================================
-
-Table carry_default_spec [note: '주거형태별 반입 기본값. 고객이 현관문·엘리베이터 치수를 입력하지 않으면 이 값으로 반입 여부를 추정 (관리자가 데이터로 조정). 기본값으로만 통과하면 shipment.carry_check_status = NEEDS_CHECK → 출고 전 기사 확인'] {
-  building_type varchar(20) [pk, note: 'APARTMENT/VILLA/HOUSE/OFFICETEL/COMMERCIAL/ETC (address.building_type과 같은 코드)']
-  has_elevator_default char(1) [not null, note: 'Y/N 이 유형의 일반적인 엘리베이터 유무 (빌라·주택은 N)']
-  entrance_door_width_mm int [not null, note: '표준 현관문 유효 폭']
-  elevator_door_width_mm int [note: '표준 엘리베이터 문 폭']
-  elevator_inner_depth_mm int [note: '표준 엘리베이터 내부 깊이']
-  elevator_inner_height_mm int [note: '표준 엘리베이터 내부 높이']
-  note varchar(300) [note: '근거·주의 (예: 2000년 이전 아파트는 엘리베이터가 작을 수 있음)']
-  updated_at datetime
-}
-
-Table product_part [note: '조립식 상품 부품 목록 (설명서 표기 기준). 누락·파손 부품 요청과 단품 구매의 기준'] {
-  part_id bigint [pk, increment]
-  product_id bigint [not null]
-  sku_id bigint [note: '옵션마다 다른 부품이면 그 SKU (예: 색상별 판재). NULL이면 모든 옵션 공통']
-  part_code varchar(30) [not null, note: '설명서 표기 (예: A, B, 볼트 M6×30)']
-  name varchar(100) [not null, note: '예: 측판(좌), 선반, 캠볼트']
-  quantity smallint [not null, note: '상품 1개에 들어가는 수량']
-  image_url varchar(500)
-  is_orderable char(1) [not null, default: 'Y', note: 'Y/N 단품 구매·요청 가능']
-  unit_price bigint [not null, default: 0, note: '추가 구매(PURCHASE) 단가']
-  sort_order smallint [not null]
-
-  indexes {
-    (product_id, part_code) [unique, name: 'uk_product_part']
-    sku_id [name: 'ix_product_part_sku']
-  }
-}
-
-Table assembly_step [note: '단계별 조립 설명서. 단계 순서대로 이미지·영상·설명을 보여 주고, 각 단계에서 쓰는 부품은 assembly_step_part'] {
-  step_id bigint [pk, increment]
-  product_id bigint [not null]
-  step_no smallint [not null, note: '1부터']
-  title varchar(100) [not null, note: '예: 측판과 바닥판 연결']
-  description text
-  image_url varchar(500)
-  video_url varchar(500)
-
-  indexes {
-    (product_id, step_no) [unique, name: 'uk_assembly_step']
-  }
-}
-
-Table assembly_step_part [note: '조립 단계에서 쓰는 부품 (설명서 화면의 부품 표시, 부품 요청 시 "몇 단계에서 쓰는 부품" 안내)'] {
-  step_id bigint [not null]
-  part_id bigint [not null]
-  quantity smallint [not null, default: 1]
-
-  indexes {
-    (step_id, part_id) [pk]
-    part_id [name: 'ix_asp_part']
-  }
-}
-
-// =====================================================================
-// 4단계: 주문 - 부품 요청 (누락·파손·추가 구매)
-// =====================================================================
-
-Table part_request [note: '조립식 상품 부품 요청. 누락(MISSING)·파손(DAMAGED)은 구매 확정 후 30일까지 무료 발송, 추가 구매(PURCHASE)는 is_orderable 부품만 유료 (결제 흐름은 다음 단계에서 정교화)'] {
-  request_id bigint [pk, increment]
-  member_id bigint [not null]
-  order_item_id bigint [not null, note: '부품이 필요한 구매 상품']
-  request_type varchar(20) [not null, note: 'MISSING/DAMAGED/PURCHASE']
-  status varchar(20) [not null, default: 'REQUESTED', note: 'REQUESTED/APPROVED/SHIPPED/REJECTED']
-  photo_url varchar(500) [note: '파손 사진 (DAMAGED는 필수, 앱 검증)']
-  amount bigint [not null, default: 0, note: 'PURCHASE만 SUM(part.unit_price × 수량), MISSING·DAMAGED는 0']
-  carrier_code varchar(20)
-  tracking_no varchar(50)
-  reject_reason varchar(500)
-  handled_by bigint [note: '처리 관리자']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
-  handled_at datetime
-  shipped_at datetime
-
-  indexes {
-    (member_id, created_at) [name: 'ix_part_request_member']
-    order_item_id [name: 'ix_part_request_item']
-    (status, created_at) [name: 'ix_part_request_status', note: '처리 대기 목록']
-    handled_by [name: 'ix_part_request_handled_by']
-  }
-}
-
-Table part_request_item [note: '요청한 부품과 수량'] {
-  request_id bigint [not null]
-  part_id bigint [not null]
-  quantity smallint [not null, note: 'CHECK quantity >= 1']
-
-  indexes {
-    (request_id, part_id) [pk]
-    part_id [name: 'ix_pri_part']
-  }
-}
-
-// =====================================================================
-// 관계 (> 다대일, - 일대일)
-// =====================================================================
-
-// 고객
+// 고객 - 회원 기본
 Ref: member_account.grade_id > member_grade.grade_id
 Ref: member_account.referred_by > member_account.member_id
 Ref: member_social.member_id > member_account.member_id
@@ -1575,36 +1583,37 @@ Ref: member_home.member_id - member_account.member_id
 Ref: member_home.address_id > address.address_id
 Ref: member_room.member_id > member_account.member_id
 Ref: address.member_id > member_account.member_id
+
+// 고객 - 약관/알림/취향
 Ref: member_terms_agreement.member_id > member_account.member_id
 Ref: member_terms_agreement.terms_id > terms.terms_id
 Ref: member_notification_setting.member_id > member_account.member_id
 Ref: member_style.member_id > member_account.member_id
 Ref: member_style.style_id > style.style_id
+
+// 고객 - 보안
 Ref: login_history.member_id > member_account.member_id
 Ref: member_token.member_id > member_account.member_id
 Ref: member_session.member_id > member_account.member_id
 Ref: password_history.member_id > member_account.member_id
 Ref: privacy_access_log.admin_id > member_account.member_id
 Ref: privacy_access_log.target_member_id > member_account.member_id
+
+// 고객 - 상태/닉네임/탈퇴 정책
 Ref: member_status_history.member_id > member_account.member_id
 Ref: member_status_history.changed_by > member_account.member_id
 Ref: member_status_history.report_id > report.report_id
 Ref: nickname_history.member_id > member_account.member_id
 Ref: forbidden_word.created_by > member_account.member_id
 
-// 상품
+// 상품 - 분류/브랜드
 Ref: category.parent_id > category.category_id
 Ref: category.notice_type_id > notice_type.notice_type_id
+
+// 상품 - 상품/옵션/SKU/포장/문의
 Ref: product.brand_id > brand.brand_id
 Ref: product.category_id > category.category_id
 Ref: product.shipping_policy_id > shipping_policy.policy_id
-Ref: product_notice.product_id - product.product_id
-Ref: product_notice.notice_type_id > notice_type.notice_type_id
-Ref: product_notice.updated_by > member_account.member_id
-Ref: notice_item.notice_type_id > notice_type.notice_type_id
-Ref: product_notice_value.product_id > product_notice.product_id
-Ref: product_notice_value.item_id > notice_item.item_id
-Ref: product_home_fit.product_id > product.product_id
 Ref: product_option_group.product_id > product.product_id
 Ref: product_option_value.option_group_id > product_option_group.option_group_id
 Ref: product_option_value.color_family_id > color_family.color_family_id
@@ -1618,28 +1627,32 @@ Ref: product_qna.product_id > product.product_id
 Ref: product_qna.sku_id > product_sku.sku_id
 Ref: product_qna.member_id > member_account.member_id
 Ref: product_qna.answered_by > member_account.member_id
+Ref: sku_package.sku_id > product_sku.sku_id
+Ref: product.created_by > member_account.member_id
+Ref: product.updated_by > member_account.member_id
+
+// 상품 - 정보제공고시 (품목별 항목)
+Ref: product_notice.product_id - product.product_id
+Ref: product_notice.notice_type_id > notice_type.notice_type_id
+Ref: product_notice.updated_by > member_account.member_id
+Ref: notice_item.notice_type_id > notice_type.notice_type_id
+Ref: product_notice_value.product_id > product_notice.product_id
+Ref: product_notice_value.item_id > notice_item.item_id
+
+// 상품 - 연결/추천/재고/알림
+Ref: product_home_fit.product_id > product.product_id
 Ref: stock_history.sku_id > product_sku.sku_id
 Ref: price_history.product_id > product.product_id
-Ref: sku_package.sku_id > product_sku.sku_id
-
-// 가구 배송
-Ref: delivery_zone_zipcode.zone_id > delivery_zone.zone_id
-Ref: shipping_policy_zone.policy_id > shipping_policy.policy_id
-Ref: shipping_policy_zone.zone_id > delivery_zone.zone_id
-
-// 고객 ↔ 상품
 Ref: product_style.product_id > product.product_id
 Ref: product_style.style_id > style.style_id
 Ref: member_brand_preference.member_id > member_account.member_id
 Ref: member_brand_preference.brand_id > brand.brand_id
-Ref: product.created_by > member_account.member_id
-Ref: product.updated_by > member_account.member_id
 Ref: stock_history.created_by > member_account.member_id
 Ref: price_history.changed_by > member_account.member_id
 Ref: restock_request.member_id > member_account.member_id
 Ref: restock_request.sku_id > product_sku.sku_id
 
-// 상품 검색 / 필터
+// 상품 - 검색/필터
 Ref: product_material.product_id > product.product_id
 Ref: product_material.material_id > material.material_id
 Ref: attribute.category_id > category.category_id
@@ -1648,18 +1661,27 @@ Ref: product_attribute_value.product_id > product.product_id
 Ref: product_attribute_value.value_id > attribute_value.value_id
 Ref: search_synonym.created_by > member_account.member_id
 
-// 상품 구성
+// 상품 - 구성/상태 이력
 Ref: product_relation.product_id > product.product_id
 Ref: product_relation.related_product_id > product.product_id
 Ref: product_relation.created_by > member_account.member_id
 Ref: product_set_item.set_product_id > product.product_id
 Ref: product_set_item.component_product_id > product.product_id
-
-// 상품 운영
 Ref: product_status_history.product_id > product.product_id
 Ref: product_status_history.changed_by > member_account.member_id
 
-// 커뮤니티 - 글
+// 상품 - 조립식 (부품/조립 설명서)
+Ref: product_part.product_id > product.product_id
+Ref: product_part.sku_id > product_sku.sku_id
+Ref: assembly_step.product_id > product.product_id
+Ref: assembly_step_part.step_id > assembly_step.step_id
+Ref: assembly_step_part.part_id > product_part.part_id
+
+// 상품 - 부가 서비스 (폐가구 수거/조립)
+Ref: product_addon_service.product_id > product.product_id
+Ref: product_addon_service.service_id > addon_service.service_id
+
+// 커뮤니티 - 글 (사진/집들이/매거진)
 Ref: post.member_id > member_account.member_id
 Ref: post.cover_image_id > post_image.image_id
 Ref: post_image.post_id > post.post_id
@@ -1670,8 +1692,9 @@ Ref: post_product_tag.image_id > post_image.image_id
 Ref: post_product_tag.product_id > product.product_id
 Ref: housewarming_detail.post_id - post.post_id
 Ref: magazine_detail.post_id - post.post_id
+Ref: post_product_tag.verified_order_item_id > order_item.order_item_id
 
-// 커뮤니티 - 분류 / 반응
+// 커뮤니티 - 분류/반응/스크랩
 Ref: post_style.post_id > post.post_id
 Ref: post_style.style_id > style.style_id
 Ref: post_comment.post_id > post.post_id
@@ -1684,7 +1707,7 @@ Ref: scrap.member_id > member_account.member_id
 Ref: scrap.post_id > post.post_id
 Ref: scrap.product_id > product.product_id
 
-// 커뮤니티 - 운영
+// 커뮤니티 - 신고/알림
 Ref: report.reporter_id > member_account.member_id
 Ref: report.post_id > post.post_id
 Ref: report.comment_id > post_comment.comment_id
@@ -1695,15 +1718,18 @@ Ref: notification.actor_id > member_account.member_id
 Ref: notification.post_id > post.post_id
 Ref: notification.comment_id > post_comment.comment_id
 Ref: notification.product_id > product.product_id
-Ref: post_product_tag.verified_order_item_id > order_item.order_item_id
 
-// 주문 - 장바구니
+// 장바구니 - 장바구니/부가 서비스 선택
 Ref: cart_item.member_id > member_account.member_id
 Ref: cart_item.sku_id > product_sku.sku_id
 Ref: cart_item.set_product_id > product.product_id
 Ref: cart_item.room_id > member_room.room_id
 Ref: cart_item.source_post_id > post.post_id
 Ref: cart_item.plan_id > interior_plan.plan_id
+Ref: cart_item_addon.cart_item_id > cart_item.cart_item_id
+Ref: cart_item_addon.service_id > addon_service.service_id
+
+// 장바구니 - 인테리어 플랜
 Ref: interior_plan.member_id > member_account.member_id
 Ref: interior_plan.room_id > member_room.room_id
 Ref: interior_plan.style_id > style.style_id
@@ -1712,7 +1738,7 @@ Ref: interior_plan_item.product_id > product.product_id
 Ref: interior_plan_item.sku_id > product_sku.sku_id
 Ref: interior_plan_item.source_post_id > post.post_id
 
-// 주문 - 주문 / 주문 상품
+// 주문 - 주문/주문 상품
 Ref: orders.member_id > member_account.member_id
 Ref: orders.grade_id > member_grade.grade_id
 Ref: order_address.order_id - orders.order_id
@@ -1726,8 +1752,17 @@ Ref: order_item.payment_cancel_id > payment_cancel.cancel_id
 Ref: order_item.source_post_id > post.post_id
 Ref: order_item_status_history.order_item_id > order_item.order_item_id
 Ref: order_item_status_history.changed_by > member_account.member_id
+Ref: order_item_addon.order_item_id > order_item.order_item_id
+Ref: order_item_addon.service_id > addon_service.service_id
 
-// 주문 - 결제
+// 주문 - 부품 요청 (누락/파손/추가 구매)
+Ref: part_request.member_id > member_account.member_id
+Ref: part_request.order_item_id > order_item.order_item_id
+Ref: part_request.handled_by > member_account.member_id
+Ref: part_request_item.request_id > part_request.request_id
+Ref: part_request_item.part_id > product_part.part_id
+
+// 결제 - 결제/환불/현금영수증
 Ref: payment.order_id > orders.order_id
 Ref: payment_cancel.payment_id > payment.payment_id
 Ref: payment_cancel.requested_by > member_account.member_id
@@ -1735,33 +1770,16 @@ Ref: cash_receipt.payment_id > payment.payment_id
 Ref: cash_receipt.payment_cancel_id > payment_cancel.cancel_id
 Ref: cash_receipt.original_receipt_id > cash_receipt.receipt_id
 
-// 주문 - 배송
+// 배송 - 배송 정책/권역/반입 기본값
+Ref: delivery_zone_zipcode.zone_id > delivery_zone.zone_id
+Ref: shipping_policy_zone.policy_id > shipping_policy.policy_id
+Ref: shipping_policy_zone.zone_id > delivery_zone.zone_id
+
+// 배송 - 배송 묶음/설치 일정
 Ref: shipment.order_id > orders.order_id
 Ref: shipment.shipping_policy_id > shipping_policy.policy_id
 Ref: shipment.install_slot_id > install_slot.slot_id
 Ref: install_slot.zone_id > delivery_zone.zone_id
-
-// 주문 - 부가 서비스
-Ref: product_addon_service.product_id > product.product_id
-Ref: product_addon_service.service_id > addon_service.service_id
-Ref: cart_item_addon.cart_item_id > cart_item.cart_item_id
-Ref: cart_item_addon.service_id > addon_service.service_id
-Ref: order_item_addon.order_item_id > order_item.order_item_id
-Ref: order_item_addon.service_id > addon_service.service_id
-
-// 상품 - 조립식
-Ref: product_part.product_id > product.product_id
-Ref: product_part.sku_id > product_sku.sku_id
-Ref: assembly_step.product_id > product.product_id
-Ref: assembly_step_part.step_id > assembly_step.step_id
-Ref: assembly_step_part.part_id > product_part.part_id
-
-// 주문 - 부품 요청
-Ref: part_request.member_id > member_account.member_id
-Ref: part_request.order_item_id > order_item.order_item_id
-Ref: part_request.handled_by > member_account.member_id
-Ref: part_request_item.request_id > part_request.request_id
-Ref: part_request_item.part_id > product_part.part_id
 
 // =====================================================================
 // 화면 그룹 (dbdiagram에서 영역별로 묶여 보임)
@@ -1804,12 +1822,13 @@ TableGroup product_classification [note: '상품 - 분류/브랜드'] {
   category
 }
 
-TableGroup product_core [note: '상품 - 상품/옵션/SKU/문의'] {
+TableGroup product_core [note: '상품 - 상품/옵션/SKU/포장/문의'] {
   product
   product_option_group
   product_option_value
   product_sku
   product_sku_option
+  sku_package
   product_image
   product_qna
 }
@@ -1819,15 +1838,6 @@ TableGroup product_notice_info [note: '상품 - 정보제공고시 (품목별 �
   notice_item
   product_notice
   product_notice_value
-}
-
-TableGroup product_delivery [note: '상품 - 가구 배송/포장/반입 기본값'] {
-  carry_default_spec
-  shipping_policy
-  delivery_zone
-  delivery_zone_zipcode
-  shipping_policy_zone
-  sku_package
 }
 
 TableGroup product_link_history [note: '상품 - 연결/추천/재고/알림'] {
@@ -1855,6 +1865,17 @@ TableGroup product_composition_operation [note: '상품 - 구성/상태 이력']
   product_status_history
 }
 
+TableGroup product_assembly [note: '상품 - 조립식 (부품/조립 설명서)'] {
+  product_part
+  assembly_step
+  assembly_step_part
+}
+
+TableGroup product_addon [note: '상품 - 부가 서비스 (폐가구 수거/조립)'] {
+  addon_service
+  product_addon_service
+}
+
 TableGroup community_post [note: '커뮤니티 - 글 (사진/집들이/매거진)'] {
   post
   post_image
@@ -1876,8 +1897,12 @@ TableGroup community_operation [note: '커뮤니티 - 신고/알림'] {
   notification
 }
 
-TableGroup order_cart [note: '주문 - 장바구니/인테리어 플랜'] {
+TableGroup cart_core [note: '장바구니 - 장바구니/부가 서비스 선택'] {
   cart_item
+  cart_item_addon
+}
+
+TableGroup cart_plan [note: '장바구니 - 인테리어 플랜'] {
   interior_plan
   interior_plan_item
 }
@@ -1887,33 +1912,29 @@ TableGroup order_core [note: '주문 - 주문/주문 상품'] {
   order_address
   order_item
   order_item_status_history
-}
-
-TableGroup order_payment [note: '주문 - 결제/환불/현금영수증'] {
-  payment
-  payment_cancel
-  cash_receipt
-}
-
-TableGroup order_delivery [note: '주문 - 배송 묶음/설치 일정'] {
-  shipment
-  install_slot
-}
-
-TableGroup order_addon [note: '주문 - 부가 서비스 (폐가구 수거/조립)'] {
-  addon_service
-  product_addon_service
-  cart_item_addon
   order_item_addon
-}
-
-TableGroup product_assembly [note: '상품 - 조립식 (부품/조립 설명서)'] {
-  product_part
-  assembly_step
-  assembly_step_part
 }
 
 TableGroup order_part [note: '주문 - 부품 요청 (누락/파손/추가 구매)'] {
   part_request
   part_request_item
+}
+
+TableGroup payment_core [note: '결제 - 결제/환불/현금영수증'] {
+  payment
+  payment_cancel
+  cash_receipt
+}
+
+TableGroup delivery_policy [note: '배송 - 배송 정책/권역/반입 기본값'] {
+  shipping_policy
+  shipping_policy_zone
+  delivery_zone
+  delivery_zone_zipcode
+  carry_default_spec
+}
+
+TableGroup delivery_shipment [note: '배송 - 배송 묶음/설치 일정'] {
+  shipment
+  install_slot
 }

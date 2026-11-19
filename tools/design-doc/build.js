@@ -5,7 +5,7 @@
 // Chrome 경로가 다르면 환경변수 CHROME_PATH로 지정
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, mm, fig, load, initViz, erSvg, head, mermaidInit, renderPdf, groupDesc } = require('./lib');
+const { ROOT, esc, noteOf, mm, fig, load, initViz, erSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const outPdf = process.argv[3] || path.join(ROOT, 'docs', 'DB_설계서.pdf');
@@ -16,14 +16,14 @@ const { S, tableMap, groups, groupOf, refs, fk, compositePk } = ctx;
 // ---------- 전체 구조도 (HTML 카드 + 영역 간 연결 표) ----------
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 function overview() {
-  const stages = [['member', '1단계 고객', 's1'], ['product', '2단계 상품', 's2'], ['community', '3단계 커뮤니티', 's3'], ['order', '4단계 주문', 's4']];
-  const cols = stages.map(([p, name, cls]) => {
-    const gs = groups.filter((g) => g.name.startsWith(p));
+  const cols = AREAS.map(({ prefix: p, name }, i) => {
+    const cls = `s${i + 1}`;
+    const gs = groups.filter((g) => areaOf(g.name).prefix === p);
     const n = gs.reduce((a, g) => a + g.tables.length, 0);
     return `<div class="ov-col ${cls}"><div class="ov-head">${name}<span>${n}개</span></div>
       ${gs.map((g) => `<div class="ov-card"><b>${esc(gTitle(g))}</b><div class="chips">${g.tables.map((t) => `<span>${t.name}</span>`).join('')}</div></div>`).join('')}
     </div>`;
-  }).join('<div class="ov-arrow">⇄</div>');
+  }).join('');
   const agg = {};
   refs.forEach((r) => {
     const a = groupOf[r.child], b = groupOf[r.parent];
@@ -36,7 +36,7 @@ function overview() {
     const [a, b] = k.split('|');
     return `<tr><td>${esc(noteOf(gByName[a].note))}</td><td class="arr">→</td><td>${esc(noteOf(gByName[b].note))}</td><td class="mono">${[...set].join('<br>')}</td></tr>`;
   }).join('');
-  return `<div class="ov">${cols}</div>
+  return `<div class="ov areas">${cols}</div>
     <h3>영역 간 연결</h3>
     <table class="ov-links"><tr><th>참조하는 영역</th><th></th><th>참조되는 영역</th><th>FK</th></tr>${rows}</table>`;
 }
@@ -79,10 +79,10 @@ function erSection(g) {
   return `<section class="erd-page">
     <h3>ERD · ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
     <p class="gdesc">${groupDesc[g.name] || ''}</p>
-    ${fig('ERD', svg, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 8장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
+    ${fig('ERD', svg, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 11장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
   </section>`;
 }
-const erOf = (prefix) => groups.filter((g) => g.name.startsWith(prefix)).map(erSection).join('');
+const erOf = (prefix) => groups.filter((g) => areaOf(g.name).prefix === prefix).map(erSection).join('');
 
 const D = require('./diagrams');
 
@@ -143,12 +143,12 @@ const tagMock = `
 let no = 0;
 const specHtml = groups.map((g, gi) => `
   <div class="spec-group">
-    <h3>7.${gi + 1} ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
+    <h3>11.${gi + 1} ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
     ${g.tables.map((x) => tableHtml(tableMap[x.name], ++no)).join('')}
   </div>`).join('');
 
 const relRows = refs.map((r) => `<tr><td>${r.child}.${r.ccol}</td><td class="c">${r.oneToOne ? '1 : 1' : 'N : 1'}</td><td>${r.parent}.${r.pcol}</td></tr>`).join('');
-const stageCount = (p) => groups.filter((g) => g.name.startsWith(p)).reduce((a, g) => a + g.tables.length, 0);
+const stageCount = (p) => groups.filter((g) => areaOf(g.name).prefix === p).reduce((a, g) => a + g.tables.length, 0);
 
 const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
 
@@ -163,11 +163,8 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <div><b>${refs.length}</b><span>관계 (FK)</span></div>
     <div><b>${groups.length}</b><span>영역</span></div>
   </div>
-  <div class="stage-cards">
-    <div class="sc s1"><b>1단계 고객</b><span>${stageCount('member')}개</span><p>회원 · 프로필 · 주거정보 · 약관 · 보안 · 상태</p></div>
-    <div class="sc s2"><b>2단계 상품</b><span>${stageCount('product')}개</span><p>옵션 · SKU · 가구 배송 · 재고 · 필터</p></div>
-    <div class="sc s3"><b>3단계 커뮤니티</b><span>${stageCount('community')}개</span><p>고객 집사진 · 집들이 · 브랜드 매거진</p></div>
-    <div class="sc s4"><b>4단계 주문</b><span>${stageCount('order')}개</span><p>장바구니 · 주문 · 결제 · 배송 · 설치 일정</p></div>
+  <div class="stage-cards areas">
+    ${AREAS.map((a, i) => `<div class="sc s${i + 1}"><b>${a.name}</b><span>${stageCount(a.prefix)}개</span><p>${a.desc}</p></div>`).join('')}
   </div>
   <div class="points">
     <div><b>사진 속 상품 태그</b><p>커뮤니티 사진의 % 좌표에 스토어 상품을 연결해 바로 구매로 이어지게 한다.</p></div>
@@ -189,10 +186,13 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
   <ol>
     <li>개요와 전체 구조</li>
     <li>공통 설계 원칙</li>
-    <li>1단계 고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
-    <li>2단계 상품 — 옵션/SKU · 재고 · 상태 흐름 · 가구 배송비 · 조립식(부품 · 조립 설명서) · ERD</li>
-    <li>3단계 커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
-    <li>4단계 주문 — 장바구니 진단 · 반입 판단 · 주문 흐름 · 주문 상품 상태 · 설치 일정 예약 · 부분 취소 · 가상계좌 · 현금영수증 · 부가 서비스 · 부품 요청 · ERD</li>
+    <li>고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
+    <li>상품 — 옵션/SKU · 재고 · 상태 흐름 · 정보제공고시 · 조립식(부품 · 조립 설명서) · 부가 서비스 · ERD</li>
+    <li>커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
+    <li>장바구니 — 장바구니 진단 · 인테리어 플랜 · 비회원 장바구니 · 가격 인하 알림 · ERD</li>
+    <li>주문 — 주문 흐름 · 주문 상품 상태 · 스냅샷 · 할인 안분 · 부분 취소 · 부품 요청 · ERD</li>
+    <li>결제 — 결제수단 · 가상계좌 · 현금영수증 · 에스크로 · ERD</li>
+    <li>배송 — 가구 배송비 계산 · 반입 판단 · 배송 묶음 · 설치 일정 예약 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
     <li>관계(FK) 전체 목록</li>
@@ -202,7 +202,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
   <ul>
     <li>포트폴리오용 인테리어 가구몰 DB이며, 실서비스 수준을 목표로 설계했다.</li>
     <li>오늘의집처럼 <b>스토어</b>와 <b>커뮤니티(글쓰기)</b>를 함께 운영한다. 커뮤니티 사진 속 상품을 태그해서 스토어 구매로 연결하는 것이 핵심이다.</li>
-    <li>판매 방식은 <b>자사 직접 판매</b>다. 주문·리뷰 등 다음 단계 테이블은 이번 범위에 없다.</li>
+    <li>판매 방식은 <b>자사 직접 판매</b>다. 구매 리뷰 · 쿠폰 · 포인트 · 반품/교환 등 다음 단계 테이블은 이번 범위에 없다.</li>
   </ul>
   <h3>전체 구조</h3>${overview()}<p class="small">member_account(회원 기본)는 작성자·관리자로 거의 모든 영역이 참조하므로 연결 표에서 생략했다.</p>
 </section>
@@ -228,7 +228,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
 </section>
 
 <section class="page">
-  <h2>3. 1단계 고객</h2>
+  <h2>3. 고객</h2>
   <h3>보안 저장 방식</h3>
   <table class="rules">
     <tr><th>대상</th><th>저장 방식</th></tr>
@@ -249,14 +249,14 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
 ${erOf('member')}
 
 <section class="page">
-  <h2>4. 2단계 상품</h2>
+  <h2>4. 상품</h2>
   ${fig('옵션 → SKU 구조 (예시)', mm(D.option), '옵션 축이 상품마다 다른 가구에 맞춘 구조. 조합 중복은 option_key(값 ID 오름차순) UNIQUE로 방지')}
   ${fig('재고 흐름과 재입고 알림', mm(D.stock), '모든 변경을 원장에 기록하고, 재고가 0에서 양수가 되면 재입고 알림 신청자에게 발송. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않음')}
   ${fig('상품 상태 흐름', mm(D.pstatus), '품절 기준은 SKU 재고 하나로 통일 — 시스템 변경은 changed_by NULL로 product_status_history에 기록')}
 </section>
 <section class="page">
-  ${fig('가구 배송비 계산 흐름', mm(D.shipfee), '배송지(1단계 address)의 우편번호 · 층수 · 엘리베이터와 상품 배송 정책으로 배송 가능 여부 · 비용 · 출고 예정일을 계산')}
-  <div class="callout"><b>가구 배송</b> — shipping_policy: 일반택배 / 화물택배 / 업체 직접 설치배송, 기본 · 무료조건 · 반품 · 교환 비용, 사다리차 · 계단 운반비, 출고 소요일, 오늘출발 마감 시각. 지역 차이는 delivery_zone(권역)과 shipping_policy_zone(권역별 가능 여부 · 추가비 · 추가 소요일)으로 처리한다. sku_package는 SKU 하나가 여러 박스로 나가는 가구의 박스별 크기 · 무게를 저장해 화물 운임과 배송 차량 판단에 쓴다. 상품에는 조립 방식(완제품 / 자가조립 / 기사 설치)과 판매 방식(일반 / 예약 / 주문제작)을 둔다.</div>
+  <div class="callout"><b>가구 상품 정보</b> — sku_package는 SKU 하나가 여러 박스로 나가는 가구의 박스별 크기 · 무게를 저장해 화물 운임 · 배송 차량 · 반입 판단에 쓴다. 상품에는 배송 정책(product.shipping_policy_id → 배송 영역), 조립 방식(완제품 / 자가조립 / 기사 설치), 판매 방식(일반 / 예약 / 주문제작)을 둔다.</div>
+  <div class="callout"><b>부가 서비스 마스터</b> — 폐가구 수거(DISPOSAL)와 조립 서비스(ASSEMBLY)는 addon_service 마스터와 상품별 제공 여부(product_addon_service, 상품별 금액 가능)로 관리한다. 조립은 자가조립 상품만, 수거는 기사가 방문하는 배송만 제공한다. 고객이 고른 서비스는 장바구니(cart_item_addon) → 주문(order_item_addon)으로 이어진다.</div>
   <div class="callout"><b>상품정보제공고시 (품목별 항목)</b> — 가구 · 침구 · 주방용품 · 가전은 법정 표시 항목이 다르다. 항목을 컬럼으로 두면 품목이 늘 때마다 테이블을 바꿔야 하므로 notice_type(품목 유형) → notice_item(항목 마스터) → product_notice_value(상품별 값) 행 구조로 저장한다. 카테고리에 기본 유형을 두어 등록 화면에서 항목이 자동으로 나오고, 필수 항목이 모두 채워져야 판매 시작(ON_SALE)할 수 있다.
     <table class="mini"><tr><th>유형</th><th>항목 예시</th></tr>
       <tr><td>FURNITURE 가구</td><td>KC 인증 · 색상 · 구성품 · 주요 소재 · 제조자 · 제조국 · 크기 · 배송·설치비용 · 품질보증기준 · A/S 책임자</td></tr>
@@ -270,7 +270,7 @@ ${erOf('member')}
 ${erOf('product')}
 
 <section class="page">
-  <h2>5. 3단계 커뮤니티 (글쓰기)</h2>
+  <h2>5. 커뮤니티 (글쓰기)</h2>
   ${fig('글 구조 — 공통 post + 유형별 상세', mm(D.post), '반응 테이블은 post 하나에만 연결되므로 글 유형이 늘어도 바뀌지 않는다')}
   ${fig('글 상태 흐름', mm(D.poststatus), '신고 누적은 report_count 캐시로 자동 BLINDED')}
 </section>
@@ -287,48 +287,64 @@ ${erOf('product')}
 ${erOf('community')}
 
 <section class="page">
-  <h2>6. 4단계 주문 (장바구니 · 주문 · 결제 · 배송)</h2>
+  <h2>6. 장바구니</h2>
   ${fig('장바구니 진단 — 저장하지 않고 기존 데이터로 계산', mm(D.cartcheck), '방 치수 · 반입 경로 · 포장 박스 · 배송 정책 · 연관 상품을 조합해 주문 전에 문제를 알려 준다')}
   ${fig('인테리어 플랜 — interior_plan · interior_plan_item', mm(D.plan), '가구는 바로 사지 않고 후보를 모아 비교하다가 한꺼번에 산다. 방 · 스타일 · 예산을 정한 보드에서 확정한 상품을 장바구니로 옮긴다')}
   <div class="callout"><b>인테리어 플랜</b> — interior_plan은 꾸밀 방(member_room) · 목표 스타일(style) · 예산을 가진 보드다. 같은 자리의 후보(예: 소파 3개)를 CANDIDATE로 담아 비교하고 하나를 CHOSEN으로 확정한다. 합계 · 예산 대비 · 방 치수 확인은 저장하지 않고 계산하며, 공유 링크(share_token_hash, 보기 전용)로 가족과 함께 고른다. "장바구니로 담기"는 확정 항목을 cart_item으로 옮기고 plan_id · room_id · source_post_id를 남겨 플랜과 집들이의 구매 전환을 추적한다.</div>
   <div class="callout"><b>비회원 장바구니 · 가격 인하 알림</b> — 비회원은 쿠키 토큰의 해시(guest_token_hash)로 담고, 로그인하면 회원 장바구니로 합친다(같은 SKU는 수량 합산, 담은 가격은 더 낮은 값). 주문은 회원만 할 수 있다. 담은 시점 단가(added_price)로 "담은 뒤 내렸어요"를 보여 주고, 가격이 바뀌면 그 SKU를 담은 회원에게 PRICE_DROP 알림(광고성: 설정 ON + 채널 마케팅 동의 + 야간 동의)을 보낸 뒤 price_alert_price로 같은 가격 중복 발송을 막는다. 상품별 담긴 수는 product.cart_count 캐시로 둔다.</div>
   <div class="callout"><b>가구몰 장바구니</b> — 담을 때 놓을 방(cart_item.room_id)을 고르면 방별 합계와 바닥 면적 점유율, 방문 통과 여부를 보여 주고, 주문하면 방 이름이 설치 위치(order_item.room_name)로 기사에게 전달된다. 집들이 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담으면 유입 글(source_post_id)이 주문 상품까지 이어져, 구매 확정 시 post.purchase_count(작성자 본인 구매 제외)로 "구매로 이어진 집들이"를 보여 준다. 출고일이 다른 가구는 이사일에 한 번에 받기(orders.receive_together, 희망 수령일 기본값 = 이사 예정일)로 같은 날 도착하게 맞춘다.</div>
-  <div class="callout"><b>부가 서비스</b> — 폐가구 수거(DISPOSAL)와 조립 서비스(ASSEMBLY)는 addon_service 마스터와 상품별 제공 여부(product_addon_service, 상품별 금액 가능)로 관리한다. 조립은 자가조립 상품만, 수거는 기사가 방문하는 배송만 고를 수 있다. 주문하면 order_item_addon에 이름 · 금액을 복사하고, 부가 서비스 금액은 할인과 무료배송 기준에서 빼며 상품을 취소하면 함께 환불한다(final_amount에 포함).</div>
+  <div class="callout"><b>부가 서비스 선택</b> — 장바구니에서 상품별로 폐가구 수거 · 조립 서비스를 고르면 cart_item_addon에 담긴다(조립은 자가조립 상품만, 수거는 기사가 방문하는 배송만). 주문하면 order_item_addon에 이름 · 금액을 복사하고, 부가 서비스 금액은 할인과 무료배송 기준에서 빼며 상품을 취소하면 함께 환불한다(final_amount에 포함).</div>
 </section>
+${erOf('cart')}
+
 <section class="page">
+  <h2>7. 주문</h2>
   ${fig('주문 흐름', mm(D.orderflow), '재고는 주문 생성 시 차감하고, 30분 안에 결제되지 않으면 배치로 재고 · 설치 슬롯을 되돌린다. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않는다')}
   ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후 반품 · 교환은 다음 단계(클레임)')}
 </section>
 <section class="page">
-  ${fig('설치배송 일정 예약 — install_slot', mm(D.install), '권역 × 날짜 × 오전/오후 슬롯에 하루 가능 건수(capacity)를 두고, 재고 차감과 같은 조건부 UPDATE로 초과 예약을 막는다')}
   <div class="callout"><b>스냅샷</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수 · 사다리차 진입)는 order_address에, 배송비 내역(기본 · 권역 · 사다리차 · 계단)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다.</div>
   <div class="callout"><b>할인 안분과 부분 취소</b> — 등급 할인(다음 단계의 쿠폰 · 포인트 포함)은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다.</div>
-  ${fig('반입 판단 — shipment.carry_check_status', mm(D.carry), '고객은 주거형태만 고르고, 치수를 모르면 기본값으로 추정한 뒤 애매하면 출고 전에 기사가 확인한다')}
-  <div class="callout"><b>반입 판단</b> — 대부분의 고객은 현관문 · 엘리베이터 치수를 모르므로 입력을 요구하지 않는다. 택배로 가는 조립식 · 소형 상품은 판단하지 않고(NOT_REQUIRED), 화물 · 설치배송만 판단한다. 치수는 고객이 입력한 값이 있으면 그 값을, 없으면 주거형태(address.building_type)의 기본값(carry_default_spec)을 쓴다. 기본값으로만 통과하거나 여유가 작으면 NEEDS_CHECK로 두고 출고 전 기사가 전화로 확인해 반입 방법(엘리베이터 · 계단 · 사다리차)을 확정한다. 현장 반입 실패는 회사 판단 오류면 무료 반품으로 처리한다.</div>
-  <div class="callout"><b>배송 묶음</b> — 같은 배송 정책이고 묶음배송이 허용되면(is_bundle_allowed = Y) 한 shipment로 묶고, 아니면 상품마다 따로 만든다. 택배 · 화물은 송장으로, 설치배송은 희망일 → 확정일 → 기사 배정으로 진행한다. 배송 완료 7일 후 구매 확정되면 product.sales_count와 회원 누적 구매액을 갱신한다.</div>
+  <div class="callout"><b>부품 요청</b> — 구매한 조립식 상품의 누락 · 파손 부품은 주문 상품(order_item) 기준으로 part_request를 남기고, 요청 부품은 part_request_item에 담는다. 부품 목록과 조립 설명서는 상품 영역(product_part · assembly_step)에 있다(4장 조립식 부품 요청 흐름 참고).</div>
 </section>
+${erOf('order')}
+
 <section class="page">
+  <h2>8. 결제</h2>
   ${fig('가상계좌 · 현금영수증 — payment · cash_receipt', mm(D.vbank), '가상계좌는 입금 기한까지 재고를 잡아 두고, 입금이 확인되면 현금영수증을 발급한다')}
   <div class="callout"><b>결제수단</b> — 카드 · 간편결제 · 실시간 계좌이체(TRANSFER)는 결제창에서 바로 승인되고, 가상계좌(VIRTUAL_ACCOUNT)는 주문 전용 1회 계좌를 발급한 뒤 입금 통보(웹훅)로 PAID가 된다. 가상계좌는 PG가 원 결제수단으로 되돌려 줄 수 없어서 취소할 때 환불 계좌(payment_cancel.refund_*, 계좌번호 암호화 · 환불 후 파기)를 받는다.</div>
   <div class="callout"><b>현금영수증</b> — 현금성 결제(계좌이체 · 가상계좌)는 cash_receipt에 발급 · 취소를 행으로 남긴다. 가구 소매업은 현금영수증 의무발행업종이라 요청이 없어도 10만 원 이상이면 자진 발급(SELF_ISSUED)한다. 부분 취소하면 원 발급을 CANCEL하고 남은 금액으로 다시 ISSUE한다(original_receipt_id · payment_cancel_id로 연결). 실패 건은 배치로 재시도한다.</div>
   <div class="callout"><b>에스크로</b> — 현금성 결제는 고객이 에스크로(구매안전서비스)를 고를 수 있다(payment.is_escrow). 에스크로 결제는 출고 시 PG에 송장을 등록해야 정산 · 구매 확정이 진행되므로 shipment.escrow_registered_at에 등록 시각을 남긴다.</div>
 </section>
-${erOf('order')}
+${erOf('payment')}
 
 <section class="page">
-  <h2>7. 표 읽는 법</h2>
+  <h2>9. 배송</h2>
+  ${fig('가구 배송비 계산 흐름', mm(D.shipfee), '배송지(고객 영역 address)의 우편번호 · 층수 · 엘리베이터와 상품 배송 정책으로 배송 가능 여부 · 비용 · 출고 예정일을 계산')}
+  <div class="callout"><b>가구 배송</b> — shipping_policy: 일반택배 / 화물택배 / 업체 직접 설치배송, 기본 · 무료조건 · 반품 · 교환 비용, 사다리차 · 계단 운반비, 출고 소요일, 오늘출발 마감 시각. 지역 차이는 delivery_zone(권역)과 shipping_policy_zone(권역별 가능 여부 · 추가비 · 추가 소요일)으로 처리한다. 상품마다 배송 정책을 고르고(product.shipping_policy_id), 박스 크기 · 무게는 상품 영역의 sku_package를 쓴다.</div>
+  ${fig('반입 판단 — shipment.carry_check_status', mm(D.carry), '고객은 주거형태만 고르고, 치수를 모르면 기본값으로 추정한 뒤 애매하면 출고 전에 기사가 확인한다')}
+  <div class="callout"><b>반입 판단</b> — 대부분의 고객은 현관문 · 엘리베이터 치수를 모르므로 입력을 요구하지 않는다. 택배로 가는 조립식 · 소형 상품은 판단하지 않고(NOT_REQUIRED), 화물 · 설치배송만 판단한다. 치수는 고객이 입력한 값이 있으면 그 값을, 없으면 주거형태(address.building_type)의 기본값(carry_default_spec)을 쓴다. 기본값으로만 통과하거나 여유가 작으면 NEEDS_CHECK로 두고 출고 전 기사가 전화로 확인해 반입 방법(엘리베이터 · 계단 · 사다리차)을 확정한다. 현장 반입 실패는 회사 판단 오류면 무료 반품으로 처리한다.</div>
+</section>
+<section class="page">
+  ${fig('설치배송 일정 예약 — install_slot', mm(D.install), '권역 × 날짜 × 오전/오후 슬롯에 하루 가능 건수(capacity)를 두고, 재고 차감과 같은 조건부 UPDATE로 초과 예약을 막는다')}
+  <div class="callout"><b>배송 묶음</b> — 같은 배송 정책이고 묶음배송이 허용되면(is_bundle_allowed = Y) 한 shipment로 묶고, 아니면 상품마다 따로 만든다. 택배 · 화물은 송장으로, 설치배송은 희망일 → 확정일 → 기사 배정으로 진행한다. 배송 완료 7일 후 구매 확정되면 product.sales_count와 회원 누적 구매액을 갱신한다.</div>
+</section>
+${erOf('delivery')}
+
+<section class="page">
+  <h2>10. 표 읽는 법</h2>
   <ul>
     <li><span class="k pk">PK</span> 기본키 · <span class="k fk">FK</span> 외래키 (→ 참조 대상) · <span class="k uk">UK</span> 단일 컬럼 UNIQUE · NN = NOT NULL</li>
     <li>ERD 관계선: 부모의 PK 칸에서 자식의 FK 칸으로 이어진다. 끝 모양은 까마귀발 = N(여럿), 세로줄 = 1, 원 = 0 허용(선택). 부모 쪽 원은 FK가 NULL 가능하다는 뜻</li>
     <li>ERD의 회색 테이블은 다른 영역 테이블(PK만 표시), "+ N columns"는 생략된 일반 컬럼 수</li>
     <li>복합 UNIQUE, 함수 기반 인덱스, 일반 인덱스는 각 표 아래에 적었다.</li>
   </ul>
-  <h2>8. 테이블 명세</h2>
+  <h2>11. 테이블 명세</h2>
   ${specHtml}
 </section>
 
 <section class="page">
-  <h2>9. 관계(FK) 전체 목록 <small>${refs.length}개</small></h2>
+  <h2>12. 관계(FK) 전체 목록 <small>${refs.length}개</small></h2>
   <table class="rel"><thead><tr><th>FK 컬럼 (자식)</th><th>관계</th><th>참조 (부모)</th></tr></thead><tbody>${relRows}</tbody></table>
 </section>
 
