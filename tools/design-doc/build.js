@@ -82,7 +82,7 @@ function erSection(g) {
   return `<section class="erd-page">
     <h3>ERD · ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
     <p class="gdesc">${groupDesc[g.name] || ''}</p>
-    ${fig('ERD', svg, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 11장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
+    ${fig('ERD', svg, `키 컬럼(PK·FK·UK)만 표시, 전체 컬럼은 12장 명세 참고${ext.length ? ` · 다른 영역 테이블(PK만 표시): ${ext.join(', ')}` : ''}${g.name.startsWith('member') ? '' : ' · 관리자 감사 컬럼(created_by 등) → member_account 선은 생략'}`)}
   </section>`;
 }
 const erOf = (prefix) => groups.filter((g) => areaOf(g.name).prefix === prefix).map(erSection).join('');
@@ -146,7 +146,7 @@ const tagMock = `
 let no = 0;
 const specHtml = groups.map((g, gi) => `
   <div class="spec-group">
-    <h3>11.${gi + 1} ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
+    <h3>12.${gi + 1} ${esc(noteOf(g.note))} <small>${g.tables.length}개</small></h3>
     ${g.tables.map((x) => tableHtml(tableMap[x.name], ++no)).join('')}
   </div>`).join('');
 
@@ -179,7 +179,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <tr><th>DBMS</th><td>MySQL 8.0.16 이상 · InnoDB · utf8mb4</td></tr>
     <tr><th>판매 방식</th><td>자사 직접 판매 (입점 판매자 · 정산 없음)</td></tr>
     <tr><th>원본</th><td>docs/erd.dbml (dbdiagram.io)</td></tr>
-    <tr><th>다음 단계</th><td>구매 리뷰 · 쿠폰 · 포인트 · 반품/교환 (대기)</td></tr>
+    <tr><th>다음 단계</th><td>구매 리뷰 · 포인트 · 반품/교환 (대기)</td></tr>
     <tr><th>작성일</th><td>2026-11-18</td></tr>
   </table>
 </section>
@@ -196,6 +196,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>주문 — 주문 흐름 · 주문 상품 상태 · 스냅샷 · 할인 안분 · 부분 취소 · 부품 요청 · ERD</li>
     <li>결제 — 결제수단 · 가상계좌 · 현금영수증 · 에스크로 · ERD</li>
     <li>배송 — 가구 배송비 계산 · 반입 판단 · 배송 묶음 · 설치 일정 예약 · ERD</li>
+    <li>혜택 — 쿠폰 종류와 중복 사용 · 발급 방식(커뮤니티 활동 보상) · 할인 안분 · 취소 복원 · ERD</li>
     <li>표 읽는 법</li>
     <li>테이블 명세 (${S.tables.length}개)</li>
     <li>관계(FK) 전체 목록</li>
@@ -205,7 +206,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
   <ul>
     <li>포트폴리오용 인테리어 가구몰 DB이며, 실서비스 수준을 목표로 설계했다.</li>
     <li>오늘의집처럼 <b>스토어</b>와 <b>커뮤니티(글쓰기)</b>를 함께 운영한다. 커뮤니티 사진 속 상품을 태그해서 스토어 구매로 연결하는 것이 핵심이다.</li>
-    <li>판매 방식은 <b>자사 직접 판매</b>다. 구매 리뷰 · 쿠폰 · 포인트 · 반품/교환 등 다음 단계 테이블은 이번 범위에 없다.</li>
+    <li>판매 방식은 <b>자사 직접 판매</b>다. 구매 리뷰 · 포인트 · 반품/교환 등 다음 단계 테이블은 이번 범위에 없다.</li>
   </ul>
   <h3>전체 구조</h3>${overview()}<p class="small">member_account(회원 기본)는 작성자·관리자로 거의 모든 영역이 참조하므로 연결 표에서 생략했다.</p>
 </section>
@@ -333,19 +334,28 @@ ${erOf('payment')}
 ${erOf('delivery')}
 
 <section class="page">
-  <h2>10. 표 읽는 법</h2>
+  <h2>10. 혜택 (쿠폰)</h2>
+  ${fig('쿠폰 발급 · 사용 · 복원 — coupon · member_coupon · coupon_use', mm(D.coupon), '발급 4가지 방식 → 회원 쿠폰함 → 주문서에서 종류별 1장씩 사용 → 할인 안분, 주문 상품이 전부 취소되면 복원')}
+  <div class="callout"><b>쿠폰 종류와 중복 사용</b> — 상품 쿠폰(PRODUCT)은 적용 대상(coupon_target: 상품 · 브랜드 · 카테고리, 제외 지정 가능)에 맞는 주문 상품 한 줄에 1장, 주문 쿠폰(ORDER)은 주문 전체에 1장, 배송비 쿠폰(SHIPPING)은 배송 묶음 하나에 1장을 함께 쓸 수 있다. 중복은 DB로 막는다: uk_coupon_use_item(order_item_id)과 함수 기반 ux_coupon_use_order(주문 × 종류). 배송비 쿠폰은 적용 배송 방식(shipping_delivery_type)을 지정할 수 있어 "설치배송비 무료"처럼 가구몰에 맞는 쿠폰을 만들 수 있다.</div>
+  <div class="callout"><b>발급 방식</b> — 다운로드 · 자동(가입 · 생일 · 등급 달성) · 코드 입력(공용 · 1회용) · <b>커뮤니티 활동 보상</b>(집들이 발행, 구매 인증 태그가 있는 사진 발행). 보상 쿠폰은 근거 글(member_coupon.reward_post_id)을 남기고 UK(coupon_id, reward_post_id)로 글마다 1장만 준다. 글이 블라인드 · 삭제되면 미사용 쿠폰은 회수(REVOKED)한다. 가입 쿠폰은 본인인증 회원에게만 준다(verified_only, 탈퇴 후 재가입 반복 수령 방지). 총 발급 한도는 issued_count 조건부 UPDATE로 지킨다(재고 차감과 같은 방식).</div>
+  <div class="callout"><b>할인 안분과 취소</b> — 상품 · 주문 쿠폰 할인은 order_item.coupon_discount_amount에 줄별로 나눠 저장해(주문 쿠폰은 상품 금액 비율) final_amount가 그대로 환불 기준이 된다. 배송비 쿠폰은 shipment.coupon_discount_amount에 둔다. 주문 상품이 전부 취소되거나 결제 기한이 지나 만료되면 쿠폰을 돌려준다(coupon_use.restored_at, member_coupon AVAILABLE, 사용 기간이 지났으면 EXPIRED). 부분 취소는 복원하지 않고 안분된 금액만큼 덜 환불한다.</div>
+</section>
+${erOf('benefit')}
+
+<section class="page">
+  <h2>11. 표 읽는 법</h2>
   <ul>
     <li><span class="k pk">PK</span> 기본키 · <span class="k fk">FK</span> 외래키 (→ 참조 대상) · <span class="k uk">UK</span> 단일 컬럼 UNIQUE · NN = NOT NULL</li>
     <li>ERD 관계선: 부모의 PK 칸에서 자식의 FK 칸으로 이어진다. 끝 모양은 까마귀발 = N(여럿), 세로줄 = 1, 원 = 0 허용(선택). 부모 쪽 원은 FK가 NULL 가능하다는 뜻</li>
     <li>ERD의 회색 테이블은 다른 영역 테이블(PK만 표시), "+ N columns"는 생략된 일반 컬럼 수</li>
     <li>복합 UNIQUE, 함수 기반 인덱스, 일반 인덱스는 각 표 아래에 적었다.</li>
   </ul>
-  <h2>11. 테이블 명세</h2>
+  <h2>12. 테이블 명세</h2>
   ${specHtml}
 </section>
 
 <section class="page">
-  <h2>12. 관계(FK) 전체 목록 <small>${refs.length}개</small></h2>
+  <h2>13. 관계(FK) 전체 목록 <small>${refs.length}개</small></h2>
   <table class="rel"><thead><tr><th>FK 컬럼 (자식)</th><th>관계</th><th>참조 (부모)</th></tr></thead><tbody>${relRows}</tbody></table>
 </section>
 

@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 고객 20개 + 상품 35개 + 커뮤니티 12개 + 장바구니 4개 + 주문 7개 + 결제 3개 + 배송 7개 = 88개 테이블
+// 고객 20개 + 상품 35개 + 커뮤니티 12개 + 장바구니 4개 + 주문 7개 + 결제 3개 + 배송 7개 + 혜택 5개 = 93개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -187,7 +187,7 @@ Table member_terms_agreement [note: '[약관 동의 이력] 약관 동의 이력
 
 Table member_notification_setting [note: '[알림 수신 설정] 알림 수신 스위치 (회원이 유형 × 채널별로 켜고 끔). 광고성 유형(EVENT, PRICE_DROP)은 이 설정 ON + 해당 채널 마케팅 약관 동의(member_terms_agreement) + 21~08시면 MARKETING_NIGHT 동의가 모두 있어야 발송'] {
   member_id bigint [not null, note: '[설정 회원 ID]']
-  noti_type varchar(20) [not null, note: '[수신 설정 알림 유형] ORDER/DELIVERY/RESTOCK/COMMENT/LIKE(정보성) / EVENT/PRICE_DROP(광고성: 찜 상품 가격 인하 안내도 광고성)']
+  noti_type varchar(20) [not null, note: '[수신 설정 알림 유형] ORDER/DELIVERY/RESTOCK/COMMENT/LIKE(정보성) / EVENT/PRICE_DROP/COUPON(광고성: 찜 상품 가격 인하·쿠폰 발급·만료 임박 안내도 광고성)']
   channel varchar(10) [not null, note: '[알림 수신 채널] PUSH/SMS/EMAIL/KAKAO. 광고성은 같은 이름의 MARKETING_* 약관 동의 필요']
   enabled char(1) [not null, default: 'Y', note: '[알림 수신 여부] Y/N']
   updated_at datetime [note: '[알림 수신 설정 수정일시]']
@@ -1087,7 +1087,7 @@ Table notification [note: '[알림] 알림함 (앱 내 알림 목록). 발송 �
   notification_id bigint [pk, increment, note: '[알림 ID]']
   member_id bigint [not null, note: '[알림 받는 회원 ID] 받는 사람']
   actor_id bigint [note: '[알림 발생 회원 ID] 행동한 사람 (좋아요/댓글 단 회원). 시스템 알림은 NULL']
-  noti_type varchar(20) [not null, note: '[알림 유형] COMMENT/REPLY/MENTION/LIKE/FEATURED(추천 선정)/RESTOCK/PRICE_DROP/ORDER/DELIVERY/NOTICE']
+  noti_type varchar(20) [not null, note: '[알림 유형] COMMENT/REPLY/MENTION/LIKE/FEATURED(추천 선정)/RESTOCK/PRICE_DROP/COUPON(쿠폰 발급·만료 임박)/ORDER/DELIVERY/NOTICE']
   post_id bigint [note: '[알림 관련 글 ID]']
   comment_id bigint [note: '[알림 관련 댓글 ID]']
   product_id bigint [note: '[알림 관련 상품 ID]']
@@ -1210,11 +1210,12 @@ Table orders [note: '[주문] 주문 (order는 MySQL 예약어라 orders). 상�
   total_list_amount bigint [not null, note: '[주문 정가 합계] 정가 합계 (할인 표시용)']
   total_sale_amount bigint [not null, note: '[주문 판매가 합계] 판매가 + 옵션 추가금 합계 = SUM(order_item.item_amount)']
   grade_discount_amount bigint [not null, default: 0, note: '[주문 등급 할인액]']
-  coupon_discount_amount bigint [not null, default: 0, note: '[주문 쿠폰 할인액] 다음 단계(쿠폰)에서 사용. 지금은 0']
+  coupon_discount_amount bigint [not null, default: 0, note: '[주문 상품·주문 쿠폰 할인액] 상품 쿠폰 + 주문 쿠폰 할인 합계 = SUM(order_item.coupon_discount_amount). 배송비 쿠폰은 shipping_coupon_discount_amount']
   point_used_amount bigint [not null, default: 0, note: '[주문 포인트 사용액] 다음 단계(포인트)에서 사용. 지금은 0']
-  shipping_fee_total bigint [not null, default: 0, note: '[주문 배송비 합계] SUM(shipment.fee_total)']
+  shipping_fee_total bigint [not null, default: 0, note: '[주문 배송비 합계] SUM(shipment.fee_total) (배송비 쿠폰 할인 전)']
+  shipping_coupon_discount_amount bigint [not null, default: 0, note: '[주문 배송비 쿠폰 할인액] SUM(shipment.coupon_discount_amount). 주문당 배송비 쿠폰 1장']
   addon_fee_total bigint [not null, default: 0, note: '[주문 부가 서비스 금액 합계] 부가 서비스(폐가구 수거·조립) 합계 = SUM(order_item.addon_amount). 할인·무료배송 기준 금액에 포함하지 않음']
-  payment_amount bigint [not null, note: '[주문 결제 금액] 실결제 금액 = 판매가 합 - 할인 - 포인트 + 배송비 + 부가 서비스. CHECK payment_amount >= 0']
+  payment_amount bigint [not null, note: '[주문 결제 금액] 실결제 금액 = 판매가 합 - 등급 할인 - 쿠폰 할인 - 포인트 + (배송비 - 배송비 쿠폰 할인) + 부가 서비스. CHECK payment_amount >= 0']
   desired_receive_date date [note: '[주문 희망 수령일] 희망 수령일. 기본값 member_home.move_in_planned_at (오늘 이후일 때)']
   receive_together char(1) [not null, default: 'N', note: '[주문 한 번에 받기 여부] Y/N 이사일에 한 번에 받기. Y면 모든 배송 묶음을 같은 날 받도록 출고를 맞춤 (shipment.expected_ship_date 조정, 설치배송은 그 날짜 슬롯 예약)']
   status varchar(20) [not null, default: 'PENDING', note: '[주문 상태] PENDING(결제 대기)/PAID(진행 중)/COMPLETED(모든 상품 구매 확정 또는 취소)/CANCELED(전체 취소)/EXPIRED(결제 기한 초과). order_item 상태에서 계산해 갱신']
@@ -1273,7 +1274,7 @@ Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태
   quantity smallint [not null, note: '[주문 상품 수량] CHECK quantity >= 1']
   item_amount bigint [not null, note: '[주문 상품 금액] unit_price × quantity']
   grade_discount_amount bigint [not null, default: 0, note: '[주문 상품 등급 할인액] 주문 등급 할인을 이 상품 몫으로 안분']
-  coupon_discount_amount bigint [not null, default: 0, note: '[주문 상품 쿠폰 할인액] 쿠폰 할인 안분 (다음 단계)']
+  coupon_discount_amount bigint [not null, default: 0, note: '[주문 상품 쿠폰 할인액] 이 줄에 적용한 상품 쿠폰 할인 + 주문 쿠폰 할인 안분액 (상품 금액 비율, 끝전은 금액이 가장 큰 줄에). 부분 취소 시 이 금액을 뺀 final_amount만 환불']
   point_used_amount bigint [not null, default: 0, note: '[주문 상품 포인트 사용액] 포인트 사용 안분 (다음 단계)']
   addon_amount bigint [not null, default: 0, note: '[주문 상품 부가 서비스 금액] 부가 서비스 합계 = SUM(order_item_addon.amount). 할인 대상 아님']
   final_amount bigint [not null, note: '[주문 상품 실결제 금액] 이 상품의 실결제 몫 = item_amount - 할인 안분 + addon_amount. 부분 취소 시 환불 기준 (부가 서비스도 함께 환불)']
@@ -1403,7 +1404,7 @@ Table payment_cancel [note: '[결제 취소] 결제 취소·부분 환불. 취�
   cancel_id bigint [pk, increment, note: '[결제 취소 ID]']
   payment_id bigint [not null, note: '[결제 ID]']
   cancel_amount bigint [not null, note: '[결제 취소 환불 금액] 환불 금액 = 취소 상품 final_amount 합 + shipping_fee_adjust']
-  shipping_fee_adjust bigint [not null, default: 0, note: '[결제 취소 배송비 조정액] 배송비 조정. 묶음 전체 취소면 배송비 환불(+), 부분 취소로 무료배송 기준이 깨지면 차감(-)']
+  shipping_fee_adjust bigint [not null, default: 0, note: '[결제 취소 배송비 조정액] 배송비 조정. 묶음 전체 취소면 배송비 환불(+, 배송비 쿠폰을 쓴 묶음은 실제 낸 배송비 = fee_total - shipment.coupon_discount_amount만), 부분 취소로 무료배송 기준이 깨지면 차감(-)']
   reason varchar(500) [not null, note: '[결제 취소 사유]']
   pg_cancel_tid varchar(100) [unique, note: '[결제 취소 PG 거래번호]']
   refund_bank_code varchar(10) [note: '[결제 취소 환불 은행 코드] 환불 받을 은행. 가상계좌 결제 취소일 때만 필수 (카드·간편·실시간 이체는 PG가 원 결제수단으로 환불)']
@@ -1520,7 +1521,8 @@ Table shipment [note: '[배송 묶음] 배송 묶음. 같은 배송 정책이고
   delivery_type varchar(20) [not null, note: '[배송 방식] PARCEL/FREIGHT/DIRECT_INSTALL 스냅샷']
   base_fee bigint [not null, default: 0, note: '[기본 배송비] 기본 배송비 (무료배송 기준 충족 시 0)']
   zone_extra_fee bigint [not null, default: 0, note: '[배송 권역 추가비]']
-  fee_total bigint [not null, default: 0, note: '[배송비 합계] 기본 배송비 + 권역 추가비. 설계서 "가구 배송비 계산 흐름" 결과. 사다리차·계단 운반비는 포함하지 않음 (고객 현장 정산)']
+  fee_total bigint [not null, default: 0, note: '[배송비 합계] 기본 배송비 + 권역 추가비. 설계서 "가구 배송비 계산 흐름" 결과. 사다리차·계단 운반비는 포함하지 않음 (고객 현장 정산). 배송비 쿠폰 할인 전 금액']
+  coupon_discount_amount bigint [not null, default: 0, note: '[배송 묶음 배송비 쿠폰 할인액] 이 묶음에 적용한 배송비 쿠폰 할인 (fee_total 이하). 쿠폰 적용 대상 배송 방식(coupon.shipping_delivery_type)과 맞는 묶음에만']
   expected_ship_date date [not null, note: '[배송 출고 예정일] 결제일 + lead_days + 권역 extra_lead_days (주문제작은 제작 기간 포함)']
   status varchar(20) [not null, default: 'WAITING', note: '[배송 상태] WAITING(출고 대기)/SCHEDULED(설치일 확정)/SHIPPED/DELIVERED/CANCELED']
   carrier_code varchar(20) [note: '[배송 택배사 코드] 택배·화물 회사 코드']
@@ -1563,6 +1565,124 @@ Table install_slot [note: '[설치 일정 슬롯] 설치배송 가능 일정 (�
 
   indexes {
     (zone_id, install_date, time_slot) [unique, name: 'uk_install_slot']
+  }
+}
+
+// =====================================================================
+// 혜택 - 쿠폰 정의
+// =====================================================================
+
+Table coupon [note: '[쿠폰] 관리자가 만드는 쿠폰의 틀. 종류(상품/주문/배송비) × 발급 방식(다운로드/자동/코드/커뮤니티 보상). 한 주문에 종류별 1장씩 함께 사용 가능 (상품 쿠폰은 주문 상품 한 줄에 1장)'] {
+  coupon_id bigint [pk, increment, note: '[쿠폰 ID]']
+  name varchar(100) [not null, note: '[쿠폰 이름] 예: 첫 구매 소파 10% / 설치배송비 무료']
+  coupon_type varchar(20) [not null, note: '[쿠폰 종류] PRODUCT(상품 쿠폰: 대상 상품 줄에 적용)/ORDER(주문 쿠폰: 주문 전체에 적용 후 상품별 안분)/SHIPPING(배송비 쿠폰)']
+  discount_type varchar(20) [not null, note: '[쿠폰 할인 방식] AMOUNT(정액)/RATE(정률)/FREE_SHIPPING(배송비 전액). CHECK: FREE_SHIPPING은 SHIPPING만']
+  discount_value bigint [not null, default: 0, note: '[쿠폰 할인 값] AMOUNT면 원, RATE면 % (CHECK 1~100), FREE_SHIPPING이면 0']
+  max_discount_amount bigint [note: '[쿠폰 최대 할인 금액] 정률 할인의 상한 (원). NULL이면 상한 없음']
+  min_order_amount bigint [not null, default: 0, note: '[쿠폰 최소 주문 금액] 상품 쿠폰은 대상 상품 금액, 주문 쿠폰은 할인 전 주문 상품 합계, 배송비 쿠폰은 주문 상품 합계 기준. 부가 서비스 금액은 제외']
+  shipping_delivery_type varchar(20) [note: '[배송비 쿠폰 적용 배송 방식] SHIPPING만: ALL/PARCEL(일반택배)/FREIGHT(화물)/DIRECT_INSTALL(설치배송). 가구 특화: "설치배송비 무료" 쿠폰. CHECK: SHIPPING이면 필수']
+  issue_type varchar(20) [not null, note: '[쿠폰 발급 방식] DOWNLOAD(고객이 받기)/AUTO(조건 충족 시 자동)/CODE(코드 입력)/REWARD(커뮤니티 활동 보상)']
+  issue_trigger varchar(30) [note: '[쿠폰 자동 발급 조건] AUTO: SIGNUP(가입)/BIRTHDAY(생일)/GRADE_UP(등급 달성), REWARD: HOUSEWARMING_PUBLISHED(집들이 발행)/VERIFIED_PHOTO_PUBLISHED(구매 인증 태그가 있는 사진 발행). CHECK: AUTO·REWARD면 필수, 유형별 값만 허용. 생일 쿠폰은 연도별 쿠폰 행을 배치로 생성']
+  target_grade_id bigint [note: '[쿠폰 대상 회원 등급 ID] GRADE_UP 또는 등급 전용 쿠폰. NULL이면 등급 무관']
+  verified_only char(1) [not null, default: 'N', note: '[본인인증 회원 전용 여부] Y/N. SIGNUP 쿠폰은 Y (신규 가입 혜택은 본인인증 회원에게만, 재가입 반복 수령 방지)']
+  issue_start_at datetime [not null, note: '[쿠폰 발급 시작일시]']
+  issue_end_at datetime [note: '[쿠폰 발급 종료일시] NULL이면 종료일 없음']
+  valid_type varchar(20) [not null, note: '[쿠폰 사용 기간 방식] FIXED(정해진 기간)/DAYS_AFTER_ISSUE(발급 후 N일)']
+  valid_from datetime [note: '[쿠폰 사용 시작일시] FIXED만. CHECK']
+  valid_until datetime [note: '[쿠폰 사용 종료일시] FIXED만. CHECK']
+  valid_days smallint [note: '[쿠폰 발급 후 사용 가능 일수] DAYS_AFTER_ISSUE만. CHECK']
+  total_issue_limit int [note: '[쿠폰 총 발급 한도] NULL이면 무제한']
+  issued_count int [not null, default: 0, note: '[쿠폰 발급 수] 캐시. 발급 시 issued_count < total_issue_limit 조건부 UPDATE로 한도 초과 방지 (재고 차감과 같은 방식)']
+  per_member_limit smallint [not null, default: 1, note: '[쿠폰 1인 발급 한도] 같은 회원이 받을 수 있는 최대 장수 (REWARD는 글마다 1장)']
+  status varchar(20) [not null, default: 'DRAFT', note: '[쿠폰 상태] DRAFT/ACTIVE(발급 중)/PAUSED(발급 중지)/ENDED. 이미 발급된 쿠폰은 상태와 무관하게 사용 기간까지 사용 가능']
+  created_by bigint [not null, note: '[쿠폰 등록 관리자 ID]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[쿠폰 등록일시]']
+  updated_at datetime [note: '[쿠폰 수정일시]']
+
+  indexes {
+    (status, issue_type) [name: 'ix_coupon_status', note: '발급 중인 다운로드 쿠폰 목록, 자동 발급 대상 조회']
+    (issue_type, issue_trigger, status) [name: 'ix_coupon_trigger', note: '가입·생일·등급·커뮤니티 보상 이벤트 시 발급할 쿠폰 찾기']
+    target_grade_id [name: 'ix_coupon_grade']
+    created_by [name: 'ix_coupon_created_by']
+  }
+}
+
+Table coupon_target [note: '[쿠폰 적용 대상] 상품 쿠폰을 적용할 상품·브랜드·카테고리 (하위 카테고리 포함). 행이 없으면 전 상품. is_exclude = Y면 제외 대상 (예: 소파 카테고리 10%, 단 특정 브랜드 제외). CHECK: product_id·brand_id·category_id 중 정확히 하나만 채움 → 이 세 FK는 참조 동작(ON DELETE) 없이 생성'] {
+  target_id bigint [pk, increment, note: '[쿠폰 적용 대상 ID]']
+  coupon_id bigint [not null, note: '[쿠폰 ID]']
+  product_id bigint [note: '[쿠폰 적용 상품 ID]']
+  brand_id bigint [note: '[쿠폰 적용 브랜드 ID]']
+  category_id bigint [note: '[쿠폰 적용 카테고리 ID] 하위 카테고리까지 적용']
+  is_exclude char(1) [not null, default: 'N', note: '[쿠폰 적용 제외 여부] Y면 이 대상은 할인에서 제외']
+
+  indexes {
+    coupon_id [name: 'ix_coupon_target_coupon']
+    product_id [name: 'ix_coupon_target_product', note: '상품 상세에서 받을 수 있는 쿠폰 찾기']
+    brand_id [name: 'ix_coupon_target_brand']
+    category_id [name: 'ix_coupon_target_category']
+  }
+}
+
+Table coupon_code [note: '[쿠폰 코드] 코드 입력 방식(issue_type = CODE)의 코드. PUBLIC은 여러 회원이 같은 코드 사용(1인 한도는 coupon.per_member_limit), SINGLE은 1회용 난수 코드'] {
+  code_id bigint [pk, increment, note: '[쿠폰 코드 ID]']
+  coupon_id bigint [not null, note: '[쿠폰 ID]']
+  code varchar(30) [not null, unique, note: '[쿠폰 코드 문자열] 대문자·숫자로 저장 (입력은 대소문자 무시). 예: WELCOME2026']
+  code_type varchar(10) [not null, note: '[쿠폰 코드 유형] PUBLIC(공용)/SINGLE(1회용)']
+  used_member_id bigint [note: '[1회용 코드 사용 회원 ID] SINGLE만. 사용되면 채움']
+  used_at datetime [note: '[1회용 코드 사용일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[쿠폰 코드 생성일시]']
+
+  indexes {
+    coupon_id [name: 'ix_coupon_code_coupon']
+    used_member_id [name: 'ix_coupon_code_used_member']
+  }
+}
+
+// =====================================================================
+// 혜택 - 보유·사용
+// =====================================================================
+
+Table member_coupon [note: '[회원 보유 쿠폰] 발급 1건 = 1행 (내 쿠폰함). 사용 기간은 발급 시 계산해 저장. 주문 상품이 전부 취소되거나 주문이 결제 기한 초과(EXPIRED)면 AVAILABLE로 복원 (부분 취소는 복원 안 함)'] {
+  member_coupon_id bigint [pk, increment, note: '[회원 보유 쿠폰 ID]']
+  coupon_id bigint [not null, note: '[쿠폰 ID]']
+  member_id bigint [not null, note: '[쿠폰 보유 회원 ID]']
+  issue_source varchar(20) [not null, note: '[쿠폰 발급 경로] DOWNLOAD/AUTO/CODE/REWARD/ADMIN(관리자 지급, CS 보상 등)']
+  code_id bigint [note: '[발급에 사용한 쿠폰 코드 ID] CODE 발급만']
+  reward_post_id bigint [note: '[보상 근거 글 ID] REWARD 발급만: 보상을 받게 한 집들이·사진 글']
+  issued_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[쿠폰 발급일시]']
+  valid_from datetime [not null, note: '[보유 쿠폰 사용 시작일시] FIXED면 coupon.valid_from, 아니면 발급일시']
+  valid_until datetime [not null, note: '[보유 쿠폰 사용 종료일시] FIXED면 coupon.valid_until, 아니면 발급일시 + valid_days']
+  status varchar(20) [not null, default: 'AVAILABLE', note: '[보유 쿠폰 상태] AVAILABLE(사용 가능)/USED(사용함)/EXPIRED(기간 만료, 배치)/REVOKED(회수)']
+  used_at datetime [note: '[보유 쿠폰 사용일시] 복원되면 NULL']
+  revoked_reason varchar(200) [note: '[쿠폰 회수 사유] 예: 보상 근거 글이 블라인드·삭제됨 (미사용 쿠폰만 회수)']
+
+  indexes {
+    (member_id, status, valid_until) [name: 'ix_member_coupon_box', note: '내 쿠폰함: 사용 가능 쿠폰을 만료 임박순으로']
+    (coupon_id, member_id) [name: 'ix_member_coupon_limit', note: '1인 발급 한도 확인']
+    (coupon_id, reward_post_id) [unique, name: 'uk_member_coupon_reward', note: '같은 글로 보상 쿠폰 중복 발급 방지. MySQL UNIQUE는 NULL 행을 중복으로 보지 않아 다른 발급 경로와 충돌하지 않음']
+    (status, valid_until) [name: 'ix_member_coupon_expire', note: '만료 배치(AVAILABLE → EXPIRED)와 만료 임박 알림']
+    code_id [name: 'ix_member_coupon_code']
+    reward_post_id [name: 'ix_member_coupon_reward_post', note: '글이 블라인드·삭제될 때 회수 대상 찾기']
+  }
+}
+
+Table coupon_use [note: '[쿠폰 사용 내역] 주문에 쿠폰을 적용한 1건 = 1행. 복원(전체 취소·결제 기한 초과)해도 행은 남기고 restored_at만 채움. 상품 쿠폰은 order_item_id, 배송비 쿠폰은 shipment_id에 적용. CHECK: PRODUCT면 order_item_id 필수·shipment_id NULL, SHIPPING이면 shipment_id 필수·order_item_id NULL, ORDER면 둘 다 NULL → order_item_id·shipment_id FK는 참조 동작 없이 생성'] {
+  use_id bigint [pk, increment, note: '[쿠폰 사용 ID]']
+  member_coupon_id bigint [not null, note: '[사용한 회원 보유 쿠폰 ID]']
+  coupon_type varchar(20) [not null, note: '[사용 쿠폰 종류] PRODUCT/ORDER/SHIPPING 스냅샷 (중복 사용 방지 인덱스용)']
+  order_id bigint [not null, note: '[쿠폰 사용 주문 ID]']
+  order_item_id bigint [note: '[상품 쿠폰 적용 주문 상품 ID] PRODUCT만']
+  shipment_id bigint [note: '[배송비 쿠폰 적용 배송 묶음 ID] SHIPPING만']
+  discount_amount bigint [not null, note: '[쿠폰 할인 금액] 이 쿠폰으로 깎은 금액 (원). ORDER는 상품별 안분 전 합계']
+  used_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[쿠폰 적용일시]']
+  restored_at datetime [note: '[쿠폰 복원일시] 주문 상품 전체 취소 또는 결제 기한 초과로 쿠폰을 돌려준 시각']
+
+  indexes {
+    order_item_id [unique, name: 'uk_coupon_use_item', note: '주문 상품 한 줄에 상품 쿠폰 1장. NULL(주문·배송비 쿠폰)은 중복으로 보지 않음']
+    (`(CASE WHEN coupon_type IN ('ORDER','SHIPPING') THEN order_id END)`, `(CASE WHEN coupon_type IN ('ORDER','SHIPPING') THEN coupon_type END)`) [unique, name: 'ux_coupon_use_order', note: '주문당 주문 쿠폰 1장, 배송비 쿠폰 1장 (함수 기반 인덱스)']
+    member_coupon_id [name: 'ix_coupon_use_member_coupon']
+    order_id [name: 'ix_coupon_use_order']
+    shipment_id [name: 'ix_coupon_use_shipment']
   }
 }
 
@@ -1776,6 +1896,26 @@ Ref: shipment.shipping_policy_id > shipping_policy.policy_id
 Ref: shipment.install_slot_id > install_slot.slot_id
 Ref: install_slot.zone_id > delivery_zone.zone_id
 
+// 혜택 - 쿠폰 정의
+Ref: coupon.target_grade_id > member_grade.grade_id
+Ref: coupon.created_by > member_account.member_id
+Ref: coupon_target.coupon_id > coupon.coupon_id
+Ref: coupon_target.product_id > product.product_id
+Ref: coupon_target.brand_id > brand.brand_id
+Ref: coupon_target.category_id > category.category_id
+Ref: coupon_code.coupon_id > coupon.coupon_id
+Ref: coupon_code.used_member_id > member_account.member_id
+
+// 혜택 - 보유·사용
+Ref: member_coupon.coupon_id > coupon.coupon_id
+Ref: member_coupon.member_id > member_account.member_id
+Ref: member_coupon.code_id > coupon_code.code_id
+Ref: member_coupon.reward_post_id > post.post_id
+Ref: coupon_use.member_coupon_id > member_coupon.member_coupon_id
+Ref: coupon_use.order_id > orders.order_id
+Ref: coupon_use.order_item_id > order_item.order_item_id
+Ref: coupon_use.shipment_id > shipment.shipment_id
+
 // =====================================================================
 // 화면 그룹 (dbdiagram에서 영역별로 묶여 보임)
 // =====================================================================
@@ -1932,4 +2072,15 @@ TableGroup delivery_policy [note: '배송 - 배송 정책/권역/반입 기본�
 TableGroup delivery_shipment [note: '배송 - 배송 묶음/설치 일정'] {
   shipment
   install_slot
+}
+
+TableGroup benefit_coupon [note: '혜택 - 쿠폰 정의/적용 대상/코드'] {
+  coupon
+  coupon_target
+  coupon_code
+}
+
+TableGroup benefit_member_coupon [note: '혜택 - 보유 쿠폰/사용 내역'] {
+  member_coupon
+  coupon_use
 }

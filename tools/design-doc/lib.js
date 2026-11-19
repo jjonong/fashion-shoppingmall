@@ -204,6 +204,7 @@ const AREAS = [
   { prefix: 'order', name: '주문', color: '#7a5bb5', fill: '#F3EFFA', desc: '주문 · 주문 상품 상태 · 부품 요청' },
   { prefix: 'payment', name: '결제', color: '#b5407a', fill: '#FBEFF5', desc: 'PG 결제 · 부분 환불 · 현금영수증' },
   { prefix: 'delivery', name: '배송', color: '#2b8a94', fill: '#EAF6F7', desc: '배송 정책 · 권역 · 반입 · 배송 묶음 · 설치 일정' },
+  { prefix: 'benefit', name: '혜택', color: '#c0392b', fill: '#FCEEEC', desc: '쿠폰(상품 · 주문 · 배송비) · 커뮤니티 활동 보상' },
 ];
 const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
 
@@ -231,6 +232,8 @@ const groupDesc = {
   payment_core: 'PG 결제(카드·간편결제·실시간 계좌이체·가상계좌, 에스크로), 결제 취소·부분 환불(가상계좌는 환불 계좌), 현금영수증 발급·취소 이력.',
   delivery_policy: '가구 배송 정책(택배·화물·설치배송, 사다리차·계단 현장 추가 비용 안내), 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, 주거형태별 반입 기본값.',
   delivery_shipment: '배송 묶음(배송비 내역·송장·반입 확인·설치 일정)과 권역별 설치 가능 슬롯.',
+  benefit_coupon: '쿠폰 정의(상품·주문·배송비 쿠폰, 정액·정률, 발급 방식·기간·한도), 상품 쿠폰 적용 대상(상품·브랜드·카테고리, 제외 지정), 코드 입력용 공용·1회용 코드.',
+  benefit_member_coupon: '회원 쿠폰함(발급 경로·사용 기간·상태, 커뮤니티 보상 근거 글)과 주문별 쿠폰 사용 내역(주문 상품·배송 묶음 적용, 전체 취소 시 복원).',
 };
 
 // ---------- HTML 머리말 / Mermaid 초기화 ----------

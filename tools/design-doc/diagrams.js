@@ -267,4 +267,29 @@ module.exports = {
   BLINDED --> PUBLISHED: 신고 기각
   PUBLISHED --> DELETED: 삭제
   HIDDEN --> DELETED: 삭제`,
+  coupon: `flowchart TB
+  subgraph ISSUE["발급 (coupon.issue_type)"]
+    direction LR
+    D1["DOWNLOAD<br/>상품 상세 · 이벤트에서 받기"]
+    D2["AUTO<br/>가입(본인인증) · 생일 · 등급 달성"]
+    D3["CODE<br/>coupon_code 입력"]
+    D4["REWARD<br/>집들이 · 구매 인증 사진 발행<br/>(글마다 1장)"]
+  end
+  ISSUE --> LIM{"발급 한도<br/>issued_count &lt; total_issue_limit<br/>1인 한도 per_member_limit"}
+  LIM -- 통과 --> MC["<b>member_coupon</b> AVAILABLE<br/>사용 기간 계산해 저장"]
+  LIM -- 초과 --> NO["발급 불가 (소진)"]
+  MC --> PICK["주문서: 종류별 1장씩 선택<br/>상품 쿠폰(줄마다) · 주문 쿠폰 · 배송비 쿠폰"]
+  PICK --> USE["<b>coupon_use</b> 기록 · member_coupon USED"]
+  USE --> SPLIT["할인 안분<br/>상품·주문 쿠폰 → order_item.coupon_discount_amount<br/>배송비 쿠폰 → shipment.coupon_discount_amount"]
+  SPLIT --> C{"주문 결과"}
+  C -- "주문 상품 전체 취소<br/>또는 결제 기한 초과" --> RS["복원: coupon_use.restored_at<br/>member_coupon AVAILABLE<br/>(기간 지났으면 EXPIRED)"]
+  C -- 부분 취소 --> PART["복원 안 함<br/>final_amount(쿠폰 안분 반영)만 환불"]
+  MC -. 기간 만료 배치 .-> EX["EXPIRED"]
+  MC -. 보상 글 블라인드 · 삭제 .-> RV["REVOKED"]
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
+  classDef main fill:#FFF3E3,stroke:#D98A2B,color:#1d2733
+  class MC,RS good
+  class NO,EX,RV bad
+  class D4 main`,
 };

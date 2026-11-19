@@ -84,7 +84,7 @@
         <div class="stat"><b>MySQL 8.0</b><span>InnoDB · utf8mb4</span></div>
       </div>
       <h2 class="ov-h">전체 구조 <span>${D.counts.tables}개 테이블 · 영역별 묶음</span></h2>
-      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(고객 · 상품 · 커뮤니티 · 장바구니 · 주문 · 결제 · 배송), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
+      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(고객 · 상품 · 커뮤니티 · 장바구니 · 주문 · 결제 · 배송 · 혜택), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
       <div class="ov-erd">
         ${toolbarHtml('테이블·영역에 마우스를 올리면 설명 · 누르면 그 영역으로 이동 · 드래그로 이동 · Ctrl + 휠로 확대')}
         <div class="canvas" id="canvas"><div class="pad"></div></div>
