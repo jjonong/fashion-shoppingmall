@@ -42,8 +42,8 @@
     let h = `<a class="home${cur.g ? '' : ' on'}" href="#">전체 개요</a>`;
     D.stages.forEach((s, i) => {
       const n = s.groups.reduce((a, g) => a + D.groups[g].tables.length, 0);
-      h += `<div class="stage"><div class="stage-h"><span class="dot" style="background:var(--s${i + 1})"></span>${esc(s.name)}<span class="n">${n}개</span></div>`;
-      h += `<a class="g-item g-all${s.all === cur.g ? ' on' : ''}" href="#g=${s.all}"><span>전체 보기</span><span class="n">${n}</span></a>`;
+      // 영역 이름을 누르면 그 영역의 모든 테이블 ERD
+      h += `<div class="stage"><a class="stage-h${s.all === cur.g ? ' on' : ''}" href="#g=${s.all}" title="${esc(s.name)} 전체 ERD 보기"><span class="dot" style="background:var(--s${i + 1})"></span>${esc(s.name)}<span class="n">${n}개</span></a>`;
       s.groups.forEach((g) => {
         const G = D.groups[g];
         const on = g === cur.g;
@@ -65,7 +65,7 @@
     let cols = '';
     D.stages.forEach((s, i) => {
       const n = s.groups.reduce((a, g) => a + D.groups[g].tables.length, 0);
-      cols += `<section class="stage-col" style="--c:var(--s${i + 1})"><h2><a href="#g=${s.all}">${esc(s.name)}</a><span>${n}개 테이블</span></h2><a class="g-card g-all" href="#g=${s.all}"><b>${esc(s.name)} 전체 ERD 보기 →</b></a>`;
+      cols += `<section class="stage-col" style="--c:var(--s${i + 1})"><h2><a href="#g=${s.all}" title="${esc(s.name)} 전체 ERD 보기">${esc(s.name)}</a><span>${n}개 테이블</span></h2>`;
       s.groups.forEach((g) => {
         const G = D.groups[g];
         cols += `<a class="g-card" href="#g=${g}"><b>${esc(G.title)} <span class="n" style="color:var(--muted);font-weight:400">· ${G.tables.length}</span></b>

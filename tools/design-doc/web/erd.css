@@ -175,12 +175,16 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 0 10px 6px;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  border-radius: 7px;
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
   letter-spacing: .02em;
 }
+a.stage-h:hover { background: var(--panel-2); color: var(--text); text-decoration: none; }
+a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
 .stage-h .dot { width: 8px; height: 8px; border-radius: 50%; }
 .stage-h .n { margin-left: auto; font-weight: 500; }
 .g-item {
@@ -194,9 +198,8 @@ button { font: inherit; color: inherit; }
 .g-item:hover { background: var(--panel-2); text-decoration: none; }
 .g-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .g-item .n { color: var(--muted); font-size: 12px; font-weight: 400; }
-.g-item.g-all { font-weight: 600; }
-.g-card.g-all { padding: 8px 12px; margin-bottom: 10px; color: var(--c); }
 .stage-col h2 a { color: inherit; }
+.stage-col h2 a:hover { color: var(--c); }
 .t-list { margin: 2px 0 8px 14px; padding-left: 8px; border-left: 2px solid var(--line); }
 .t-list a {
   display: block;
