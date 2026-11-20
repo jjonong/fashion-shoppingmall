@@ -392,6 +392,9 @@ Table product [note: '[상품] 상품 (옵션 공통 정보)'] {
   name varchar(200) [not null, note: '[상품명] 검색용 FULLTEXT 인덱스 WITH PARSER ngram (DDL에서 생성, 한글 부분 일치)']
   product_type varchar(10) [not null, default: 'SINGLE', note: '[상품 유형] SINGLE/SET. SET은 product_set_item으로 구성 (예: 식탁 + 의자 4개). SET의 list_price·sale_price는 구성품 SKU 가격 합계(표시용, 구성품 가격이 바뀌면 함께 갱신)이고 세트 할인은 없음. 주문은 구성품 SKU별 가격으로. SET은 대표 치수·조립 정보·make_days를 비우고 구성품 값을 사용']
   sale_type varchar(20) [not null, default: 'NORMAL', note: '[상품 판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER(주문제작). PRE_ORDER는 SKU stock을 예약 한도로 사용, MADE_TO_ORDER는 재고를 차감하지 않고 make_days만큼 제작 후 출고']
+  condition_grade varchar(20) [not null, default: 'NEW', note: '[상품 상태 등급] NEW(새상품)/OPEN_BOX(개봉·미사용 반품)/DISPLAY(전시)/REFURB_A(미세 흠집)/REFURB_B(눈에 띄는 흠집). NEW가 아니면 새상품과 별도 상품 행으로 등록 (가격·재고·흠집 사진·반품 규정이 다름). 상품 목록 기본은 NEW만, 리퍼·전시는 별도 필터']
+  original_product_id bigint [note: '[원본 새상품 ID] 리퍼·전시 상품의 원본 새상품. CHECK: condition_grade = NEW이면 NULL, 그 외에는 필수 (CHECK에 쓰이므로 FK는 참조 동작 없이). 원본 상세의 "리퍼 N개 있어요" 링크, 커뮤니티 "이 상품이 쓰인 사진"을 원본으로 모으는 근거']
+  condition_note varchar(500) [note: '[상품 상태 설명] 리퍼·전시 상품의 흠집 위치·정도 (예: 좌측 다리 3mm 찍힘, 사용에 지장 없음). 흠집 사진은 product_image. NEW는 NULL']
   ship_expected_date date [note: '[상품 예약 출고 예정일] 예약 판매 출고 예정일. CHECK: sale_type = PRE_ORDER이면 필수, 그 외에는 NULL']
   make_days smallint [note: '[상품 주문제작 기간(일)] 결제 후 제작에 걸리는 일수. CHECK: sale_type = MADE_TO_ORDER이면 필수(1 이상), 그 외에는 NULL. 출고 예정일 = 결제일 + make_days + 배송 정책 lead_days + 권역 extra_lead_days']
   max_per_order smallint [note: '[상품 1회 최대 구매 수량] 주문 1건당 최대 수량. NULL이면 제한 없음']
@@ -428,6 +431,7 @@ Table product [note: '[상품] 상품 (옵션 공통 정보)'] {
     shipping_policy_id [name: 'ix_product_shipping']
     created_by [name: 'ix_product_created_by']
     updated_by [name: 'ix_product_updated_by']
+    original_product_id [name: 'ix_product_original', note: '원본 새상품의 리퍼·전시 상품 찾기']
   }
 }
 
@@ -1212,6 +1216,7 @@ Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태
   option_text varchar(200) [not null, note: '[주문 상품 옵션 문구(스냅샷)] 스냅샷 (예: 월넛 / Q). 옵션 없으면 빈 문자열']
   sku_code varchar(50) [not null, note: '[주문 상품 SKU 코드] 스냅샷']
   sale_type varchar(20) [not null, note: '[주문 상품 판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER 스냅샷. MADE_TO_ORDER는 재고 차감 없음']
+  condition_grade varchar(20) [not null, default: 'NEW', note: '[주문 상품 상태 등급] product.condition_grade 스냅샷 (NEW/OPEN_BOX/DISPLAY/REFURB_A/REFURB_B). 리퍼·전시 구매 사실의 근거, 반품 규정 판단(다음 단계 클레임)']
   unit_list_price bigint [not null, note: '[주문 상품 정가 단가] 정가 + 옵션 추가금']
   unit_price bigint [not null, note: '[주문 상품 단가] 판매가 + 옵션 추가금']
   quantity smallint [not null, note: '[주문 상품 수량] CHECK quantity >= 1']
@@ -1654,6 +1659,7 @@ Ref: category.default_shipping_policy_id > shipping_policy.policy_id
 // 상품 - 상품/옵션/SKU/포장/문의
 Ref: product.category_id > category.category_id
 Ref: product.shipping_policy_id > shipping_policy.policy_id
+Ref: product.original_product_id > product.product_id
 Ref: product_option_group.product_id > product.product_id
 Ref: product_option_value.option_group_id > product_option_group.option_group_id
 Ref: product_option_value.color_family_id > color_family.color_family_id
