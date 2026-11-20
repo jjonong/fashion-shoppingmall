@@ -1,30 +1,39 @@
-/* 발표 자료 (A4 가로, 한 장 = .slide). 장식 없이 흰 바탕 + 표. head()가 넣는 style.css 뒤에 붙여 덮어쓴다 */
-@page { size: A4 landscape; margin: 0; }
-body { font-size: 11pt; line-height: 1.5; color: #222; background: #fff; }
+/* 발표 자료 (A4 가로). 장식 없이 흰 바탕 + 표. head()가 넣는 style.css 뒤에 붙여 덮어쓴다 */
+@page { size: A4 landscape; margin: 12mm 14mm 13mm; }
+body { font-size: 9.5pt; line-height: 1.45; color: #222; background: #fff; }
 
-.slide { width: 297mm; height: 210mm; position: relative; overflow: hidden; page-break-after: always; padding: 14mm 18mm 12mm; }
-.slide:last-child { page-break-after: auto; }
-.slide header { display: flex; align-items: baseline; gap: 10px; padding-bottom: 3mm; border-bottom: 1px solid #222; }
-.slide header h2 { font-size: 18pt; font-weight: bold; color: #222; border: 0; margin: 0; padding: 0; }
-.slide header .idx { font-size: 10pt; color: #888; }
-.slide header .cnt { margin-left: auto; font-size: 10pt; color: #888; }
-.gdesc { margin: 3mm 0 5mm; font-size: 10.5pt; color: #555; }
-.pg { position: absolute; right: 18mm; bottom: 7mm; font-size: 9pt; color: #aaa; }
-
-.slide table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-.slide th { background: none; border: 0; border-bottom: 1px solid #222; color: #555; font-weight: normal; font-size: 9pt; padding: 2mm 3mm; text-align: left; }
-.slide td { border: 0; border-bottom: 1px solid #e3e3e3; padding: 1.8mm 3mm; vertical-align: top; line-height: 1.4; }
-.slide td.name { font-weight: bold; }
-.slide td.name .phys { display: block; font-weight: normal; font-family: Consolas, monospace; font-size: 8.5pt; color: #999; }
-.slide td.desc { color: #333; }
-.slide td.keys { font-family: Consolas, monospace; font-size: 8.5pt; color: #555; line-height: 1.45; }
-.slide td.keys div { display: flex; }
-.slide td.keys .k { flex: 0 0 22px; color: #aaa; }
-.slide td.keys div + div { margin-top: 1mm; }
-
-.cover { display: flex; flex-direction: column; justify-content: center; padding: 0 30mm; }
+/* 표지 */
+.cover { height: 180mm; display: flex; flex-direction: column; justify-content: center; padding: 0 16mm; page-break-after: always; }
 .cover h1 { font-size: 30pt; margin: 0 0 3mm; color: #222; }
 .cover p { font-size: 12pt; color: #777; margin: 0 0 10mm; }
 .cover ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 20mm; font-size: 12pt; color: #333; }
 .cover li { margin-bottom: 2mm; }
 .cover li span { color: #aaa; margin-left: 6px; }
+
+/* 세부 영역: 새 페이지에서 시작 */
+.group { page-break-before: always; }
+.cover + .group { page-break-before: auto; }
+.group > header { display: flex; align-items: baseline; gap: 10px; padding-bottom: 2.5mm; border-bottom: 1.5px solid #222; margin-bottom: 4mm; }
+.group > header h2 { font-size: 17pt; font-weight: bold; color: #222; border: 0; margin: 0; padding: 0; }
+.group > header .idx, .group > header .cnt { font-size: 10pt; color: #888; }
+.group > header .cnt { margin-left: auto; }
+
+/* 테이블 하나 */
+.tbl { margin: 0 0 6mm; page-break-inside: avoid; }
+.tbl.big { page-break-inside: auto; }
+.tbl h3 { font-size: 12pt; margin: 0 0 1mm; padding: 0; border: 0; color: #222; display: flex; align-items: baseline; gap: 8px; }
+.tbl h3 .phys { font-family: Consolas, monospace; font-size: 9.5pt; color: #999; font-weight: normal; }
+.tbl h3 .cnt { margin-left: auto; font-size: 8.5pt; color: #aaa; font-weight: normal; }
+.tbl .tdesc { margin: 0 0 1.5mm; color: #666; font-size: 9pt; }
+
+.tbl table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8.5pt; }
+.tbl thead { display: table-header-group; }
+.tbl tr { page-break-inside: avoid; }
+.tbl th { background: none; border: 0; border-top: 1px solid #222; border-bottom: 1px solid #222; color: #555; font-weight: normal; font-size: 8pt; padding: 1.2mm 2mm; text-align: left; }
+.tbl td { border: 0; border-bottom: 1px solid #e6e6e6; padding: 1mm 2mm; vertical-align: top; line-height: 1.4; word-break: break-all; }
+.tbl td.lg { font-weight: bold; word-break: keep-all; }
+.tbl td.ph, .tbl td.ty, .tbl td.df { font-family: Consolas, monospace; font-size: 8pt; color: #444; }
+.tbl td.df { font-size: 7.5pt; word-break: normal; }
+.tbl td.ky { font-size: 7.5pt; color: #555; font-weight: bold; }
+.tbl td.nn { text-align: center; color: #555; }
+.tbl td.ds { color: #444; word-break: keep-all; overflow-wrap: anywhere; }
