@@ -317,6 +317,7 @@ ${erOf('order')}
 <section class="page">
   <h2>8. 결제</h2>
   ${fig('가상계좌 · 현금영수증 — payment · cash_receipt', mm(D.vbank), '가상계좌는 입금 기한까지 재고를 잡아 두고, 입금이 확인되면 현금영수증을 발급한다')}
+  <div class="callout"><b>결제 대상 3가지</b> — payment는 주문(ORDER)뿐 아니라 유료 부품 구매(PART_REQUEST)와 유상 A/S(AS_REQUEST)도 결제한다(payment_target). 대상별 nullable FK(order_id · part_request_id · as_request_id)를 두고 CHECK로 유형에 맞는 하나만 채운다(다형 참조를 FK로 유지하는 설계 규칙과 같음). 부품 구매는 요청과 함께 결제하고(PAYMENT_PENDING → 결제 승인 시 APPROVED, 기한이 지나면 CANCELED), 유상 A/S는 관리자 견적(QUOTED)을 보고 온라인 결제해야 방문 일정이 확정된다(SCHEDULED). 사다리차 · 계단비처럼 현장에서 돈을 받지 않으므로 모든 결제가 PG를 거쳐 기록 · 환불 · 현금영수증이 같은 구조로 처리된다. 부품 · A/S 결제는 반려 · 철회 시 전액 환불하고, 에스크로는 주문 결제만 쓴다.</div>
   <div class="callout"><b>결제수단</b> — 카드 · 간편결제 · 실시간 계좌이체(TRANSFER)는 결제창에서 바로 승인되고, 가상계좌(VIRTUAL_ACCOUNT)는 주문 전용 1회 계좌를 발급한 뒤 입금 통보(웹훅)로 PAID가 된다. 가상계좌는 PG가 원 결제수단으로 되돌려 줄 수 없어서 취소할 때 환불 계좌(payment_cancel.refund_*, 계좌번호 암호화 · 환불 후 파기)를 받는다.</div>
   <div class="callout"><b>현금영수증</b> — 현금성 결제(계좌이체 · 가상계좌)는 cash_receipt에 발급 · 취소를 행으로 남긴다. 가구 소매업은 현금영수증 의무발행업종이라 요청이 없어도 10만 원 이상이면 자진 발급(SELF_ISSUED)한다. 부분 취소하면 원 발급을 CANCEL하고 남은 금액으로 다시 ISSUE한다(original_receipt_id · payment_cancel_id로 연결). 실패 건은 배치로 재시도한다.</div>
   <div class="callout"><b>에스크로</b> — 현금성 결제는 고객이 에스크로(구매안전서비스)를 고를 수 있다(payment.is_escrow). 에스크로 결제는 출고 시 PG에 송장을 등록해야 정산 · 구매 확정이 진행되므로 shipment.escrow_registered_at에 등록 시각을 남긴다.</div>

@@ -1352,12 +1352,12 @@ Table order_claim_item [note: '[클레임 대상 주문 상품] 반품·교환�
 // 주문 - 구매 후 지원 (부품 요청·A/S)
 // =====================================================================
 
-Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누락(MISSING)·파손(DAMAGED)은 구매 확정 후 30일까지 무료 발송, 추가 구매(PURCHASE)는 is_orderable 부품만 유료 (결제 흐름은 다음 단계에서 정교화)'] {
+Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누락(MISSING)·파손(DAMAGED)은 구매 확정 후 30일까지 무료 발송, 추가 구매(PURCHASE)는 is_orderable 부품만 유료. PURCHASE는 요청과 함께 결제(payment.part_request_id): PAYMENT_PENDING으로 만들고 결제 승인 시 APPROVED(관리자 승인 없이 바로 발송 준비), 결제 기한(30분, 가상계좌는 입금 기한)이 지나면 CANCELED. 반려·철회하면 전액 환불'] {
   request_id bigint [pk, increment, note: '[부품 요청 ID]']
   member_id bigint [not null, note: '[부품 요청 회원 ID]']
   order_item_id bigint [not null, note: '[주문 상품 ID] 부품이 필요한 구매 상품']
   request_type varchar(20) [not null, note: '[부품 요청 유형] MISSING/DAMAGED/PURCHASE']
-  status varchar(20) [not null, default: 'REQUESTED', note: '[부품 요청 상태] REQUESTED(접수)/APPROVED(승인)/SHIPPED(발송)/DELIVERED(배송 완료)/REJECTED(반려)/CANCELED(고객 철회, REQUESTED일 때만)']
+  status varchar(20) [not null, default: 'REQUESTED', note: '[부품 요청 상태] PAYMENT_PENDING(결제 대기, PURCHASE만)/REQUESTED(접수, MISSING·DAMAGED)/APPROVED(승인 또는 결제 완료)/SHIPPED(발송)/DELIVERED(배송 완료)/REJECTED(반려)/CANCELED(고객 철회·결제 기한 초과, 발송 전까지)']
   request_memo varchar(500) [note: '[부품 요청 내용] 고객이 쓴 누락·파손 설명 (예: 선반 모서리가 깨져서 왔어요)']
   photo_url varchar(500) [note: '[부품 요청 파손 사진 URL] 파손 사진 (DAMAGED는 필수, 앱 검증)']
   amount bigint [not null, default: 0, note: '[부품 요청 유료 금액] PURCHASE만 SUM(part_request_item.amount), MISSING·DAMAGED는 0']
@@ -1373,8 +1373,9 @@ Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누�
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[부품 요청 등록일시]']
   handled_at datetime [note: '[부품 요청 처리일시]']
   shipped_at datetime [note: '[부품 요청 출고일시]']
+  paid_at datetime [note: '[부품 구매 결제일시] PURCHASE 결제 승인 시각 (payment PAID)']
   delivered_at datetime [note: '[부품 요청 배송 완료일시]']
-  canceled_at datetime [note: '[부품 요청 철회일시] 고객 철회 시각']
+  canceled_at datetime [note: '[부품 요청 철회일시] 고객 철회·결제 기한 초과 시각']
 
   indexes {
     (member_id, created_at) [name: 'ix_part_request_member']
@@ -1419,10 +1420,12 @@ Table as_request [note: '[A/S 요청] 구매한 가구의 고장·하자 수리 
   visit_date date [note: '[A/S 방문 예정일] VISIT·PICKUP']
   visit_time_slot varchar(10) [note: '[A/S 방문 시간대] AM/PM']
   technician_name varchar(50) [note: '[A/S 담당 기사 이름]']
-  cost_amount bigint [not null, default: 0, note: '[A/S 유상 수리 비용] is_free = N일 때 안내·청구 금액 (현장 결제, 결제 연동은 다음 단계)']
+  cost_amount bigint [not null, default: 0, note: '[A/S 유상 수리 비용] is_free = N일 때 관리자가 정한 견적 금액. 고객이 견적을 보고 온라인 결제(payment.as_request_id)해야 일정 확정(SCHEDULED). 방문 후 금액이 달라지면 현장에서 받지 않고 재견적: 줄면 차액 부분 환불(payment_cancel), 늘면 기존 결제를 취소하고 새 금액으로 다시 결제']
+  quoted_at datetime [note: '[A/S 견적 안내일시] 유상 견적을 고객에게 보낸 시각']
+  paid_at datetime [note: '[A/S 결제일시] 유상 A/S 결제 승인 시각. is_free = N이면 SCHEDULED 전에 필수 (앱 검증)']
   result_memo varchar(1000) [note: '[A/S 처리 결과] 예: 경첩 교체, 서랍 레일 조정']
   reject_reason varchar(500) [note: '[A/S 반려 사유]']
-  status varchar(20) [not null, default: 'REQUESTED', note: '[A/S 상태] REQUESTED(접수)/SCHEDULED(처리 방식·일정 확정)/COMPLETED(처리 완료)/REJECTED(반려)/CANCELED(고객 철회)']
+  status varchar(20) [not null, default: 'REQUESTED', note: '[A/S 상태] REQUESTED(접수)/QUOTED(유상 견적 안내, 결제 대기)/SCHEDULED(처리 방식·일정 확정, 유상은 결제 완료)/COMPLETED(처리 완료)/REJECTED(반려)/CANCELED(고객 철회, 결제했으면 전액 환불)']
   handled_by bigint [note: '[A/S 처리 관리자 ID]']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[A/S 접수일시]']
   scheduled_at datetime [note: '[A/S 일정 확정일시]']
@@ -1443,13 +1446,16 @@ Table as_request [note: '[A/S 요청] 구매한 가구의 고장·하자 수리 
 // 결제 - 결제/환불/현금영수증
 // =====================================================================
 
-Table payment [note: '[결제] 결제 (PG 결제 시도마다 1행, 실패 포함). 주문당 PAID는 1건. 카드·간편결제·실시간 계좌이체·가상계좌. 현금성 결제(TRANSFER, VIRTUAL_ACCOUNT)는 현금영수증(cash_receipt) 대상이고 에스크로를 고를 수 있음'] {
+Table payment [note: '[결제] 결제 (PG 결제 시도마다 1행, 실패 포함). 결제 대상은 주문·유료 부품 구매·유상 A/S 세 가지(payment_target)이고 대상당 PAID는 1건. 카드·간편결제·실시간 계좌이체·가상계좌. 현금성 결제(TRANSFER, VIRTUAL_ACCOUNT)는 현금영수증(cash_receipt) 대상이고, 주문 결제는 에스크로를 고를 수 있음'] {
   payment_id bigint [pk, increment, note: '[결제 ID]']
-  order_id bigint [not null, note: '[주문 ID]']
+  payment_target varchar(20) [not null, default: 'ORDER', note: '[결제 대상 유형] ORDER(주문)/PART_REQUEST(유료 부품 구매)/AS_REQUEST(유상 A/S). CHECK: 유형에 맞는 대상 ID 하나만 채움 (order_id · part_request_id · as_request_id 중 정확히 하나) → 세 FK는 참조 동작 없이 생성']
+  order_id bigint [note: '[결제 주문 ID] payment_target = ORDER일 때']
+  part_request_id bigint [note: '[결제 부품 요청 ID] payment_target = PART_REQUEST일 때 (part_request.request_type = PURCHASE)']
+  as_request_id bigint [note: '[결제 A/S 요청 ID] payment_target = AS_REQUEST일 때 (as_request.is_free = N)']
   pg_provider varchar(20) [not null, note: '[결제 PG사] TOSS/KCP/INICIS...']
   method varchar(20) [not null, note: '[결제수단] CARD/KAKAO_PAY/NAVER_PAY/TOSS_PAY/TRANSFER(실시간 계좌이체)/VIRTUAL_ACCOUNT(가상계좌 무통장입금)']
   pg_tid varchar(100) [unique, note: '[결제 PG 거래번호] PG 거래번호. 승인 전(READY)은 NULL']
-  amount bigint [not null, note: '[결제 금액] 결제 요청 금액 = orders.payment_amount']
+  amount bigint [not null, note: '[결제 금액] 결제 요청 금액 = orders.payment_amount / part_request.amount / as_request.cost_amount']
   canceled_amount bigint [not null, default: 0, note: '[결제 누적 취소 금액] 캐시. SUM(payment_cancel.cancel_amount WHERE DONE). CHECK canceled_amount <= amount']
   status varchar(20) [not null, default: 'READY', note: '[결제 상태] READY/WAITING_DEPOSIT(가상계좌 발급, 입금 대기)/PAID/FAILED/EXPIRED(입금 기한 초과)/PARTIAL_CANCELED/CANCELED']
   card_company varchar(30) [note: '[결제 카드사] 카드사 (카드 결제일 때)']
@@ -1460,7 +1466,7 @@ Table payment [note: '[결제] 결제 (PG 결제 시도마다 1행, 실패 포�
   deposit_due_at datetime [note: '[결제 입금 기한] 입금 기한 (예: 발급 다음날 23:59). orders.expires_at도 이 시각으로 연장']
   deposited_at datetime [note: '[결제 입금일시] PG 입금 통보(웹훅) 시각 → status PAID']
   depositor_name varchar(50) [note: '[결제 입금자명]']
-  is_escrow char(1) [not null, default: 'N', note: '[결제 에스크로 여부] Y/N 에스크로(구매안전서비스). 현금성 결제에서 고객이 선택 (전자상거래법). Y면 출고 시 PG에 송장 등록(shipment.escrow_registered_at)']
+  is_escrow char(1) [not null, default: 'N', note: '[결제 에스크로 여부] Y/N 에스크로(구매안전서비스). 현금성 결제에서 고객이 선택 (전자상거래법). Y면 출고 시 PG에 송장 등록(shipment.escrow_registered_at). CHECK: 주문 결제(ORDER)만 Y 가능']
   approved_at datetime [note: '[결제 승인일시]']
   fail_reason varchar(500) [note: '[결제 실패 사유]']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[결제 등록일시]']
@@ -1468,14 +1474,16 @@ Table payment [note: '[결제] 결제 (PG 결제 시도마다 1행, 실패 포�
 
   indexes {
     (order_id, status) [name: 'ix_payment_order']
+    (part_request_id, status) [name: 'ix_payment_part_request']
+    (as_request_id, status) [name: 'ix_payment_as_request']
     (status, deposit_due_at) [name: 'ix_payment_deposit_due', note: '입금 기한 지난 가상계좌 만료 배치']
   }
 }
 
-Table payment_cancel [note: '[결제 취소] 결제 취소·부분 환불. 취소 1건이 주문 상품 여러 줄을 함께 환불할 수 있고, 해당 order_item.payment_cancel_id가 이 행을 가리킴'] {
+Table payment_cancel [note: '[결제 취소] 결제 취소·부분 환불. 주문 결제는 취소 1건이 주문 상품 여러 줄을 함께 환불할 수 있고, 해당 order_item.payment_cancel_id(반품은 order_claim.payment_cancel_id)가 이 행을 가리킴. 부품 구매·A/S 결제는 전액 취소만 (반려·철회 시)'] {
   cancel_id bigint [pk, increment, note: '[결제 취소 ID]']
   payment_id bigint [not null, note: '[결제 ID]']
-  cancel_amount bigint [not null, note: '[결제 취소 환불 금액] 환불 금액 = 취소 상품 final_amount 합 + shipping_fee_adjust']
+  cancel_amount bigint [not null, note: '[결제 취소 환불 금액] 주문: 취소 상품 final_amount 합 + shipping_fee_adjust (반품은 - 회수 배송비). 부품 구매·A/S: 결제 금액 전액']
   shipping_fee_adjust bigint [not null, default: 0, note: '[결제 취소 배송비 조정액] 배송비 조정. 묶음 전체 취소면 배송비 환불(+, 배송비 쿠폰을 쓴 묶음은 실제 낸 배송비 = fee_total - shipment.coupon_discount_amount만), 부분 취소로 무료배송 기준이 깨지면 차감(-). 등급 무료배송(shipment.free_reason = GRADE)은 차감하지 않음']
   reason varchar(500) [not null, note: '[결제 취소 사유]']
   pg_cancel_tid varchar(100) [unique, note: '[결제 취소 PG 거래번호]']
@@ -1959,6 +1967,8 @@ Ref: as_request.handled_by > member_account.member_id
 
 // 결제 - 결제/환불/현금영수증
 Ref: payment.order_id > orders.order_id
+Ref: payment.part_request_id > part_request.request_id
+Ref: payment.as_request_id > as_request.as_id
 Ref: payment_cancel.payment_id > payment.payment_id
 Ref: payment_cancel.requested_by > member_account.member_id
 Ref: cash_receipt.payment_id > payment.payment_id

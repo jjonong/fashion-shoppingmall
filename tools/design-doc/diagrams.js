@@ -254,9 +254,12 @@ module.exports = {
   A(["조립 설명서<br/>assembly_step"]) --> B["단계별 부품 확인<br/>assembly_step_part"]
   B --> C{"부품 문제?"}
   C -- "누락 · 파손" --> D["part_request<br/>MISSING · DAMAGED<br/>요청 내용 · 파손은 사진 첨부<br/>받는 주소(기본값 주문 배송지)"]
-  C -- "추가로 필요" --> E["part_request PURCHASE<br/>is_orderable 부품만 유료"]
-  D --> F["관리자 승인<br/>구매 확정 후 30일까지 무료"]
-  E --> F
+  C -- "추가로 필요" --> E["part_request PURCHASE<br/>is_orderable 부품만 유료<br/>PAYMENT_PENDING"]
+  D --> F["관리자 승인 APPROVED<br/>구매 확정 후 30일까지 무료"]
+  E --> P["결제 payment<br/>payment_target = PART_REQUEST"]
+  P -- 승인 --> F2["APPROVED<br/>관리자 승인 없이 발송 준비"]
+  P -- 기한 초과 --> X["CANCELED"]
+  F2 --> G
   F --> G["부품 발송<br/>송장 · SHIPPED"]
   G --> H["배송 완료<br/>DELIVERED"]
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
