@@ -30,11 +30,11 @@ Table member_account [note: '[회원] 구매 고객 계정. 마켓 관리자·�
   name varchar(50) [not null, note: '[회원 이름] 실명. 탈퇴 시 탈퇴회원']
   nickname varchar(20) [not null, note: '[회원 닉네임] 리뷰·문의에 표시. 2~12자 한글/영문/숫자/_ (앱 검증). 탈퇴 시 deleted_{아이디}']
   email varchar(100) [not null, note: '[회원 이메일] 평문 저장(법적 암호화 대상 아님, 암호화하면 UNIQUE·대소문자 무시 비교·아이디 찾기가 안 됨). 관리자 화면은 마스킹, 조회는 접근 기록. 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{아이디}@deleted.local로 마스킹']
-  phone_enc varchar(255) [note: '[회원 휴대폰 번호(암호화)] AES-256 암호문. 법적 의무는 아니지만 유출 시 피해(스팸·피싱)가 커서 추가 보호']
-  phone_hash char(64) [note: '[회원 휴대폰 번호 해시] SHA-256. 번호로 계정 찾기·중복 확인']
+  phone_enc varchar(255) [note: '[회원 휴대폰 번호(암호화)] AES-256 암호문. 문자 발송·화면 표시처럼 실제 번호가 필요할 때 복호화. 같은 번호도 매번 다른 암호문(IV)이라 검색에는 phone_hash 사용. 법적 의무는 아니지만 유출 시 피해(스팸·피싱)가 커서 추가 보호']
+  phone_hash char(64) [note: '[회원 휴대폰 번호 검색값] HMAC-SHA256(서버 비밀 키). 같은 번호면 항상 같은 값이라 아이디 찾기·같은 번호 가입 확인에 검색용으로 사용. 번호는 경우의 수가 약 1억 개라 단순 SHA-256은 전부 대입해 풀리므로 키를 섞음']
   birth_date date [note: '[회원 생년월일] 선택 입력. 생일 쿠폰, 연령대 맞춤 추천 기본값']
   gender char(1) [note: '[회원 성별] F/M. 선택 입력, 맞춤 추천 피드 기본값']
-  ci_hash char(64) [note: '[회원 본인인증 CI 해시] 중복 가입 방지. 탈퇴 시 NULL']
+  ci_hash char(64) [note: '[회원 중복 가입 확인값(CI)] 휴대폰 본인인증 시 본인확인기관이 주는 연계정보(CI, 같은 사람이면 어느 사이트든 같은 값)를 HMAC-SHA256(서버 비밀 키)으로 저장. 원래 값은 볼 일 없이 비교만 함. 같은 사람은 계정 1개만 허용(가입 혜택 반복 수령 방지). 탈퇴 시 NULL']
   verified_at datetime [note: '[회원 본인인증일시] NULL이면 미인증. 신규 가입 혜택은 본인인증 회원에게만']
   status varchar(20) [not null, default: 'ACTIVE', note: '[회원 상태] ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 로그인 잠금은 상태가 아니라 locked_until로 판단']
   login_fail_count tinyint [not null, default: 0, note: '[회원 연속 로그인 실패 횟수] 로그인 성공 시 0으로 초기화']
@@ -50,8 +50,8 @@ Table member_account [note: '[회원] 구매 고객 계정. 마켓 관리자·�
   indexes {
     email [unique, name: 'uk_member_email']
     nickname [unique, name: 'uk_member_nickname']
-    ci_hash [unique, name: 'uk_member_ci', note: 'NULL(미인증·탈퇴)은 중복 허용']
-    phone_hash [name: 'ix_member_phone_hash']
+    ci_hash [unique, name: 'uk_member_ci', note: '같은 사람(CI)은 계정 1개. NULL(미인증·탈퇴)은 중복 허용']
+    phone_hash [name: 'ix_member_phone_hash', note: '휴대폰 번호로 아이디 찾기·가입 확인']
     (status, last_login_at) [name: 'ix_member_dormant_target', note: '휴면 안내·전환 대상 배치 조회']
   }
 }
