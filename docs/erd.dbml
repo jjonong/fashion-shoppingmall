@@ -1284,9 +1284,15 @@ Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누�
   member_id bigint [not null, note: '[부품 요청 회원 ID]']
   order_item_id bigint [not null, note: '[주문 상품 ID] 부품이 필요한 구매 상품']
   request_type varchar(20) [not null, note: '[부품 요청 유형] MISSING/DAMAGED/PURCHASE']
-  status varchar(20) [not null, default: 'REQUESTED', note: '[부품 요청 상태] REQUESTED/APPROVED/SHIPPED/REJECTED']
+  status varchar(20) [not null, default: 'REQUESTED', note: '[부품 요청 상태] REQUESTED(접수)/APPROVED(승인)/SHIPPED(발송)/DELIVERED(배송 완료)/REJECTED(반려)/CANCELED(고객 철회, REQUESTED일 때만)']
+  request_memo varchar(500) [note: '[부품 요청 내용] 고객이 쓴 누락·파손 설명 (예: 선반 모서리가 깨져서 왔어요)']
   photo_url varchar(500) [note: '[부품 요청 파손 사진 URL] 파손 사진 (DAMAGED는 필수, 앱 검증)']
-  amount bigint [not null, default: 0, note: '[부품 요청 유료 금액] PURCHASE만 SUM(part.unit_price × 수량), MISSING·DAMAGED는 0']
+  amount bigint [not null, default: 0, note: '[부품 요청 유료 금액] PURCHASE만 SUM(part_request_item.amount), MISSING·DAMAGED는 0']
+  receiver_name varchar(50) [not null, note: '[부품 받는 분 이름] 요청 시점 기록. 기본값은 주문 배송지(order_address), 요청 화면에서 수정 가능 (이사·다른 장소 조립)']
+  receiver_phone_enc varchar(200) [not null, note: '[부품 받는 분 연락처(암호화)] AES-256 암호문']
+  zipcode varchar(10) [not null, note: '[부품 받는 곳 우편번호]']
+  address1 varchar(200) [not null, note: '[부품 받는 곳 기본 주소]']
+  address2 varchar(200) [note: '[부품 받는 곳 상세 주소]']
   carrier_code varchar(20) [note: '[부품 요청 택배사 코드]']
   tracking_no varchar(50) [note: '[부품 요청 송장번호]']
   reject_reason varchar(500) [note: '[부품 요청 반려 사유]']
@@ -1294,6 +1300,8 @@ Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누�
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[부품 요청 등록일시]']
   handled_at datetime [note: '[부품 요청 처리일시]']
   shipped_at datetime [note: '[부품 요청 출고일시]']
+  delivered_at datetime [note: '[부품 요청 배송 완료일시]']
+  canceled_at datetime [note: '[부품 요청 철회일시] 고객 철회 시각']
 
   indexes {
     (member_id, created_at) [name: 'ix_part_request_member']
@@ -1306,7 +1314,11 @@ Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누�
 Table part_request_item [note: '[부품 요청 품목] 요청한 부품과 수량 (부품 요청 1건에 부품 여러 개)'] {
   request_id bigint [not null, note: '[부품 요청 ID]']
   part_id bigint [not null, note: '[요청 부품 ID]']
+  part_code varchar(30) [not null, note: '[요청 시점 부품 코드] 설명서 표기 (product_part.part_code 기록)']
+  part_name varchar(100) [not null, note: '[요청 시점 부품명] 부품 이름이 바뀌거나 부품이 삭제돼도 그대로']
   quantity smallint [not null, note: '[요청 부품 수량] CHECK quantity >= 1']
+  unit_price bigint [not null, default: 0, note: '[요청 시점 부품 단가] PURCHASE면 product_part.unit_price 기록, MISSING·DAMAGED는 0. 단가가 나중에 바뀌어도 그대로']
+  amount bigint [not null, default: 0, note: '[요청 부품 금액] unit_price × quantity']
 
   indexes {
     (request_id, part_id) [pk]
