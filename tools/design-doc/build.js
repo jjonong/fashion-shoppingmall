@@ -193,7 +193,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>상품 — 옵션/SKU · 재고 · 상태 흐름 · 정보제공고시 · 조립식(부품 · 조립 설명서) · ERD</li>
     <li>커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
     <li>장바구니 — 장바구니 진단 · 인테리어 플랜 · 비회원 장바구니 · 가격 인하 알림 · ERD</li>
-    <li>주문 — 주문 흐름 · 주문 상품 상태 · 스냅샷 · 할인 안분 · 부분 취소 · 부품 요청 · ERD</li>
+    <li>주문 — 주문 흐름 · 주문 상품 상태 · 주문 시점 기록 · 할인 안분 · 부분 취소 · 부품 요청 · ERD</li>
     <li>결제 — 결제수단 · 가상계좌 · 현금영수증 · 에스크로 · ERD</li>
     <li>배송 — 가구 배송비 계산 · 반입 판단 · 배송 묶음 · 설치 일정 예약 · ERD</li>
     <li>혜택 — 쿠폰 종류와 중복 사용 · 발급 방식(커뮤니티 활동 보상) · 할인 안분 · 취소 복원 · ERD</li>
@@ -302,7 +302,7 @@ ${erOf('cart')}
   <h2>7. 주문</h2>
   ${fig('주문 흐름', mm(D.orderflow), '재고는 주문 생성 시 차감하고, 30분 안에 결제되지 않으면 배치로 재고 · 설치 슬롯을 되돌린다. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않는다')}
   ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후 반품 · 교환은 다음 단계(클레임)')}
-  <div class="callout"><b>스냅샷</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수)는 order_address에, 배송비 내역(기본 · 권역)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다.</div>
+  <div class="callout"><b>주문 시점 기록 (영수증)</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수)는 order_address에, 배송비 내역(기본 · 권역)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다. 영수증에 산 날의 가격이 찍혀 있는 것과 같다 (흔히 스냅샷이라고 부름). 장바구니는 아직 사기 전이라 기록하지 않고 항상 현재 값을 보여 준다.</div>
   <div class="callout"><b>할인 안분과 부분 취소</b> — 등급 할인(다음 단계의 쿠폰 · 포인트 포함)은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다.</div>
   <div class="callout"><b>부품 요청</b> — 구매한 조립식 상품의 누락 · 파손 부품은 주문 상품(order_item) 기준으로 part_request를 남기고, 요청 부품은 part_request_item에 담는다. 부품 목록과 조립 설명서는 상품 영역(product_part · assembly_step)에 있다(4장 조립식 부품 요청 흐름 참고).</div>
 </section>

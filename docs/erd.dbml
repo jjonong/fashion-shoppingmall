@@ -1157,11 +1157,11 @@ Table interior_plan_item [note: '[플랜 상품] 플랜에 담은 상품. 같은
 // 주문 - 주문/주문 상품
 // =====================================================================
 
-Table orders [note: '[주문] 주문 (order는 MySQL 예약어라 orders). 상태는 주문 상품(order_item)별로 관리하고 여기는 요약. 금액은 주문 시점 스냅샷'] {
+Table orders [note: '[주문] 주문 (order는 MySQL 예약어라 orders). 상태는 주문 상품(order_item)별로 관리하고 여기는 요약. 금액은 주문 시점 기록 (영수증처럼 나중에 상품·가격이 바뀌어도 그대로)'] {
   order_id bigint [pk, increment, note: '[주문 ID]']
   order_no varchar(20) [not null, unique, note: '[주문번호] 화면·고객센터용 주문번호 (예: 20261118-000123). PG 가맹점 주문번호로도 사용']
   member_id bigint [not null, note: '[주문 회원 ID]']
-  orderer_name varchar(50) [not null, note: '[주문자 이름] 주문자 스냅샷']
+  orderer_name varchar(50) [not null, note: '[주문자 이름] 주문 시점 기록']
   orderer_phone_enc varchar(200) [not null, note: '[주문자 연락처(암호화)] AES-256 암호문']
   orderer_email varchar(200) [not null, note: '[주문자 이메일]']
   grade_id bigint [not null, note: '[주문 시점 회원 등급 ID] 주문 시점 등급 (등급 할인 근거)']
@@ -1189,7 +1189,7 @@ Table orders [note: '[주문] 주문 (order는 MySQL 예약어라 orders). 상�
   }
 }
 
-Table order_address [note: '[주문 배송지] 주문 배송지 스냅샷 (orders와 1:1). 주문 후 회원이 배송지를 고치거나 지워도 이 주문은 그대로. 반입 경로까지 복사해 설치 기사에게 전달'] {
+Table order_address [note: '[주문 배송지] 주문 시점 배송지 기록 (orders와 1:1). 주문 후 회원이 배송지를 고치거나 지워도 이 주문은 그대로. 반입 경로까지 복사해 설치 기사에게 전달'] {
   order_id bigint [pk, note: '[주문 ID] orders와 1:1']
   receiver_name varchar(50) [not null, note: '[주문 배송지 받는 분 이름]']
   receiver_phone_enc varchar(200) [not null, note: '[주문 배송지 받는 분 연락처(암호화)] AES-256 암호문']
@@ -1197,7 +1197,7 @@ Table order_address [note: '[주문 배송지] 주문 배송지 스냅샷 (order
   address1 varchar(200) [not null, note: '[주문 배송지 기본 주소]']
   address2 varchar(200) [note: '[주문 배송지 상세 주소]']
   zone_id bigint [not null, note: '[권역 ID] 우편번호로 찾은 배송 권역 (배송비·설치 슬롯 기준)']
-  building_type varchar(20) [note: '[주문 배송지 주거형태] 주거형태 스냅샷 (반입 기본값 근거)']
+  building_type varchar(20) [note: '[주문 배송지 주거형태] 주문 시점 주거형태 (반입 기본값 근거)']
   floor_no smallint [note: '[주문 배송지 층수]']
   has_elevator char(1) [note: '[주문 배송지 엘리베이터 유무]']
   entrance_door_width_mm int [note: '[주문 배송지 현관문 폭(mm)]']
@@ -1212,7 +1212,7 @@ Table order_address [note: '[주문 배송지] 주문 배송지 스냅샷 (order
   }
 }
 
-Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태·취소·구매 확정을 행 단위로 관리. 상품명·옵션·단가는 주문 시점 스냅샷. 취소는 행 전체 단위 (수량 일부 취소 없음)'] {
+Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태·취소·구매 확정을 행 단위로 관리. 상품명·옵션·단가는 주문 시점 기록 (영수증처럼 상품이 바뀌거나 삭제돼도 그대로). 취소는 행 전체 단위 (수량 일부 취소 없음)'] {
   order_item_id bigint [pk, increment, note: '[주문 상품 ID]']
   order_id bigint [not null, note: '[주문 ID]']
   shipment_id bigint [not null, note: '[배송 묶음 ID] 배송 묶음']
@@ -1221,12 +1221,12 @@ Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태
   set_product_id bigint [note: '[세트 상품 ID] 세트로 주문했으면 세트 상품 ID']
   bundle_key char(36) [note: '[주문 상품 세트 묶음 키] 세트 1회 선택 묶음 (cart_item에서 복사)']
   source_post_id bigint [note: '[유입 글 ID] 유입 글 (cart_item에서 복사). 구매 확정 시 post.purchase_count 증가 (작성자 본인 구매 제외)']
-  room_name varchar(30) [note: '[주문 상품 설치 위치(방 이름)] 설치 위치 스냅샷 (cart_item.room_id의 방 이름, 예: 안방). 설치 기사 전달용']
-  product_name varchar(200) [not null, note: '[상품명(스냅샷)] 스냅샷']
-  option_text varchar(200) [not null, note: '[주문 상품 옵션 문구(스냅샷)] 스냅샷 (예: 월넛 / Q). 옵션 없으면 빈 문자열']
-  sku_code varchar(50) [not null, note: '[주문 상품 SKU 코드] 스냅샷']
-  sale_type varchar(20) [not null, note: '[주문 상품 판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER 스냅샷. MADE_TO_ORDER는 재고 차감 없음']
-  condition_grade varchar(20) [not null, default: 'NEW', note: '[주문 상품 상태 등급] product.condition_grade 스냅샷 (NEW/OPEN_BOX/DISPLAY/REFURB_A/REFURB_B). 리퍼·전시 구매 사실의 근거, 반품 규정 판단(다음 단계 클레임)']
+  room_name varchar(30) [note: '[주문 상품 설치 위치(방 이름)] 주문 시점 설치 위치 (cart_item.room_id의 방 이름, 예: 안방). 설치 기사 전달용']
+  product_name varchar(200) [not null, note: '[주문 시점 상품명] 상품 이름이 바뀌거나 상품이 삭제돼도 그대로']
+  option_text varchar(200) [not null, note: '[주문 시점 옵션 문구] (예: 월넛 / Q). 옵션 없으면 빈 문자열']
+  sku_code varchar(50) [not null, note: '[주문 시점 SKU 코드]']
+  sale_type varchar(20) [not null, note: '[주문 상품 판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER 주문 시점 기록. MADE_TO_ORDER는 재고 차감 없음']
+  condition_grade varchar(20) [not null, default: 'NEW', note: '[주문 상품 상태 등급] 주문 시점 product.condition_grade 기록 (NEW/OPEN_BOX/DISPLAY/REFURB_A/REFURB_B). 리퍼·전시 구매 사실의 근거, 반품 규정 판단(다음 단계 클레임)']
   unit_list_price bigint [not null, note: '[주문 상품 정가 단가] 정가 + 옵션 추가금']
   unit_price bigint [not null, note: '[주문 상품 단가] 판매가 + 옵션 추가금']
   quantity smallint [not null, note: '[주문 상품 수량] CHECK quantity >= 1']
@@ -1456,11 +1456,11 @@ Table carry_default_spec [note: '[반입 기본값] 주거형태별 반입 기�
 // 배송 - 배송 묶음/설치 일정
 // =====================================================================
 
-Table shipment [note: '[배송 묶음] 배송 묶음. 같은 배송 정책이고 is_bundle_allowed = Y면 한 묶음, 아니면 상품마다 따로. 배송비 계산 결과와 설치배송 일정을 스냅샷으로 저장. orders.receive_together = Y면 모든 묶음의 출고를 가장 늦은 출고 가능일(또는 희망 수령일)에 맞춰 같은 날 도착하게 함'] {
+Table shipment [note: '[배송 묶음] 배송 묶음. 같은 배송 정책이고 is_bundle_allowed = Y면 한 묶음, 아니면 상품마다 따로. 배송비 계산 결과와 설치배송 일정을 주문 시점 기록으로 저장. orders.receive_together = Y면 모든 묶음의 출고를 가장 늦은 출고 가능일(또는 희망 수령일)에 맞춰 같은 날 도착하게 함'] {
   shipment_id bigint [pk, increment, note: '[배송 묶음 ID]']
   order_id bigint [not null, note: '[주문 ID]']
   shipping_policy_id bigint [not null, note: '[배송 정책 ID]']
-  delivery_type varchar(20) [not null, note: '[배송 방식] PARCEL/FREIGHT/DIRECT_INSTALL 스냅샷']
+  delivery_type varchar(20) [not null, note: '[배송 방식] PARCEL/FREIGHT/DIRECT_INSTALL 주문 시점 기록']
   base_fee bigint [not null, default: 0, note: '[기본 배송비] 기본 배송비 (무료배송 기준 충족 시 0)']
   zone_extra_fee bigint [not null, default: 0, note: '[배송 권역 추가비]']
   fee_total bigint [not null, default: 0, note: '[배송비 합계] 기본 배송비 + 권역 추가비. 설계서 "가구 배송비 계산 흐름" 결과. 사다리차·계단 운반비는 포함하지 않음 (고객 현장 정산). 배송비 쿠폰 할인 전 금액']
@@ -1609,7 +1609,7 @@ Table member_coupon [note: '[회원 보유 쿠폰] 발급 1건 = 1행 (내 쿠�
 Table coupon_use [note: '[쿠폰 사용 내역] 주문에 쿠폰을 적용한 1건 = 1행. 복원(전체 취소·결제 기한 초과)해도 행은 남기고 restored_at만 채움. 상품 쿠폰은 order_item_id, 배송비 쿠폰은 shipment_id에 적용. CHECK: PRODUCT면 order_item_id 필수·shipment_id NULL, SHIPPING이면 shipment_id 필수·order_item_id NULL, ORDER면 둘 다 NULL → order_item_id·shipment_id FK는 참조 동작 없이 생성'] {
   use_id bigint [pk, increment, note: '[쿠폰 사용 ID]']
   member_coupon_id bigint [not null, note: '[사용한 회원 보유 쿠폰 ID]']
-  coupon_type varchar(20) [not null, note: '[사용 쿠폰 종류] PRODUCT/ORDER/SHIPPING 스냅샷 (중복 사용 방지 인덱스용)']
+  coupon_type varchar(20) [not null, note: '[사용 쿠폰 종류] PRODUCT/ORDER/SHIPPING 사용 시점 기록 (중복 사용 방지 인덱스용)']
   order_id bigint [not null, note: '[쿠폰 사용 주문 ID]']
   order_item_id bigint [note: '[상품 쿠폰 적용 주문 상품 ID] PRODUCT만']
   shipment_id bigint [note: '[배송비 쿠폰 적용 배송 묶음 ID] SHIPPING만']

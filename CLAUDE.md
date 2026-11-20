@@ -90,7 +90,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **상품정보제공고시**: 품목마다 법정 항목이 달라서 컬럼이 아닌 행 구조. `notice_type`(FURNITURE/BEDDING_CURTAIN/KITCHENWARE/HOME_APPLIANCE...) → `notice_item`(유형별 항목) → `product_notice`(상품별 유형, 1:1) + `product_notice_value`(항목 값). `category.notice_type_id`가 기본 유형(배송 정책도 같은 방식으로 `category.default_shipping_policy_id`가 기본값, 상품별 변경 가능). 필수 항목이 모두 있어야 ON_SALE. 항목 유형 일치는 앱 검증.
 - **상품 상태 흐름**: `DRAFT → ON_SALE ⇄ SOLD_OUT`, `STOPPED`. 품절 기준은 SKU 재고로 통일(전 SKU 0이면 시스템이 SOLD_OUT, changed_by NULL).
 - **자사몰 규모로 축소한 것 (사용자 확정)**: 창고별 실물 재고(`warehouse`, `sku_inventory`), 상품 검수 승인(`product_approval`), 검색 로그(`search_log`), MD 검색 키워드(`product_search_keyword`), 부가 서비스(폐가구 수거·조립 대행: `addon_service`, `product_addon_service`, `cart_item_addon`, `order_item_addon`)는 뺐다. 다시 넣기 전에 사용자와 상의한다. 포트폴리오 초점은 **가구몰 특화 + 커뮤니티**.
-- **상태 등급** (사용자 확정): `product.condition_grade` = NEW/OPEN_BOX/DISPLAY/REFURB_A/REFURB_B. 리퍼·전시는 옵션(SKU)이 아니라 **별도 상품 행** + `original_product_id`(원본 새상품, NEW면 NULL·그 외 필수 CHECK → FK 참조 동작 없이) + `condition_note`(흠집 설명, 사진은 `product_image`). 가격·재고·반품 규정이 달라서. 주문 시 `order_item.condition_grade` 스냅샷(반품 규정은 다음 단계 클레임에서 등급 기준). 목록 기본은 NEW만, 커뮤니티 "이 상품이 쓰인 사진"은 원본으로 모음.
+- **상태 등급** (사용자 확정): `product.condition_grade` = NEW/OPEN_BOX/DISPLAY/REFURB_A/REFURB_B. 리퍼·전시는 옵션(SKU)이 아니라 **별도 상품 행** + `original_product_id`(원본 새상품, NEW면 NULL·그 외 필수 CHECK → FK 참조 동작 없이) + `condition_note`(흠집 설명, 사진은 `product_image`). 가격·재고·반품 규정이 달라서. 주문 시 `order_item.condition_grade` 주문 시점 기록(반품 규정은 다음 단계 클레임에서 등급 기준). 목록 기본은 NEW만, 커뮤니티 "이 상품이 쓰인 사진"은 원본으로 모음.
 - **세트 상품**: `product_type='SET'`은 자체 SKU 없이 `product_set_item` 구성품 SKU를 각각 선택. 세트의 `list_price`·`sale_price`는 구성품 SKU 가격 합계(표시용, 세트 할인 없음), 대표 치수·조립 정보·`make_days`는 비우고 구성품 값을 사용.
 - **필터**: 컬러 계열(옵션 값 단위), 소재(부위별), 카테고리별 속성(`attribute`, 데이터로 추가). 동의어·검색 로그는 스토어/커뮤니티 공용.
 - **조립식 특화** (사용자 확정: 완제품·조립식 모두 취급): `product.assembly_type`(NONE/SELF/INSTALL)만 상품에 두고 조립 정보(난이도·시간·인원·공구)는 1:1 확장 `product_assembly_detail`(조립이 필요한 상품만 행, 사용자 확정: 상품 테이블에서 분리), 부품 목록 `product_part`(설명서 코드, 옵션별 부품, 단품 구매 가능), 단계별 설명서 `assembly_step` + `assembly_step_part`, 부품 요청 `part_request`(MISSING·DAMAGED는 구매 확정 후 30일 무료, PURCHASE 유료) + `part_request_item`. 조립 HARD·2인 이상이면 장바구니 진단에서 미리 안내.
@@ -106,13 +106,13 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 
 ### 장바구니
 - **장바구니** `cart_item`: 회원(`member_id`) 또는 비회원(`guest_token_hash`, 쿠키 토큰 SHA-256) 중 정확히 하나(CHECK → member_id FK는 참조 동작 없이). 로그인 시 회원 장바구니로 합침(같은 SKU 수량 합산, added_price는 낮은 값). 주문은 회원만. 담은 시점 단가 `added_price`로 가격 변동 표시, 가격 인하 시 PRICE_DROP 알림(광고성 조건) + `price_alert_price`로 중복 방지. `product.cart_count` 캐시. 품절은 재입고 알림 신청, 판매중지는 비슷한 상품 제안(장바구니 진단). 세트는 구성품 SKU를 `set_product_id` + `bundle_key`(UUID)로 묶음. 같은 SKU 중복 방지는 함수 기반 `ux_cart_item (COALESCE(member_id, 0), COALESCE(guest_token_hash, ''), sku_id, COALESCE(bundle_key, ''))`.
-- **가구몰 장바구니**: 놓을 방 `cart_item.room_id`(→ 주문 시 `order_item.room_name` 스냅샷), 유입 글 `source_post_id`(장바구니 → 주문 상품, last-touch) → 구매 확정 시 `post.purchase_count` 증가(작성자 본인 구매 제외). 이사일에 한 번에 받기 `orders.receive_together` + `desired_receive_date`(기본값 `member_home.move_in_planned_at`). 장바구니 진단(방 치수·반입·배송 묶음·연관 상품)은 저장하지 않고 계산.
+- **가구몰 장바구니**: 놓을 방 `cart_item.room_id`(→ 주문 시 `order_item.room_name` 주문 시점 기록), 유입 글 `source_post_id`(장바구니 → 주문 상품, last-touch) → 구매 확정 시 `post.purchase_count` 증가(작성자 본인 구매 제외). 이사일에 한 번에 받기 `orders.receive_together` + `desired_receive_date`(기본값 `member_home.move_in_planned_at`). 장바구니 진단(방 치수·반입·배송 묶음·연관 상품)은 저장하지 않고 계산.
 - **인테리어 플랜** `interior_plan`(방·스타일·예산·공유 토큰) + `interior_plan_item`(후보 CANDIDATE → 확정 CHOSEN, SKU 미정 가능, 유입 글). 합계·예산 대비·방 치수 확인은 계산만. "장바구니로 담기"는 CHOSEN을 `cart_item`으로 복사(`plan_id`·`room_id`·`source_post_id` 유지).
 
 ### 주문
 - **이름**: `order`는 MySQL 예약어라 주문 테이블은 **`orders`**.
 - **상태 단위**: 상태는 **`order_item`별**(PENDING → PAID → PREPARING → SHIPPED → DELIVERED → CONFIRMED, CANCEL_REQUESTED → CANCELED), `orders.status`는 요약(PENDING/PAID/COMPLETED/CANCELED/EXPIRED). 변경은 `order_item_status_history`.
-- **스냅샷**: 상품명·옵션 문구·단가는 `order_item`, 배송지·반입 경로는 `order_address`(1:1), 배송비 내역은 `shipment`에 복사.
+- **주문 시점 기록 (스냅샷)**: 영수증처럼 주문 순간의 값을 복사해 두어 나중에 바뀌어도 그대로. 문서·발표에서는 "스냅샷" 대신 "주문 시점 기록"이라고 쓴다(사용자 요청). 상품명·옵션 문구·단가는 `order_item`, 배송지·반입 경로는 `order_address`(1:1), 배송비 내역은 `shipment`에 복사.
 - **재고 차감 시점**: 주문 생성(PENDING) 시 조건부 UPDATE로 차감 + `stock_history`(ref_type ORDER, ref_id = order_item_id). 결제 기한 30분(`orders.expires_at`)이 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구. MADE_TO_ORDER는 차감 없음.
 - **할인 안분·부분 취소**: 등급 할인(다음 단계 쿠폰·포인트 포함)을 `order_item`별로 나눠 저장, `final_amount`가 환불 기준. 취소는 주문 상품 한 줄 단위(수량 일부 취소 없음). PAID는 즉시 취소, PREPARING부터는 요청 → 관리자 승인, 출고 후는 반품(다음 단계).
 - **구매 확정**: 배송 완료 7일 후 자동(또는 직접). 이때 `product.sales_count`, `member_account.total_purchase_amount` 갱신.

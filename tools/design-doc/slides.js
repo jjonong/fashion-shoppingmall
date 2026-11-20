@@ -14,18 +14,18 @@ const DECKS = [['product'], ['cart', 'order']]; // 발표 자료 (사용자 요�
 const LINKS = {
   'cart>order': {
     title: '장바구니 → 주문: 넘어가는 값',
-    desc: '주문하기를 누르면 is_selected = Y인 장바구니 행이 주문 상품 한 줄씩이 되고, 주문이 끝나면 장바구니에서 지운다. 장바구니는 담은 사실만, 주문은 결제 시점의 값을 스냅샷으로 저장한다.',
+    desc: '주문하기를 누르면 is_selected = Y인 장바구니 행이 주문 상품 한 줄씩이 되고, 주문이 끝나면 장바구니에서 지운다. 장바구니는 담은 사실만, 주문은 결제 시점의 값을 영수증처럼 기록해 둔다 (나중에 상품이 바뀌어도 그대로).',
     rows: [
       ['cart_item.sku_id', 'order_item.sku_id, product_id', '그대로 복사'],
       ['cart_item.quantity', 'order_item.quantity', '그대로 복사'],
       ['cart_item.set_product_id, bundle_key', 'order_item.set_product_id, bundle_key', '세트 구성품 묶음 유지'],
       ['cart_item.source_post_id', 'order_item.source_post_id', '유입 글 유지 → 구매 확정 시 post.purchase_count 증가'],
       ['cart_item.room_id', 'order_item.room_name', '방 ID가 아니라 방 이름을 복사 (방을 지워도 설치 위치가 남도록)'],
-      ['(상품 · SKU 현재 값)', 'order_item.product_name, option_text, sku_code, sale_type, unit_list_price, unit_price', '주문 시점 스냅샷'],
+      ['(상품 · SKU 현재 값)', 'order_item.product_name, option_text, sku_code, sale_type, unit_list_price, unit_price', '주문 시점 기록'],
       ['cart_item.added_price', '—', '복사 안 함: 담은 뒤 가격 변동 표시용. 주문은 현재 가격'],
       ['cart_item.plan_id', '—', '복사 안 함: 플랜 유입은 장바구니까지만 기록'],
       ['cart_item.member_id', 'orders.member_id', '주문은 회원만 (비회원은 로그인 후 장바구니를 합쳐서 주문)'],
-      ['(배송지 address)', 'order_address', '받는 분 · 주소 · 반입 경로 치수 스냅샷'],
+      ['(배송지 address)', 'order_address', '받는 분 · 주소 · 반입 경로 치수를 주문 시점 그대로 기록'],
     ],
   },
 };
