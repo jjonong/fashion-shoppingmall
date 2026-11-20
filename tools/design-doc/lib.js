@@ -214,46 +214,19 @@ ${p.inner.replace('@XYWH@', `x="${x + PAD}" y="${y + PAD + LABEL}" width="${iw}"
   return { svg, ext: [...ext] };
 }
 
-// 영역 7개: TableGroup 이름 접두사로 구분 (쇼핑 흐름 순서). 전체 설계서와 ERD 웹페이지 공용
-// color/fill은 ERD 웹페이지 전체 구조도 색 (화면 CSS --s1~--s7과 같은 순서)
+// 영역: TableGroup 이름 접두사로 구분 (쇼핑 흐름 순서). 전체 설계서와 ERD 웹페이지 공용
+// color/fill은 ERD 웹페이지 전체 구조도 색 (화면 CSS --s1~--s8과 같은 순서)
+// 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다
 const AREAS = [
-  { prefix: 'member', name: '고객', color: '#2f8f6b', fill: '#EEF7F2', desc: '회원 · 프로필 · 주거정보 · 약관 · 보안 · 상태' },
-  { prefix: 'product', name: '상품', color: '#2f6496', fill: '#EDF3F9', desc: '옵션 · SKU · 포장 · 재고 · 필터 · 조립식' },
-  { prefix: 'community', name: '커뮤니티', color: '#b5562f', fill: '#FBF1EC', desc: '고객 집사진 · 집들이 · 브랜드 매거진' },
-  { prefix: 'cart', name: '장바구니', color: '#a67c00', fill: '#FBF6E6', desc: '회원·비회원 장바구니 · 인테리어 플랜' },
-  { prefix: 'order', name: '주문', color: '#7a5bb5', fill: '#F3EFFA', desc: '주문 · 주문 상품 상태 · 반품/교환 · 부품 요청 · A/S' },
-  { prefix: 'payment', name: '결제', color: '#b5407a', fill: '#FBEFF5', desc: 'PG 결제 · 부분 환불 · 현금영수증' },
-  { prefix: 'delivery', name: '배송', color: '#2b8a94', fill: '#EAF6F7', desc: '배송 정책 · 권역 · 반입 · 배송 묶음 · 설치 일정' },
-  { prefix: 'benefit', name: '혜택', color: '#c0392b', fill: '#FCEEEC', desc: '쿠폰(상품 · 주문 · 배송비) · 커뮤니티 활동 보상' },
+  { prefix: 'member', name: '고객', color: '#2f8f6b', fill: '#EEF7F2', desc: '회원 · 소셜 연동 · 체형 · 배송지' },
+  { prefix: 'market', name: '마켓', color: '#b5562f', fill: '#FBF1EC', desc: '입점 마켓 · 마켓 관리자 · 마켓 찜' },
+  { prefix: 'product', name: '상품', color: '#2f6496', fill: '#EDF3F9', desc: '카테고리 · 사이즈 · 컬러 · SKU · 재고' },
 ];
 const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
 
 // 영역(TableGroup)별 설명: 전체 설계서와 ERD 웹페이지 공용
 const groupDesc = {
-  member_basic: '회원 계정, 커뮤니티 프로필, 주거 정보, 배송지(가구 반입 경로 치수 포함). 거의 모든 영역이 member_account를 작성자·관리자로 참조한다.',
-  member_terms_noti_style: '약관 버전과 동의 이력(마케팅 동의의 유일한 기준, 2년 재확인), 알림 수신 스위치, 인테리어 스타일 취향.',
-  member_security: '로그인 이력, 1회용 토큰, 기기별 세션, 비밀번호 이력, 관리자 개인정보 접근 기록. 로그·세션은 보관 기간이 지나면 배치로 삭제.',
-  member_lifecycle: '회원 상태(휴면·정지·탈퇴) 전환 이력, 닉네임 변경 이력, 닉네임·글 공용 금칙어, 탈퇴 후 30일 재가입 제한.',
-  product_classification: '4단계 카테고리(URL 코드, 상품 등록 시 미리 채우는 기본 고시 유형·기본 배송 정책). 자사 브랜드만 판매하므로 브랜드 구분 없음.',
-  product_core: '상품 → 옵션 그룹 → 옵션 값 → SKU 구조, SKU 포장 박스(화물 운임·반입 판단 근거), 이미지, 상품 문의.',
-  product_notice_info: '상품정보제공고시 품목 유형(가구·침구·주방·가전)별 항목 마스터와 상품별 값.',
-  product_link_history: '스타일·주거 조건 연결(맞춤 추천), 재고 원장, 가격 이력, 재입고 알림 신청.',
-  product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어.',
-  product_composition_operation: '연관·세트 상품, 상품 상태 이력.',
-  product_assembly: '조립 정보(난이도·시간·인원·공구, 상품과 1:1), 조립식 상품의 부품 목록(설명서 표기·단품 구매 가능 여부)과 단계별 조립 설명서(단계마다 쓰는 부품).',
-  community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
-  community_reaction: '스타일 분류, 댓글, 좋아요, 스크랩(글 저장 + 상품 찜).',
-  community_operation: '신고와 앱 내 알림함.',
-  cart_core: '회원·비회원 장바구니(로그인 시 합치기, 담은 가격·가격 인하 알림, 방별 묶음, 집들이·플랜 유입).',
-  cart_plan: '인테리어 플랜(방·스타일·예산 보드)과 후보 상품(CANDIDATE 비교 → CHOSEN 확정 → 장바구니로).',
-  order_core: '주문(요약 상태·주문 시점 금액·이사일 함께 받기), 주문 시점 배송지 기록(반입 경로 포함), 주문 상품(상품별 상태·할인 안분·설치 위치·유입 글), 상태 이력(변경 주체·사유 유형), 관리자 주문 메모.',
-  order_claim: '출고 후 반품·교환(주문 상품 한 줄 단위, 귀책에 따른 회수 배송비, 회수·검수 → 환불 또는 교환품 발송).',
-  order_aftercare: '구매 후 지원: 조립식 부품 요청(누락·파손 무료, 추가 구매 유료)과 가구 A/S(품질보증 기간 무상, 방문 수리·부품 발송·회수 수리).',
-  payment_core: 'PG 결제(주문·유료 부품 구매·유상 A/S, 카드·간편결제·실시간 계좌이체·가상계좌, 에스크로는 주문만), 결제 취소·부분 환불(가상계좌는 환불 계좌), 현금영수증 발급·취소 이력.',
-  delivery_policy: '가구 배송 정책(택배·화물·설치배송, 사다리차·계단 현장 추가 비용 안내), 우편번호 → 권역 매핑, 권역별 배송 가능 여부·추가비, 주거형태별 반입 기본값.',
-  delivery_shipment: '배송 묶음(배송비 내역·송장·반입 확인·설치 일정)과 권역별 설치 가능 슬롯.',
-  benefit_coupon: '쿠폰 정의(상품·주문·배송비 쿠폰, 정액·정률, 발급 방식·기간·한도), 상품 쿠폰 적용 대상(상품·카테고리, 제외 지정), 코드 입력용 공용·1회용 코드.',
-  benefit_member_coupon: '회원 쿠폰함(발급 경로·사용 기간·상태, 커뮤니티 보상 근거 글)과 주문별 쿠폰 사용 내역(주문 상품·배송 묶음 적용, 전체 취소 시 복원).',
+  member_basic: '구매 고객 계정(상태·로그인 잠금·휴면), 소셜 계정 연동(제공자별 1개), 체형(사이즈 추천·비슷한 체형 리뷰), 배송지(기본 배송지 1개).',
 };
 
 // ---------- HTML 머리말 / Mermaid 초기화 ----------

@@ -110,7 +110,7 @@ function overallSvg() {
 async function main() {
   await initViz();
   const data = {
-    stages: STAGES.map((s) => ({ ...s, all: `${s.prefix}__all`, groups: groups.filter((g) => areaOf(g.name).prefix === s.prefix).map((g) => g.name) })),
+    stages: STAGES.filter((s) => groups.some((g) => areaOf(g.name).prefix === s.prefix)).map((s) => ({ ...s, all: `${s.prefix}__all`, groups: groups.filter((g) => areaOf(g.name).prefix === s.prefix).map((g) => g.name) })),
     groups: {},
     tables: {},
     counts: { tables: S.tables.length, refs: refs.length, groups: groups.length },
@@ -137,6 +137,7 @@ async function main() {
   // 영역 전체 ERD: 영역의 모든 테이블을 세부 영역(TableGroup) 상자로 묶어 한 장에
   AREAS.forEach((a) => {
     const gs = groups.filter((g) => areaOf(g.name).prefix === a.prefix);
+    if (!gs.length) return; // 아직 테이블이 없는 영역은 건너뜀
     const key = `${a.prefix}__all`;
     const tables = gs.flatMap((g) => g.tables.map((t) => t.name));
     const hideAudit = a.prefix !== 'member';

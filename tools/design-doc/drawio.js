@@ -136,6 +136,7 @@ async function main() {
   let areaCount = 0;
   for (const area of AREAS) {
     const gs = groups.filter((g) => areaOf(g.name).prefix === area.prefix);
+    if (!gs.length) continue; // 아직 테이블이 없는 영역은 건너뜀
     const inArea = new Set(gs.flatMap((g) => g.tables.map((t) => t.name)));
     const rels = refs.filter((r) => inArea.has(r.child) && showRef(r));
     const ext = [...new Set(rels.filter((r) => !inArea.has(r.parent)).map((r) => r.parent))];
