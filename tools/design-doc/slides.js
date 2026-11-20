@@ -1,19 +1,15 @@
-// 상품 영역 발표 자료 (A4 가로): 표지 + 세부 영역별 테이블의 전체 컬럼
-// 사용: npm run slides            (기본: ../../docs/erd.dbml → ../../docs/상품_발표자료.pdf)
-//       node slides.js <in.dbml> <out.pdf>
-// 내용은 모두 DBML에서 자동 생성. 세부 영역마다 새 페이지에서 시작하고, 테이블은 이어서 배치
+// 영역별 발표 자료 (A4 가로): 표지 + 세부 영역별 테이블의 전체 컬럼
+// 사용: npm run slides            (DECKS의 영역 모두: docs/<영역 이름>_발표자료.pdf)
+//       node slides.js cart       (한 영역만, 접두사는 lib.AREAS의 prefix)
+// 내용은 모두 docs/erd.dbml에서 자동 생성. 세부 영역마다 새 페이지에서 시작하고, 테이블은 이어서 배치
 // (작은 테이블은 페이지에서 끊기지 않게, 긴 테이블은 다음 페이지로 이어지며 표 머리글 반복)
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, logicalOf, load, initViz, head, mermaidInit, renderPdf } = require('./lib');
+const { ROOT, esc, noteOf, logicalOf, load, initViz, head, mermaidInit, renderPdf, AREAS } = require('./lib');
 
-const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
-const outPdf = process.argv[3] || path.join(ROOT, 'docs', '상품_발표자료.pdf');
-const ctx = load(src);
+const DECKS = ['product', 'cart']; // 발표 자료를 만드는 영역 (사용자 요청)
+const ctx = load(path.join(ROOT, 'docs', 'erd.dbml'));
 const { tableMap, groups, keyMark } = ctx;
-
-const areaGroups = groups.filter((g) => g.name.startsWith('product_'));
-const total = areaGroups.reduce((n, g) => n + g.tables.length, 0);
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 
 const typeOf = (f) => f.type.type_name; // varchar(50)처럼 길이까지 들어 있음
@@ -38,10 +34,12 @@ function tableBlock(name) {
 </div>`;
 }
 
-const makeHtml = () => `${head('상품 영역 발표 자료')}
+const makeHtml = (area, areaGroups) => {
+  const total = areaGroups.reduce((n, g) => n + g.tables.length, 0);
+  return `${head(`${area.name} 영역 발표 자료`)}
 <style>${fs.readFileSync(path.join(__dirname, 'slides.css'), 'utf8')}</style>
 <section class="cover">
-  <h1>상품 영역 설계</h1>
+  <h1>${esc(area.name)} 영역 설계</h1>
   <p>테이블 ${total}개 · 세부 영역 ${areaGroups.length}개</p>
   <ol>${areaGroups.map((g) => `<li>${esc(gTitle(g))} <span>${g.tables.length}</span></li>`).join('')}</ol>
 </section>
@@ -51,8 +49,15 @@ ${areaGroups.map((g, i) => `<section class="group">
 </section>`).join('\n')}
 ${mermaidInit}
 </body></html>`;
+};
 
 (async () => {
   await initViz();
-  await renderPdf({ html: makeHtml(), name: 'slides_product', outPdf, footer: '상품 영역 설계' });
+  for (const prefix of process.argv[2] ? [process.argv[2]] : DECKS) {
+    const area = AREAS.find((a) => a.prefix === prefix);
+    if (!area) throw new Error(`알 수 없는 영역: ${prefix} (lib.AREAS의 prefix)`);
+    const areaGroups = groups.filter((g) => g.name.startsWith(prefix + '_'));
+    const outPdf = path.join(ROOT, 'docs', `${area.name}_발표자료.pdf`);
+    await renderPdf({ html: makeHtml(area, areaGroups), name: `slides_${prefix}`, outPdf, footer: `${area.name} 영역 설계` });
+  }
 })();
