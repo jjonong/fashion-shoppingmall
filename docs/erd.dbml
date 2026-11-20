@@ -1283,9 +1283,9 @@ Table part_request [note: '[부품 요청] 조립식 상품 부품 요청. 누�
   }
 }
 
-Table part_request_item [note: '[부품 요청 상품] 요청한 부품과 수량'] {
-  request_id bigint [not null, note: '[요청 ID]']
-  part_id bigint [not null, note: '[부품 ID]']
+Table part_request_item [note: '[부품 요청 품목] 요청한 부품과 수량 (부품 요청 1건에 부품 여러 개)'] {
+  request_id bigint [not null, note: '[부품 요청 ID]']
+  part_id bigint [not null, note: '[요청 부품 ID]']
   quantity smallint [not null, note: '[요청 부품 수량] CHECK quantity >= 1']
 
   indexes {
