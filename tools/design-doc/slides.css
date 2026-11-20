@@ -17,6 +17,9 @@ body { font-size: 9.5pt; line-height: 1.45; color: #222; background: #fff; }
 .group > header h2 { font-size: 17pt; font-weight: bold; color: #222; border: 0; margin: 0; padding: 0; }
 .group > header .idx, .group > header .cnt { font-size: 10pt; color: #888; }
 .group > header .cnt { margin-left: auto; }
+.group > header h2 small { font-size: 11pt; color: #888; font-weight: normal; margin: 0; }
+.group.link .tdesc { font-size: 10pt; margin-bottom: 4mm; }
+.group.link td { padding: 1.8mm 2mm; }
 
 /* 테이블 하나 */
 .tbl { margin: 0 0 6mm; page-break-inside: avoid; }
