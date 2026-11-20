@@ -67,7 +67,8 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - **UNIQUE (MySQL 특성)**: 이메일은 대소문자 무시 콜레이션이라 일반 UNIQUE로 충분. 회원당 기본 배송지 1개는 함수 기반 `ux_address_default ((CASE WHEN is_default='Y' THEN member_id END))`. MySQL UNIQUE는 NULL 포함 행을 중복으로 보지 않는다.
 - **CHECK + FK 주의 (DDL 작성 시)**: MySQL은 참조 동작(`ON DELETE CASCADE`/`SET NULL`)이 있는 FK 컬럼을 CHECK에서 쓸 수 없다. CHECK에 들어가는 FK는 참조 동작 없이 만든다.
 - **다형 참조**: `target_type + target_id` 대신 대상별 nullable FK 컬럼 + CHECK.
-- **개인정보**: 휴대폰 번호 등은 `_enc`(AES-256), 검색이 필요하면 `_hash`(SHA-256)를 함께. CI·토큰은 해시만. 탈퇴는 soft delete + 마스킹(`withdrawn_{아이디}@deleted.local`, 이름 `탈퇴회원`, 닉네임 `deleted_{아이디}`, `ci_hash` NULL). 아이디(PK)는 남겨서 재사용을 막는다.
+- **컬럼 순서** (사용자 요청): 식별(PK) → 로그인(비밀번호 등) → 인적사항 → 연락처 → 선택 정보 → 인증·상태 → 시각(`created_at`, `updated_at`).
+- **개인정보**: 비밀번호는 bcrypt 단방향 해시(`password_hash`, 솔트 포함, 복원 불가 → 재설정만). 이메일은 **평문**(법적 암호화 대상 아님, UNIQUE·대소문자 무시·아이디 찾기 때문, 관리자 화면 마스킹). 휴대폰 번호는 법적 의무는 아니지만 추가 보호로 `_enc`(AES-256) + 검색용 `_hash`(SHA-256). CI·토큰은 해시만. 탈퇴는 soft delete + 마스킹(`withdrawn_{아이디}@deleted.local`, 이름 `탈퇴회원`, 닉네임 `deleted_{아이디}`, `ci_hash` NULL). 아이디(PK)는 남겨서 재사용을 막는다.
 - **캐시 컬럼**: 찜·리뷰 수, 평점 등은 note에 `캐시`로 표시하고 원본과 같은 트랜잭션에서 갱신.
 - **이력 테이블 패턴**: 상태·가격·재고 변경은 이력 테이블에 남기고, 시스템 변경이면 `changed_by`는 NULL.
 
