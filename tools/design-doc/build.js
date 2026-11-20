@@ -190,7 +190,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>개요와 전체 구조</li>
     <li>공통 설계 원칙</li>
     <li>고객 — 보안 · 로그인 · 회원 상태 · 탈퇴 · 닉네임 정책 · ERD</li>
-    <li>상품 — 옵션/SKU · 재고 · 상태 흐름 · 정보제공고시 · 조립식(부품 · 조립 설명서) · 부가 서비스 · ERD</li>
+    <li>상품 — 옵션/SKU · 재고 · 상태 흐름 · 정보제공고시 · 조립식(부품 · 조립 설명서) · ERD</li>
     <li>커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
     <li>장바구니 — 장바구니 진단 · 인테리어 플랜 · 비회원 장바구니 · 가격 인하 알림 · ERD</li>
     <li>주문 — 주문 흐름 · 주문 상품 상태 · 스냅샷 · 할인 안분 · 부분 취소 · 부품 요청 · ERD</li>
@@ -260,7 +260,6 @@ ${erOf('member')}
 </section>
 <section class="page">
   <div class="callout"><b>가구 상품 정보</b> — sku_package는 SKU 하나가 여러 박스로 나가는 가구의 박스별 크기 · 무게를 저장해 화물 운임 · 배송 차량 · 반입 판단에 쓴다. 상품에는 배송 정책(product.shipping_policy_id → 배송 영역), 조립 방식(완제품 / 자가조립 / 기사 설치), 판매 방식(일반 / 예약 / 주문제작)을 둔다.</div>
-  <div class="callout"><b>부가 서비스 마스터</b> — 폐가구 수거(DISPOSAL)와 조립 서비스(ASSEMBLY)는 addon_service 마스터와 상품별 제공 여부(product_addon_service, 상품별 금액 가능)로 관리한다. 조립은 자가조립 상품만, 수거는 기사가 방문하는 배송만 제공한다. 고객이 고른 서비스는 장바구니(cart_item_addon) → 주문(order_item_addon)으로 이어진다.</div>
   <div class="callout"><b>상품정보제공고시 (품목별 항목)</b> — 가구 · 침구 · 주방용품 · 가전은 법정 표시 항목이 다르다. 항목을 컬럼으로 두면 품목이 늘 때마다 테이블을 바꿔야 하므로 notice_type(품목 유형) → notice_item(항목 마스터) → product_notice_value(상품별 값) 행 구조로 저장한다. 카테고리에 기본 유형을 두어 등록 화면에서 항목이 자동으로 나오고, 필수 항목이 모두 채워져야 판매 시작(ON_SALE)할 수 있다.
     <table class="mini"><tr><th>유형</th><th>항목 예시</th></tr>
       <tr><td>FURNITURE 가구</td><td>KC 인증 · 색상 · 구성품 · 주요 소재 · 제조자 · 제조국 · 크기 · 배송·설치비용 · 품질보증기준 · A/S 책임자</td></tr>
@@ -268,7 +267,7 @@ ${erOf('member')}
       <tr><td>KITCHENWARE 주방용품</td><td>재질 · 구성품 · 크기 · 제조자 · 제조국 · 수입 식품용 기구 신고 여부 · 품질보증기준 · A/S 책임자</td></tr>
     </table></div>
   ${fig('조립식 부품 요청 — product_part · assembly_step · part_request', mm(D.partreq), '조립 설명서의 단계별 부품에서 바로 누락 · 파손 부품을 요청한다')}
-  <div class="callout"><b>조립식 가구</b> — 완제품과 조립식을 함께 다룬다(assembly_type). 조립식은 난이도 · 예상 시간 · 필요 인원 · 필요 공구를 상품 정보로 보여 주고(product.assembly_*), 부품 목록(product_part: 설명서 표기 코드 · 옵션별 부품 · 단품 구매 가능 여부)과 단계별 조립 설명서(assembly_step + 단계별 부품 assembly_step_part)를 둔다. 구매 후 누락 · 파손 부품은 구매 확정 후 30일까지 무료로 요청하고(part_request), 추가 부품은 유료로 산다. 조립이 어렵거나 2인 조립이면 장바구니에서 조립 서비스를 먼저 제안한다.</div>
+  <div class="callout"><b>조립식 가구</b> — 완제품과 조립식을 함께 다룬다(assembly_type). 조립식은 난이도 · 예상 시간 · 필요 인원 · 필요 공구를 상품 정보로 보여 주고(product.assembly_*), 부품 목록(product_part: 설명서 표기 코드 · 옵션별 부품 · 단품 구매 가능 여부)과 단계별 조립 설명서(assembly_step + 단계별 부품 assembly_step_part)를 둔다. 구매 후 누락 · 파손 부품은 구매 확정 후 30일까지 무료로 요청하고(part_request), 추가 부품은 유료로 산다. 조립이 어렵거나 2인 조립이면 장바구니에서 미리 안내한다.</div>
   <div class="callout"><b>자사몰 규모에 맞춘 축소</b> — 창고별 실물 재고(warehouse · sku_inventory), 등록자 · 검수자 분리 승인(product_approval), 검색 로그 · MD 키워드는 두지 않았다. 재고는 판매 가능 재고 하나로 관리하고, 검색은 동의어 사전과 MySQL FULLTEXT(ngram) 인덱스로 처리한다.</div>
 </section>
 ${erOf('product')}
@@ -296,9 +295,7 @@ ${erOf('community')}
   ${fig('인테리어 플랜 — interior_plan · interior_plan_item', mm(D.plan), '가구는 바로 사지 않고 후보를 모아 비교하다가 한꺼번에 산다. 방 · 스타일 · 예산을 정한 보드에서 확정한 상품을 장바구니로 옮긴다')}
   <div class="callout"><b>인테리어 플랜</b> — interior_plan은 꾸밀 방(member_room) · 목표 스타일(style) · 예산을 가진 보드다. 같은 자리의 후보(예: 소파 3개)를 CANDIDATE로 담아 비교하고 하나를 CHOSEN으로 확정한다. 합계 · 예산 대비 · 방 치수 확인은 저장하지 않고 계산하며, 공유 링크(share_token_hash, 보기 전용)로 가족과 함께 고른다. "장바구니로 담기"는 확정 항목을 cart_item으로 옮기고 plan_id · room_id · source_post_id를 남겨 플랜과 집들이의 구매 전환을 추적한다.</div>
   <div class="callout"><b>비회원 장바구니 · 가격 인하 알림</b> — 비회원은 쿠키 토큰의 해시(guest_token_hash)로 담고, 로그인하면 회원 장바구니로 합친다(같은 SKU는 수량 합산, 담은 가격은 더 낮은 값). 주문은 회원만 할 수 있다. 담은 시점 단가(added_price)로 "담은 뒤 내렸어요"를 보여 주고, 가격이 바뀌면 그 SKU를 담은 회원에게 PRICE_DROP 알림(광고성: 설정 ON + 채널 마케팅 동의 + 야간 동의)을 보낸 뒤 price_alert_price로 같은 가격 중복 발송을 막는다. 상품별 담긴 수는 product.cart_count 캐시로 둔다.</div>
-  <div class="callout"><b>가구몰 장바구니</b> — 담을 때 놓을 방(cart_item.room_id)을 고르면 방별 합계와 바닥 면적 점유율, 방문 통과 여부를 보여 주고, 주문하면 방 이름이 설치 위치(order_item.room_name)로 기사에게 전달된다. 집들이 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담으면 유입 글(source_post_id)이 주문 상품까지 이어져, 구매 확정 시 post.purchase_count(작성자 본인 구매 제외)로 "구매로 이어진 집들이"를 보여 준다. 출고일이 다른 가구는 이사일에 한 번에 받기(orders.receive_together, 희망 수령일 기본값 = 이사 예정일)로 같은 날 도착하게 맞춘다.</div>
-  <div class="callout"><b>부가 서비스 선택</b> — 장바구니에서 상품별로 폐가구 수거 · 조립 서비스를 고르면 cart_item_addon에 담긴다(조립은 자가조립 상품만, 수거는 기사가 방문하는 배송만). 주문하면 order_item_addon에 이름 · 금액을 복사하고, 부가 서비스 금액은 할인과 무료배송 기준에서 빼며 상품을 취소하면 함께 환불한다(final_amount에 포함).</div>
-</section>
+  <div class="callout"><b>가구몰 장바구니</b> — 담을 때 놓을 방(cart_item.room_id)을 고르면 방별 합계와 바닥 면적 점유율, 방문 통과 여부를 보여 주고, 주문하면 방 이름이 설치 위치(order_item.room_name)로 기사에게 전달된다. 집들이 글의 상품 태그나 "이 집 상품 한 번에 담기"로 담으면 유입 글(source_post_id)이 주문 상품까지 이어져, 구매 확정 시 post.purchase_count(작성자 본인 구매 제외)로 "구매로 이어진 집들이"를 보여 준다. 출고일이 다른 가구는 이사일에 한 번에 받기(orders.receive_together, 희망 수령일 기본값 = 이사 예정일)로 같은 날 도착하게 맞춘다.</div></section>
 ${erOf('cart')}
 
 <section class="page">

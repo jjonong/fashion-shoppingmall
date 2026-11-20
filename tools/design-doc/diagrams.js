@@ -151,7 +151,7 @@ module.exports = {
   style IN fill:#F4F6F8,stroke:#8795A1
   style SC fill:#F6FBF8,stroke:#3C9A63`,
   orderflow: `flowchart TB
-  C(["장바구니<br/>cart_item"]) --> O["주문서<br/>배송비 계산 · 반입 확인<br/>부가 서비스 · 함께 받기<br/>설치 희망일 선택"]
+  C(["장바구니<br/>cart_item"]) --> O["주문서<br/>배송비 계산 · 반입 확인<br/>함께 받기 · 설치 희망일 선택"]
   O --> R["주문 생성 PENDING<br/>orders · order_item · shipment<br/>재고 조건부 차감 + stock_history<br/>설치 슬롯 booked_count + 1"]
   R --> P{"PG 결제<br/>카드 · 간편 · 이체는 30분<br/>가상계좌는 입금 기한까지"}
   P -- 승인 --> OK["payment PAID<br/>order_item PAID"]
@@ -199,7 +199,7 @@ module.exports = {
   R2 -- "통과 · 정보 없음" --> R3["③ 배송 묶음 미리보기<br/>배송 정책 · 묶음배송별 그룹<br/>예상 배송비 · 출고 예정일"]
   R2 -- 불가 --> W["반입 어려움 경고<br/>사다리차 · 계단 운반 필요 가능<br/>(고객 부담 · 현장 정산 안내)"] --> R3
   R3 --> R4["함께 받기면<br/>모든 묶음 수령일 맞춤<br/>(이사 예정일 기본값)"]
-  R4 --> R5["④ 제안<br/>함께 사면 좋은 상품 · product_relation ADDON<br/>부가 서비스 · 조립 어려움 · 2인 조립이면 조립 서비스"]
+  R4 --> R5["④ 제안<br/>함께 사면 좋은 상품 · product_relation ADDON<br/>조립 어려움 · 2인 조립이면 미리 안내"]
   R5 ==> OUT["주문서로"]
   classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
   classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37

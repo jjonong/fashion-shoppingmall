@@ -124,7 +124,7 @@ async function main() {
   const viz = await require('@viz-js/viz').instance();
   const pages = [];
 
-  // 첫 페이지 "전체": 91개 테이블을 한 장에 (세부 영역 상자, 영역 색, 제목 "영역 · 세부 영역")
+  // 첫 페이지 "전체": 87개 테이블을 한 장에 (세부 영역 상자, 영역 색, 제목 "영역 · 세부 영역")
   const allDefs = groups.map((g) => {
     const a = areaOf(g.name);
     return { id: `grp_${g.name}`, label: `${a.name} · ${gTitle(g)}`, names: g.tables.map((t) => t.name), keysOnly: false, color: a.color };
