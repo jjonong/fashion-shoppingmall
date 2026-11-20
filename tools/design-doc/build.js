@@ -303,7 +303,7 @@ ${erOf('cart')}
   ${fig('주문 흐름', mm(D.orderflow), '재고는 주문 생성 시 차감하고, 30분 안에 결제되지 않으면 배치로 재고 · 설치 슬롯을 되돌린다. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않는다')}
   ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후 반품 · 교환은 다음 단계(클레임)')}
   <div class="callout"><b>주문 시점 기록 (영수증)</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수)는 order_address에, 배송비 내역(기본 · 권역)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다. 영수증에 산 날의 가격이 찍혀 있는 것과 같다 (흔히 스냅샷이라고 부름). 장바구니는 아직 사기 전이라 기록하지 않고 항상 현재 값을 보여 준다.</div>
-  <div class="callout"><b>할인 안분과 부분 취소</b> — 등급 할인(다음 단계의 쿠폰 · 포인트 포함)은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다.</div>
+  <div class="callout"><b>할인 안분과 부분 취소</b> — 할인은 등급 할인 → 상품 쿠폰 → 주문 쿠폰 → 포인트(다음 단계) 순서로 적용한다. 등급 할인은 상품 금액 × 주문 시점 할인율이며, 할인율 · 적립률은 orders.grade_discount_rate · grade_point_rate에 기록해 등급 혜택이 나중에 바뀌어도 그 주문의 기준이 남는다. 할인은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다. 단, 등급 무료배송(shipment.free_reason = GRADE)은 금액과 무관하므로 차감하지 않는다.</div>
   <div class="callout"><b>부품 요청</b> — 구매한 조립식 상품의 누락 · 파손 부품은 주문 상품(order_item) 기준으로 part_request를 남기고, 요청 부품은 part_request_item에 담는다. 부품 목록과 조립 설명서는 상품 영역(product_part · assembly_step)에 있다(4장 조립식 부품 요청 흐름 참고).</div>
 </section>
 ${erOf('order')}

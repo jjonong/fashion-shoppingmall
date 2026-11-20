@@ -114,17 +114,17 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **상태 단위**: 상태는 **`order_item`별**(PENDING → PAID → PREPARING → SHIPPED → DELIVERED → CONFIRMED, CANCEL_REQUESTED → CANCELED), `orders.status`는 요약(PENDING/PAID/COMPLETED/CANCELED/EXPIRED). 변경은 `order_item_status_history`.
 - **주문 시점 기록 (스냅샷)**: 영수증처럼 주문 순간의 값을 복사해 두어 나중에 바뀌어도 그대로. 문서·발표에서는 "스냅샷" 대신 "주문 시점 기록"이라고 쓴다(사용자 요청). 상품명·옵션 문구·단가는 `order_item`, 배송지·반입 경로는 `order_address`(1:1), 배송비 내역은 `shipment`에 복사.
 - **재고 차감 시점**: 주문 생성(PENDING) 시 조건부 UPDATE로 차감 + `stock_history`(ref_type ORDER, ref_id = order_item_id). 결제 기한 30분(`orders.expires_at`)이 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구. MADE_TO_ORDER는 차감 없음.
-- **할인 안분·부분 취소**: 등급 할인(다음 단계 쿠폰·포인트 포함)을 `order_item`별로 나눠 저장, `final_amount`가 환불 기준. 취소는 주문 상품 한 줄 단위(수량 일부 취소 없음). PAID는 즉시 취소, PREPARING부터는 요청 → 관리자 승인, 출고 후는 반품(다음 단계).
+- **할인 안분·부분 취소**: 적용 순서는 등급 할인(상품 금액 × 주문 시점 할인율) → 상품 쿠폰 → 주문 쿠폰 → 포인트. 주문 시점 등급 할인율·적립률은 `orders.grade_discount_rate`·`grade_point_rate`에 기록(등급 혜택이 바뀌어도 그대로, 적립률은 구매 확정 시 포인트 기준). 할인을 `order_item`별로 나눠 저장, `final_amount`가 환불 기준. 취소는 주문 상품 한 줄 단위(수량 일부 취소 없음). PAID는 즉시 취소, PREPARING부터는 요청 → 관리자 승인, 출고 후는 반품(다음 단계).
 - **구매 확정**: 배송 완료 7일 후 자동(또는 직접). 이때 `product.sales_count`, `member_account.total_purchase_amount` 갱신.
 
 ### 결제
-- **결제**: `payment`는 PG 시도마다 1행(주문당 PAID 1건, `pg_tid` UK), `payment_cancel` 1건이 여러 `order_item`을 환불(`order_item.payment_cancel_id`). 무료배송 기준이 깨지면 `shipping_fee_adjust`.
+- **결제**: `payment`는 PG 시도마다 1행(주문당 PAID 1건, `pg_tid` UK), `payment_cancel` 1건이 여러 `order_item`을 환불(`order_item.payment_cancel_id`). 무료배송 기준이 깨지면 `shipping_fee_adjust`(등급 무료배송 `shipment.free_reason = GRADE`는 차감 안 함).
 - **결제수단**: CARD / 간편결제(KAKAO·NAVER·TOSS_PAY) / TRANSFER(실시간 계좌이체) / VIRTUAL_ACCOUNT(가상계좌). 가상계좌는 `WAITING_DEPOSIT` → 입금 통보(웹훅) 시 PAID, `orders.expires_at`을 `deposit_due_at`으로 연장해 그때까지 재고·설치 슬롯 유지, 기한이 지나면 EXPIRED + 복구. 가상계좌 취소는 환불 계좌(`payment_cancel.refund_*`, 계좌번호 암호화·환불 후 파기) 필수.
 - **현금영수증** `cash_receipt`: 현금성 결제(TRANSFER, VIRTUAL_ACCOUNT)의 발급·취소 이력. 가구 소매업은 의무발행업종이라 요청이 없어도 10만 원 이상이면 자진 발급(SELF_ISSUED, 010-000-1234). 부분 취소 시 원 발급 CANCEL(`original_receipt_id`) + 남은 금액 ISSUE, `payment_cancel_id`로 연결.
 - **에스크로**: 현금성 결제에서 고객 선택(`payment.is_escrow`). 출고 시 PG에 송장 등록(`shipment.escrow_registered_at`)해야 정산·구매 확정 진행.
 
 ### 배송
-- **가구 배송**: `shipping_policy`(일반택배/화물/설치배송, 현장 추가 비용 안내 문구 `onsite_fee_notice`, 출고 소요일, 오늘출발 마감) + `delivery_zone`(권역) + `delivery_zone_zipcode`(우편번호 범위, 겹치면 좁은 범위 우선) + `shipping_policy_zone`(권역별 배송 가능 여부·추가비·추가 소요일). 배송비 = 기본 배송비 + 권역 추가비 (사다리차·계단비 미포함). 배송지 `address.floor_no`·`has_elevator`는 현장 추가 비용 안내·해피콜 근거. 계산 순서는 설계서의 "가구 배송비 계산 흐름" 참고.
+- **가구 배송**: `shipping_policy`(일반택배/화물/설치배송, 현장 추가 비용 안내 문구 `onsite_fee_notice`, 출고 소요일, 오늘출발 마감) + `delivery_zone`(권역) + `delivery_zone_zipcode`(우편번호 범위, 겹치면 좁은 범위 우선) + `shipping_policy_zone`(권역별 배송 가능 여부·추가비·추가 소요일). 배송비 = 기본 배송비 + 권역 추가비 (사다리차·계단비 미포함). 기본 배송비가 0이면 사유를 `shipment.free_reason`(THRESHOLD 기준 금액 / GRADE 등급 무료배송, 일반택배만)에 남긴다. 배송지 `address.floor_no`·`has_elevator`는 현장 추가 비용 안내·해피콜 근거. 계산 순서는 설계서의 "가구 배송비 계산 흐름" 참고.
 - **배송 묶음** `shipment`: 같은 배송 정책 + `is_bundle_allowed = Y`면 한 묶음. 택배·화물은 송장, 설치배송은 `install_slot`(권역 × 날짜 × AM/PM, `capacity`/`booked_count`)을 조건부 UPDATE로 예약 → 확정일·기사 배정. 설치 컬럼 CHECK에 `install_slot_id`가 들어가므로 FK는 참조 동작 없이.
 - **반입 판단**은 위 "회원 상태·닉네임 정책"의 반입 판단 항목 참고 (`carry_default_spec`은 배송 영역).
 

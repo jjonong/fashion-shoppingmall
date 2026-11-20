@@ -69,7 +69,7 @@ module.exports = {
   A(["배송지 zipcode"]) --> B["<b>delivery_zone_zipcode</b><br/>가장 좁은 범위의 권역"]
   B --> C{"<b>shipping_policy_zone</b><br/>is_available?"}
   C -- N --> X["배송 불가 안내<br/>(설치배송 제주 · 도서산간 등)"]
-  C -- "Y 또는 행 없음" --> D["기본 배송비<br/>free_threshold 이상이면 0"]
+  C -- "Y 또는 행 없음" --> D["기본 배송비<br/>free_threshold 이상이면 0 (THRESHOLD)<br/>등급 무료배송 · 일반택배면 0 (GRADE)<br/>사유는 shipment.free_reason"]
   D --> E["권역 extra_fee 추가"]
   E --> T["배송비 합계 shipment.fee_total<br/>= 기본 배송비 + 권역 추가비"]
   T --> R["출고 예정 = lead_days<br/>+ 권역 extra_lead_days<br/>(주문제작은 + make_days)"]
