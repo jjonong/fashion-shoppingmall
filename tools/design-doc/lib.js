@@ -173,26 +173,34 @@ function areaSvg(ctx, clusters, { hideAudit = false, W = 1100, H = 680 } = {}) {
   const PAD = 12, LABEL = 22, GAP = 18;
   const ext = new Set();
   const all = new Set(clusters.flatMap((c) => c.tables));
-  const parts = clusters.map((c, i) => {
+  const cand = clusters.map((c, i) => {
     const { dot, ext: e } = erDot(ctx, c.tables, { hideAudit });
     e.filter((t) => !all.has(t)).forEach((t) => ext.add(t));
-    // 각 묶음은 좌→우 / 위→아래 중 덜 길쭉한 쪽
-    let best = null;
-    for (const dir of ['LR', 'TB']) {
+    // 각 묶음은 좌→우 / 위→아래 두 가지로 그려 두고, 아래에서 상자 배치와 함께 고른다
+    const cands = ['LR', 'TB'].map((dir) => {
       const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');
       const w = parseFloat(s.match(/width="([\d.]+)pt"/)[1]);
       const h = parseFloat(s.match(/height="([\d.]+)pt"/)[1]);
-      const score = Math.max(w / h, h / w);
-      if (!best || score < best.score) best = { s, w, h, score };
-    }
-    // 묶음마다 id 접두사를 달아 겹치지 않게 하고, 바깥 svg 안에 넣을 수 있도록 크기 속성을 뺀다
-    const inner = best.s
-      .replace(/ id="/g, ` id="c${i}_`)
-      // data-cluster: 웹페이지 드래그 배치의 노드 키(묶음/테이블), overflow: 상자 밖으로 끌어도 잘리지 않게
-      .replace(/<svg[^>]*?(viewBox="[^"]+")[^>]*>/, (m, vb) => `<svg ${vb} data-cluster="${c.name}" overflow="visible" @XYWH@>`);
-    return { c, inner, w: best.w + PAD * 2, h: best.h + PAD * 2 + LABEL };
+      // 묶음마다 id 접두사를 달아 겹치지 않게 하고, 바깥 svg 안에 넣을 수 있도록 크기 속성을 뺀다
+      const inner = s
+        .replace(/ id="/g, ` id="c${i}_`)
+        // data-cluster: 웹페이지 드래그 배치의 노드 키(묶음/테이블), overflow: 상자 밖으로 끌어도 잘리지 않게
+        .replace(/<svg[^>]*?(viewBox="[^"]+")[^>]*>/, (m, vb) => `<svg ${vb} data-cluster="${c.name}" overflow="visible" @XYWH@>`);
+      return { c, inner, w: w + PAD * 2, h: h + PAD * 2 + LABEL };
+    });
+    return cands;
   });
-  const { pos, tw, th } = gridPlace(parts, { W, H, GAP });
+  // 묶음별 방향(좌→우/위→아래) 조합 × 열 수 중 W x H 화면에 가장 크게 들어가는 배치.
+  // 크기가 비슷하면(5% 이내) 상자를 가로로 더 많이 늘어놓는 쪽 (사용자 요청: 세로로 길어지지 않게)
+  let best = null;
+  for (let m = 0; m < 1 << cand.length; m++) {
+    const ps = cand.map((cs, i) => cs[(m >> i) & 1]);
+    const g = gridPlace(ps, { W, H, GAP });
+    const k = Math.min(W / g.tw, H / g.th);
+    if (!best || k > best.k * 1.05 || (k > best.k * 0.95 && g.th < best.g.th)) best = { ps, g, k };
+  }
+  const parts = best.ps;
+  const { pos, tw, th } = best.g;
   let body = '';
   parts.forEach((p, i) => {
     const { x, y } = pos[i];

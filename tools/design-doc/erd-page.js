@@ -140,7 +140,7 @@ async function main() {
     const key = `${a.prefix}__all`;
     const tables = gs.flatMap((g) => g.tables.map((t) => t.name));
     const hideAudit = a.prefix !== 'member';
-    const { svg, ext } = areaSvg(ctx, gs.map((g) => ({ name: g.name, label: gTitle(g), tables: g.tables.map((t) => t.name) })), { hideAudit, W: 1100, H: 680 });
+    const { svg, ext } = areaSvg(ctx, gs.map((g) => ({ name: g.name, label: gTitle(g), tables: g.tables.map((t) => t.name) })), { hideAudit, W: 1800, H: 680 }); // 가로로 넓게: 세부 영역 상자를 옆으로 늘어놓음 (사용자 요청)
     const clean = svg
       .replace(/^<div class="gv">|<\/div>$/g, '')
       .replace(/ width="[\d.]+pt" height="[\d.]+pt"/, '')
