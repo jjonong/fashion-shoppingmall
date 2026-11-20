@@ -111,7 +111,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 
 ### 주문
 - **이름**: `order`는 MySQL 예약어라 주문 테이블은 **`orders`**.
-- **상태 단위**: 상태는 **`order_item`별**(PENDING → PAID → PREPARING → SHIPPED → DELIVERED → CONFIRMED, CANCEL_REQUESTED → CANCELED), `orders.status`는 요약(PENDING/PAID/COMPLETED/CANCELED/EXPIRED). 변경은 `order_item_status_history`.
+- **상태 단위**: 상태는 **`order_item`별**(PENDING → PAID → PREPARING → SHIPPED → DELIVERED → CONFIRMED, CANCEL_REQUESTED → CANCELED), `orders.status`는 요약(PENDING/PAID/COMPLETED/CANCELED/EXPIRED). 변경은 `order_item_status_history`(변경 주체 `actor_type` MEMBER/ADMIN/SYSTEM/PG, ADMIN이면 `changed_by` 필수 / 사유 유형 `reason_type` + 상세 `reason`, 통계용 `(to_status, created_at)` 인덱스).
 - **주문 시점 기록 (스냅샷)**: 영수증처럼 주문 순간의 값을 복사해 두어 나중에 바뀌어도 그대로. 문서·발표에서는 "스냅샷" 대신 "주문 시점 기록"이라고 쓴다(사용자 요청). 상품명·옵션 문구·단가는 `order_item`, 배송지·반입 경로는 `order_address`(1:1), 배송비 내역은 `shipment`에 복사.
 - **재고 차감 시점**: 주문 생성(PENDING) 시 조건부 UPDATE로 차감 + `stock_history`(ref_type ORDER, ref_id = order_item_id). 결제 기한 30분(`orders.expires_at`)이 지나면 배치로 EXPIRED + 재고·설치 슬롯 복구. MADE_TO_ORDER는 차감 없음.
 - **할인 안분·부분 취소**: 적용 순서는 등급 할인(상품 금액 × 주문 시점 할인율) → 상품 쿠폰 → 주문 쿠폰 → 포인트. 주문 시점 등급 할인율·적립률은 `orders.grade_discount_rate`·`grade_point_rate`에 기록(등급 혜택이 바뀌어도 그대로, 적립률은 구매 확정 시 포인트 기준). 할인을 `order_item`별로 나눠 저장, `final_amount`가 환불 기준. 취소는 주문 상품 한 줄 단위(수량 일부 취소 없음). PAID는 즉시 취소, PREPARING부터는 요청 → 관리자 승인, 출고 후는 반품(다음 단계).

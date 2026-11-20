@@ -459,7 +459,7 @@ Table product_sku [note: '[상품 SKU] SKU = 옵션 값 조합. 재고, 장바�
   sku_id bigint [pk, increment, note: '[SKU ID]']
   product_id bigint [not null, note: '[상품 ID]']
   option_key varchar(200) [not null, note: '[SKU 옵션 조합 키] 옵션 값 ID를 오름차순으로 이은 문자열 (예: 12-35). 옵션 없으면 DEFAULT. 같은 조합 중복 방지']
-  sku_code varchar(50) [not null, unique, note: '[SKU 코드] 모델명-옵션코드']
+  sku_code varchar(50) [not null, unique, note: '[SKU 코드] 관리용 품번 = 모델명-옵션코드 (예: BED-OAK01-WN-Q). 출고·재고 실사·CS에서 사용, 주문 시 order_item.sku_code로 기록']
   barcode varchar(30) [unique, note: '[SKU 바코드] 입출고 스캔용']
   extra_price bigint [not null, default: 0, note: '[SKU 옵션 추가금] 옵션 추가금 (퀸 +50,000)']
   width_mm int [note: '[SKU 가로(mm)] 옵션별 실제 사이즈 (침대 SS/Q/K)']
@@ -1226,7 +1226,7 @@ Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태
   room_name varchar(30) [note: '[주문 상품 설치 위치(방 이름)] 주문 시점 설치 위치 (cart_item.room_id의 방 이름, 예: 안방). 설치 기사 전달용']
   product_name varchar(200) [not null, note: '[주문 시점 상품명] 상품 이름이 바뀌거나 상품이 삭제돼도 그대로']
   option_text varchar(200) [not null, note: '[주문 시점 옵션 문구] (예: 월넛 / Q). 옵션 없으면 빈 문자열']
-  sku_code varchar(50) [not null, note: '[주문 시점 SKU 코드]']
+  sku_code varchar(50) [not null, note: '[주문 시점 SKU 코드] SKU 관리용 품번 (예: BED-OAK01-WN-Q, product_sku.sku_code 기록). 출고·재고·CS 확인용. 고객에게 보이는 옵션 문구는 option_text. SKU 코드가 바뀌거나 SKU가 삭제돼도 그대로']
   sale_type varchar(20) [not null, note: '[주문 상품 판매 방식] NORMAL/PRE_ORDER/MADE_TO_ORDER 주문 시점 기록. MADE_TO_ORDER는 재고 차감 없음']
   condition_grade varchar(20) [not null, default: 'NEW', note: '[주문 상품 상태 등급] 주문 시점 product.condition_grade 기록 (NEW/OPEN_BOX/DISPLAY/REFURB_A/REFURB_B). 리퍼·전시 구매 사실의 근거, 반품 규정 판단(다음 단계 클레임)']
   unit_list_price bigint [not null, note: '[주문 상품 정가 단가] 정가 + 옵션 추가금']
@@ -1240,7 +1240,7 @@ Table order_item [note: '[주문 상품] 주문 상품 (SKU 1개 = 1행). 상태
   status varchar(20) [not null, default: 'PENDING', note: '[주문 상품 상태] PENDING(결제 대기)/PAID/PREPARING(출고 준비·제작 중)/SHIPPED/DELIVERED(배송·설치 완료)/CONFIRMED(구매 확정)/CANCEL_REQUESTED/CANCELED. PAID는 즉시 취소, PREPARING부터는 취소 요청 → 관리자 승인, SHIPPED부터는 반품(다음 단계)']
   confirmed_at datetime [note: '[주문 상품 구매 확정일시] 구매 확정 (DELIVERED 7일 후 자동 또는 회원 직접). 이때 product.sales_count, member_account.total_purchase_amount 갱신']
   canceled_at datetime [note: '[주문 상품 취소일시]']
-  cancel_reason varchar(500) [note: '[주문 상품 취소 사유]']
+  cancel_reason varchar(500) [note: '[주문 상품 취소 사유] 화면 표시용 최종 취소 사유. 사유 유형(reason_type)·처리 주체는 order_item_status_history에 기록']
   payment_cancel_id bigint [note: '[결제 취소 ID] 환불 처리된 결제 취소 건']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[주문 상품 등록일시]']
   updated_at datetime [note: '[주문 상품 수정일시]']
@@ -1262,13 +1262,16 @@ Table order_item_status_history [note: '[주문 상품 상태 이력] 주문 상
   order_item_id bigint [not null, note: '[주문 상품 ID]']
   from_status varchar(20) [note: '[변경 전 주문 상품 상태] 최초 생성은 NULL']
   to_status varchar(20) [not null, note: '[변경 후 주문 상품 상태]']
-  reason varchar(500) [note: '[주문 상품 상태 변경 사유]']
-  changed_by bigint [note: '[주문 상품 상태 변경 처리자 ID] 관리자. 회원 본인·시스템(결제 승인, 자동 확정)은 NULL']
+  actor_type varchar(20) [not null, note: '[주문 상품 상태 변경 주체 유형] MEMBER(회원 본인: 즉시 취소·취소 요청·직접 구매 확정)/ADMIN(관리자: 취소 승인·거절, 출고 처리)/SYSTEM(배치: 결제 기한 초과, 자동 구매 확정)/PG(결제 승인·가상계좌 입금 통보). CHECK: ADMIN이면 changed_by 필수, 그 외는 NULL']
+  reason_type varchar(30) [note: '[주문 상품 상태 변경 사유 유형] 취소·거절·자동 처리일 때 필수 (앱 검증). CUSTOMER_REQUEST(단순 변심)/WRONG_ORDER(옵션·주소 잘못 선택)/OUT_OF_STOCK(재고·제작 불가)/DELIVERY_DELAY(배송 지연)/PAYMENT_EXPIRED(결제 기한 초과)/CANCEL_REJECTED(취소 거절: 이미 제작·출고 진행)/AUTO_CONFIRM(자동 구매 확정)/ETC. 취소 사유별 통계 기준']
+  reason varchar(500) [note: '[주문 상품 상태 변경 상세 사유] 고객이 쓴 취소 사유, 관리자 메모 등 자유 입력']
+  changed_by bigint [note: '[주문 상품 상태 변경 처리자 ID] actor_type = ADMIN일 때 처리 관리자. 회원 본인은 order_item → orders.member_id로 알 수 있어 NULL']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[주문 상품 상태 변경일시]']
 
   indexes {
     (order_item_id, created_at) [name: 'ix_oish_item']
     changed_by [name: 'ix_oish_changed_by']
+    (to_status, created_at) [name: 'ix_oish_status', note: '기간별 취소·구매 확정 건수, 취소 사유별 통계']
   }
 }
 
