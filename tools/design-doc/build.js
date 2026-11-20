@@ -267,7 +267,7 @@ ${erOf('member')}
       <tr><td>KITCHENWARE 주방용품</td><td>재질 · 구성품 · 크기 · 제조자 · 제조국 · 수입 식품용 기구 신고 여부 · 품질보증기준 · A/S 책임자</td></tr>
     </table></div>
   ${fig('조립식 부품 요청 — product_part · assembly_step · part_request', mm(D.partreq), '조립 설명서의 단계별 부품에서 바로 누락 · 파손 부품을 요청한다')}
-  <div class="callout"><b>조립식 가구</b> — 완제품과 조립식을 함께 다룬다(assembly_type). 조립식은 난이도 · 예상 시간 · 필요 인원 · 필요 공구를 상품 정보로 보여 주고(product.assembly_*), 부품 목록(product_part: 설명서 표기 코드 · 옵션별 부품 · 단품 구매 가능 여부)과 단계별 조립 설명서(assembly_step + 단계별 부품 assembly_step_part)를 둔다. 구매 후 누락 · 파손 부품은 구매 확정 후 30일까지 무료로 요청하고(part_request), 추가 부품은 유료로 산다. 조립이 어렵거나 2인 조립이면 장바구니에서 미리 안내한다.</div>
+  <div class="callout"><b>조립식 가구</b> — 완제품과 조립식을 함께 다룬다(assembly_type). 조립식은 난이도 · 예상 시간 · 필요 인원 · 필요 공구를 조립 정보(product_assembly_detail, 상품과 1:1, 조립이 필요한 상품만 행이 있음)로 보여 주고, 부품 목록(product_part: 설명서 표기 코드 · 옵션별 부품 · 단품 구매 가능 여부)과 단계별 조립 설명서(assembly_step + 단계별 부품 assembly_step_part)를 둔다. 구매 후 누락 · 파손 부품은 구매 확정 후 30일까지 무료로 요청하고(part_request), 추가 부품은 유료로 산다. 조립이 어렵거나 2인 조립이면 장바구니에서 미리 안내한다.</div>
   <div class="callout"><b>자사몰 규모에 맞춘 축소</b> — 창고별 실물 재고(warehouse · sku_inventory), 등록자 · 검수자 분리 승인(product_approval), 검색 로그 · MD 키워드는 두지 않았다. 재고는 판매 가능 재고 하나로 관리하고, 검색은 동의어 사전과 MySQL FULLTEXT(ngram) 인덱스로 처리한다.</div>
 </section>
 ${erOf('product')}

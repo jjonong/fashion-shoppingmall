@@ -1,7 +1,7 @@
 // =====================================================================
 // 인테리어 가구몰 + 커뮤니티 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: 오늘의집 (스토어 + 커뮤니티). 자사몰 규모에 맞춰 커뮤니티는 구매 고객 사진·집들이 + 브랜드 매거진으로 축소
-// 고객 20개 + 상품 31개 + 커뮤니티 12개 + 장바구니 3개 + 주문 6개 + 결제 3개 + 배송 7개 + 혜택 5개 = 87개 테이블
+// 고객 20개 + 상품 32개 + 커뮤니티 12개 + 장바구니 3개 + 주문 6개 + 결제 3개 + 배송 7개 + 혜택 5개 = 88개 테이블
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_fashion/ (패션몰), docs/archive_oracle/ (Oracle 버전)
@@ -405,11 +405,7 @@ Table product [note: '[상품] 상품 (옵션 공통 정보)'] {
   depth_mm int [note: '[상품 대표 깊이(mm)] 세로(깊이)']
   height_mm int [note: '[상품 대표 높이(mm)] 높이']
   weight_kg decimal(6,1) [note: '[상품 무게(kg)]']
-  assembly_type varchar(20) [not null, default: 'NONE', note: '[상품 조립 방식] NONE(완제품)/SELF(자가조립)/INSTALL(설치 기사 조립)']
-  assembly_difficulty varchar(10) [note: '[상품 조립 난이도] EASY/NORMAL/HARD. CHECK: assembly_* 컬럼은 assembly_type = SELF·INSTALL일 때만. HARD이거나 필요 인원 2명 이상이면 장바구니 진단에서 조립 난이도 안내']
-  assembly_minutes smallint [note: '[상품 조립 예상 시간(분)] 예상 조립 시간 (분)']
-  assembly_people tinyint [note: '[상품 조립 필요 인원] 필요 인원 (예: 옷장 2명)']
-  assembly_tools varchar(200) [note: '[상품 조립 필요 공구] 필요 공구와 동봉 여부 (예: 십자드라이버(미동봉), 육각렌치(동봉))']
+  assembly_type varchar(20) [not null, default: 'NONE', note: '[상품 조립 방식] NONE(완제품)/SELF(자가조립)/INSTALL(설치 기사 조립). SELF·INSTALL이면 조립 정보는 product_assembly_detail(1:1)']
   status varchar(20) [not null, default: 'DRAFT', note: '[상품 상태] DRAFT/ON_SALE/SOLD_OUT/STOPPED. 품절 기준은 SKU 재고: 판매 중인 SKU가 모두 stock = 0이면 시스템이 SOLD_OUT, 재입고되면 ON_SALE (changed_by NULL)']
   sale_start_at datetime [note: '[상품 판매 시작일시]']
   sale_end_at datetime [note: '[상품 판매 종료일시]']
@@ -683,7 +679,7 @@ Table material [note: '[소재] 소재 마스터'] {
   sort_order smallint [not null, note: '[소재 정렬 순서]']
 }
 
-Table product_material [note: '[상품 소재] 상품 소재 (필터용). 법정 표기 문구는 product_notice.material'] {
+Table product_material [note: '[상품 소재] 상품 소재 (필터용). 법정 표기 문구는 정보제공고시 소재 항목(product_notice_value, notice_item.item_code = MATERIAL)'] {
   product_id bigint [not null, note: '[상품 ID]']
   material_id bigint [not null, note: '[소재 ID]']
   part varchar(20) [not null, default: 'MAIN', note: '[상품 소재 적용 부위] MAIN/FRAME/TOP(상판)/LEG(다리)/UPHOLSTERY(커버)']
@@ -792,6 +788,20 @@ Table product_status_history [note: '[상품 상태 이력] 상품 상태 변경
 // =====================================================================
 // 상품 - 조립식 (부품/조립 설명서)
 // =====================================================================
+
+Table product_assembly_detail [note: '[상품 조립 정보] 조립이 필요한 상품(product.assembly_type = SELF·INSTALL)의 조립 정보 (product와 1:1, 완제품은 행 없음: 앱 검증). 상세페이지 조립 안내, HARD이거나 필요 인원 2명 이상이면 장바구니 진단에서 미리 안내'] {
+  product_id bigint [pk, note: '[상품 ID] product와 1:1']
+  difficulty varchar(10) [not null, note: '[상품 조립 난이도] EASY/NORMAL/HARD']
+  minutes smallint [not null, note: '[상품 조립 예상 시간(분)] CHECK minutes >= 1']
+  people tinyint [not null, default: 1, note: '[상품 조립 필요 인원] 예: 옷장 2명. CHECK people >= 1']
+  tools varchar(200) [note: '[상품 조립 필요 공구] 필요 공구와 동봉 여부 (예: 십자드라이버(미동봉), 육각렌치(동봉))']
+  updated_by bigint [note: '[상품 조립 정보 수정 관리자 ID] 관리자']
+  updated_at datetime [note: '[상품 조립 정보 수정일시]']
+
+  indexes {
+    updated_by [name: 'ix_product_assembly_detail_updated_by']
+  }
+}
 
 Table product_part [note: '[상품 부품] 조립식 상품 부품 목록 (설명서 표기 기준). 누락·파손 부품 요청과 단품 구매의 기준'] {
   part_id bigint [pk, increment, note: '[부품 ID]']
@@ -1715,6 +1725,8 @@ Ref: product_status_history.product_id > product.product_id
 Ref: product_status_history.changed_by > member_account.member_id
 
 // 상품 - 조립식 (부품/조립 설명서)
+Ref: product_assembly_detail.product_id - product.product_id
+Ref: product_assembly_detail.updated_by > member_account.member_id
 Ref: product_part.product_id > product.product_id
 Ref: product_part.sku_id > product_sku.sku_id
 Ref: assembly_step.product_id > product.product_id
@@ -1918,7 +1930,8 @@ TableGroup product_composition_operation [note: '상품 - 구성/상태 이력']
   product_status_history
 }
 
-TableGroup product_assembly [note: '상품 - 조립식 (부품/조립 설명서)'] {
+TableGroup product_assembly [note: '상품 - 조립식 (조립 정보/부품/조립 설명서)'] {
+  product_assembly_detail
   product_part
   assembly_step
   assembly_step_part

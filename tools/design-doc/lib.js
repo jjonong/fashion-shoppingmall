@@ -232,7 +232,7 @@ const groupDesc = {
   product_link_history: '스타일·주거 조건 연결(맞춤 추천), 재고 원장, 가격 이력, 재입고 알림 신청.',
   product_search_filter: '컬러 계열, 소재, 카테고리별 속성 필터와 검색 동의어.',
   product_composition_operation: '연관·세트 상품, 상품 상태 이력.',
-  product_assembly: '조립식 상품의 부품 목록(설명서 표기·단품 구매 가능 여부)과 단계별 조립 설명서(단계마다 쓰는 부품).',
+  product_assembly: '조립 정보(난이도·시간·인원·공구, 상품과 1:1), 조립식 상품의 부품 목록(설명서 표기·단품 구매 가능 여부)과 단계별 조립 설명서(단계마다 쓰는 부품).',
   community_post: '공통 post와 유형별 상세(집들이·매거진), 사진, 블록 본문, 사진 속 상품 태그.',
   community_reaction: '스타일 분류, 댓글, 좋아요, 스크랩(글 저장 + 상품 찜).',
   community_operation: '신고와 앱 내 알림함.',

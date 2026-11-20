@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`. (Oracle에서 전환함. Oracle 버전은 `docs/archive_oracle/`)
 - 판매 방식: **자사 브랜드(PB) 상품만 직접 판매** (입점 판매자·정산·브랜드 구분 없음, 사용자 확정). 오픈마켓 구조로 바꾸지 않는다. 브랜드 테이블(`brand`, `member_brand_preference`)은 이 결정으로 뺐으므로 다시 넣기 전에 사용자와 상의한다. 업체·상품은 실제가 아닌 가상 데이터로 채운다.
 - 커뮤니티 범위: 자사몰은 대형 플랫폼만큼 사용자가 모이지 않으므로 **구매 고객 사진·집들이 + 운영자 매거진으로 축소** (사용자 확정). 팔로우·차단·해시태그·댓글 좋아요·스크랩 폴더·질문과답변(상품 문의와 중복)은 의도적으로 뺐다. 다시 넣기 전에 사용자와 상의한다.
-- 영역 8개 (쇼핑 흐름 순, 사용자 확정): 고객(20) + 상품(31) + 커뮤니티(12) + 장바구니(3) + 주문(6) + 결제(3) + 배송(7) + 혜택(5) = **87개 테이블**. 예전 "1~4단계" 표기는 쓰지 않는다.
+- 영역 8개 (쇼핑 흐름 순, 사용자 확정): 고객(20) + 상품(32) + 커뮤니티(12) + 장바구니(3) + 주문(6) + 결제(3) + 배송(7) + 혜택(5) = **88개 테이블**. 예전 "1~4단계" 표기는 쓰지 않는다.
 - **다음 단계(구매 리뷰, 포인트, 반품·교환 클레임, 등급 산정 기준)는 대기 중.** 사용자가 요청하기 전에는 테이블을 추가하지 않는다. `stock_history.ref_type = CLAIM`의 `ref_id`와 주문 금액의 `point_used_amount`(지금은 0)가 다음 단계와 연결될 자리. 포인트를 만들면 '혜택' 영역(`benefit_`)에 둔다.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
@@ -17,13 +17,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 파일 | 역할 |
 |---|---|
-| `docs/erd.dbml` | **기준 원본(source of truth)**. 87개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 23개. https://dbdiagram.io/d 에 붙여넣어 확인 |
+| `docs/erd.dbml` | **기준 원본(source of truth)**. 88개 테이블, 인덱스, 관계(`Ref`), `TableGroup` 23개. https://dbdiagram.io/d 에 붙여넣어 확인 |
 | `docs/DB_설계서.pdf` | `erd.dbml`에서 생성한 설계서 (표지, 전체 구조, 설계 원칙, 흐름도, 영역별 ERD, 테이블 명세, FK 목록). **모든 페이지 A4 세로** (사용자 요청, 가로 페이지 섞지 않음). 직접 수정 불가, 설계가 바뀌면 `tools/design-doc`에서 `npm run pdf`로 다시 생성 |
 | `docs/고객_설계_요약.pdf` | 고객 영역 요약본 (약 8쪽: 한눈에 보기·핵심 결정, 고객 전체 ERD, 테이블 요약표, 설계 과정, 보안, 생명주기, 정책·향후 검토). 전체 설계서가 길어서 사용자가 요청한 별도 문서. `npm run summary`로 생성 |
 | `docs/상품_발표자료.pdf`, `docs/장바구니_주문_발표자료.pdf` | 영역별 발표 자료 (`slides.js`의 `DECKS`마다 1개, 지금은 상품 / 장바구니+주문. 영역을 묶은 자료는 영역 사이에 "장바구니 → 주문: 넘어가는 값" 한 장(`LINKS`, 직접 쓴 표)을 넣음. **A4 가로**: 사용자 요청으로 설계서의 세로 규칙에서 예외). 표지 + 세부 영역별로 테이블마다 **전체 컬럼**(논리명·물리명·타입·키·필수·기본값·설명), 장식 없는 흰 바탕 (사용자 요청: 예상 질문·설명 장표·도식 없이 테이블과 컬럼만). 세부 영역은 새 페이지에서 시작, 긴 테이블은 다음 페이지로 이어짐. DBML에서 자동 생성, `npm run slides` |
 | `docs/erd/index.html` | ERD 웹페이지 (GitHub Pages: https://jjonong.github.io/interior-shoppingmall/erd/). 영역 이름(고객·상품 등)을 누르면 그 영역 전체 ERD(세부 영역별 ERD를 상자로 격자 배치, `lib.areaSvg`) + 세부 영역별 ERD + 테이블 클릭 시 전체 컬럼·인덱스·관계, 검색. 단일 HTML(외부 라이브러리 없음). 직접 수정 불가, `npm run erd`로 생성. Pages 소스는 main 브랜치 `/docs` (`docs/.nojekyll`로 Jekyll 생략). **테이블 드래그 배치**: 끌어 옮기면 연결선이 따라오고 배치는 브라우저(localStorage `erd-layout-v1`)에 저장, "배치 초기화"·"배치 내보내기", "draw.io에서 열기"(Pages에서만) |
 | `docs/erd-layout.json` | (선택) 웹페이지 공유 배치. 웹페이지 "배치 내보내기"로 받은 파일을 여기 두고 `npm run erd`하면 모든 사람에게 같은 배치. 화면키 → {노드키(영역 전체 화면은 `그룹/테이블`): [dx, dy]}. 설계 변경으로 자동 배치가 달라지면 어긋날 수 있음 → 다시 내보내기 |
-| `docs/erd.drawio` | draw.io(diagrams.net) 파일. 첫 페이지 "전체"(87개 한 장, 영역 색) + 영역별 페이지 8개(다른 영역은 PK만 회색), 논리명 · 물리명 · 타입 · 키 전체 컬럼, 세부 영역 상자, 관계선. 직접 수정 불가, `npm run drawio`로 생성. **한 방향**: draw.io에서 옮기거나 꾸민 내용은 `erd.dbml`에 반영되지 않음 (사용자 확정: draw.io는 보조, 원본은 dbml) |
+| `docs/erd.drawio` | draw.io(diagrams.net) 파일. 첫 페이지 "전체"(88개 한 장, 영역 색) + 영역별 페이지 8개(다른 영역은 PK만 회색), 논리명 · 물리명 · 타입 · 키 전체 컬럼, 세부 영역 상자, 관계선. 직접 수정 불가, `npm run drawio`로 생성. **한 방향**: draw.io에서 옮기거나 꾸민 내용은 `erd.dbml`에 반영되지 않음 (사용자 확정: draw.io는 보조, 원본은 dbml) |
 | `docs/archive_fashion/` | 이전 패션몰 설계 (Oracle). 참고용, 갱신하지 않음 |
 | `docs/archive_oracle/` | 인테리어몰 Oracle 버전 (MySQL 전환 직전). 참고용, 갱신하지 않음 |
 
@@ -55,7 +55,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **이름**: 테이블·컬럼·인덱스 모두 **소문자 snake_case** (OS마다 테이블명 대소문자 처리가 달라서). 인덱스 이름 접두사 `uk_`(unique), `ux_`(함수 기반 unique), `ix_`(일반). PK 제약 이름은 MySQL에서 항상 `PRIMARY`.
 - **논리명(한글 이름)**: 모든 테이블·컬럼의 note 맨 앞에 `[논리명]`을 둔다 (예: `note: '[등급명] WELCOME/SILVER/GOLD/VIP'`, 설명이 없으면 `note: '[등록일시]'`). 생성 도구가 `lib.logicalOf`로 읽어 ERD 상자·명세표·툴팁·검색에 표시하고, `noteOf`는 논리명을 뺀 설명만 돌려준다. 테이블·컬럼을 추가하면 논리명도 반드시 넣는다. 컬럼 논리명은 **그 자체로 뜻이 통하게 구체적으로** 쓴다(사용자 요청): `이름`이 아니라 `회원 이름`, `등록일시`가 아니라 `주문 상품 등록일시`, 회원·관리자 참조는 역할까지(`글 작성 회원 ID`, `상품 등록 관리자 ID`, `신고된 글 ID`). **표시는 논리명 우선**(구조 설계 단계, 사용자 요청): ERD 상자·명세표·목록·팝업·검색 결과 모두 논리명을 앞에 크게, 물리명은 뒤에 작은 회색 고정폭으로.
 - **예약어 회피**: `member`는 MySQL 8.0.17+ 예약어라 회원 테이블은 **`member_account`** (PK는 `member_id`, 다른 테이블의 FK 컬럼도 `member_id`). 댓글은 `post_comment`. 새 이름을 만들 때 MySQL 예약어인지 확인한다.
-- **PK**: `bigint` AUTO_INCREMENT(`increment`). 1:1 확장 테이블(`member_home`, `product_notice`, `*_detail`)은 부모 PK를 그대로 PK로 사용. 매핑 테이블은 복합 PK.
+- **PK**: `bigint` AUTO_INCREMENT(`increment`). 1:1 확장 테이블(`member_home`, `product_notice`, `*_detail`: `product_assembly_detail` 등)은 부모 PK를 그대로 PK로 사용. 매핑 테이블은 복합 PK.
 - **타입**: ID·금액 `bigint`, 카운트 `int`, 작은 수 `smallint`/`tinyint`, 비율·평점·치수 소수 `decimal(p,s)`, 문자열 `varchar(n)`(글자 수), 본문 `text`(상세페이지·약관은 `mediumtext`), 시각 `datetime`(TIMESTAMP의 2038년 제한·시간대 변환 회피), 치수는 mm 정수.
 - **상태값**: `varchar` + CHECK 제약 (허용 값은 컬럼 `note`에 `A/B/C` 형식, 값은 대문자). **Y/N**은 `char(1)` + CHECK.
 - **시간**: `created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP`, `updated_at`은 DDL에서 `ON UPDATE CURRENT_TIMESTAMP` (DBML로는 표현 불가).
@@ -93,7 +93,7 @@ node build.js <in.dbml> <out.pdf> <미리보기폴더>     # 도식별 PNG 미�
 - **상태 등급** (사용자 확정): `product.condition_grade` = NEW/OPEN_BOX/DISPLAY/REFURB_A/REFURB_B. 리퍼·전시는 옵션(SKU)이 아니라 **별도 상품 행** + `original_product_id`(원본 새상품, NEW면 NULL·그 외 필수 CHECK → FK 참조 동작 없이) + `condition_note`(흠집 설명, 사진은 `product_image`). 가격·재고·반품 규정이 달라서. 주문 시 `order_item.condition_grade` 스냅샷(반품 규정은 다음 단계 클레임에서 등급 기준). 목록 기본은 NEW만, 커뮤니티 "이 상품이 쓰인 사진"은 원본으로 모음.
 - **세트 상품**: `product_type='SET'`은 자체 SKU 없이 `product_set_item` 구성품 SKU를 각각 선택. 세트의 `list_price`·`sale_price`는 구성품 SKU 가격 합계(표시용, 세트 할인 없음), 대표 치수·조립 정보·`make_days`는 비우고 구성품 값을 사용.
 - **필터**: 컬러 계열(옵션 값 단위), 소재(부위별), 카테고리별 속성(`attribute`, 데이터로 추가). 동의어·검색 로그는 스토어/커뮤니티 공용.
-- **조립식 특화** (사용자 확정: 완제품·조립식 모두 취급): `product.assembly_difficulty/minutes/people/tools`, 부품 목록 `product_part`(설명서 코드, 옵션별 부품, 단품 구매 가능), 단계별 설명서 `assembly_step` + `assembly_step_part`, 부품 요청 `part_request`(MISSING·DAMAGED는 구매 확정 후 30일 무료, PURCHASE 유료) + `part_request_item`. 조립 HARD·2인 이상이면 장바구니 진단에서 미리 안내.
+- **조립식 특화** (사용자 확정: 완제품·조립식 모두 취급): `product.assembly_type`(NONE/SELF/INSTALL)만 상품에 두고 조립 정보(난이도·시간·인원·공구)는 1:1 확장 `product_assembly_detail`(조립이 필요한 상품만 행, 사용자 확정: 상품 테이블에서 분리), 부품 목록 `product_part`(설명서 코드, 옵션별 부품, 단품 구매 가능), 단계별 설명서 `assembly_step` + `assembly_step_part`, 부품 요청 `part_request`(MISSING·DAMAGED는 구매 확정 후 30일 무료, PURCHASE 유료) + `part_request_item`. 조립 HARD·2인 이상이면 장바구니 진단에서 미리 안내.
 
 ### 커뮤니티 (글쓰기 중심)
 - **슈퍼타입/서브타입**: 공통 `post`(`post_type` = PHOTO/HOUSEWARMING/MAGAZINE) + 1:1 상세(`housewarming_detail`, `magazine_detail`). PHOTO·HOUSEWARMING은 고객, MAGAZINE은 EDITOR/ADMIN만 작성. 댓글·좋아요·스크랩·신고·스타일은 모두 `post`에 연결.
