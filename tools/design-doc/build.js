@@ -193,7 +193,7 @@ const makeHtml = () => `${head('인테리어 가구몰 DB 설계서')}
     <li>상품 — 옵션/SKU · 재고 · 상태 흐름 · 정보제공고시 · 조립식(부품 · 조립 설명서) · ERD</li>
     <li>커뮤니티 — 글 구조 · 블록 에디터 · 상품 태그 · 구매 인증 · 주거 맞춤 추천 · ERD</li>
     <li>장바구니 — 장바구니 진단 · 인테리어 플랜 · 비회원 장바구니 · 가격 인하 알림 · ERD</li>
-    <li>주문 — 주문 흐름 · 주문 상품 상태 · 주문 시점 기록 · 할인 안분 · 부분 취소 · 부품 요청 · ERD</li>
+    <li>주문 — 주문 흐름 · 주문 상품 상태 · 주문 시점 기록 · 할인 안분 · 부분 취소 · 반품 · 교환 · 부품 요청 · A/S · ERD</li>
     <li>결제 — 결제수단 · 가상계좌 · 현금영수증 · 에스크로 · ERD</li>
     <li>배송 — 가구 배송비 계산 · 반입 판단 · 배송 묶음 · 설치 일정 예약 · ERD</li>
     <li>혜택 — 쿠폰 종류와 중복 사용 · 발급 방식(커뮤니티 활동 보상) · 할인 안분 · 취소 복원 · ERD</li>
@@ -301,10 +301,16 @@ ${erOf('cart')}
 <section class="page">
   <h2>7. 주문</h2>
   ${fig('주문 흐름', mm(D.orderflow), '재고는 주문 생성 시 차감하고, 30분 안에 결제되지 않으면 배치로 재고 · 설치 슬롯을 되돌린다. 주문제작(MADE_TO_ORDER)은 재고를 차감하지 않는다')}
-  ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후 반품 · 교환은 다음 단계(클레임)')}
+  ${fig('주문 상품 상태 흐름 — order_item.status', mm(D.itemstatus), '상태는 상품별로 관리하고 orders.status는 요약(PENDING · PAID · COMPLETED · CANCELED · EXPIRED). 출고 후에는 반품 · 교환(order_claim)으로 처리하고 반품이 끝나면 RETURNED')}
   <div class="callout"><b>주문 시점 기록 (영수증)</b> — 주문 시점의 상품명 · 옵션 문구 · 단가는 order_item에, 배송지와 반입 경로(층수 · 엘리베이터 · 현관문 치수)는 order_address에, 배송비 내역(기본 · 권역)은 shipment에 복사한다. 상품 가격이나 회원 배송지가 바뀌어도 주문 내역과 설치 기사 전달 정보는 그대로다. 영수증에 산 날의 가격이 찍혀 있는 것과 같다 (흔히 스냅샷이라고 부름). 장바구니는 아직 사기 전이라 기록하지 않고 항상 현재 값을 보여 준다.</div>
   <div class="callout"><b>할인 안분과 부분 취소</b> — 할인은 등급 할인 → 상품 쿠폰 → 주문 쿠폰 → 포인트(다음 단계) 순서로 적용한다. 등급 할인은 상품 금액 × 주문 시점 할인율이며, 할인율 · 적립률은 orders.grade_discount_rate · grade_point_rate에 기록해 등급 혜택이 나중에 바뀌어도 그 주문의 기준이 남는다. 할인은 주문 단위 금액을 order_item별로 나눠 저장하고, 각 상품의 실결제 몫(final_amount)을 환불 기준으로 쓴다. 취소는 주문 상품 한 줄 단위이고, payment_cancel 1건이 여러 줄을 함께 환불한다(order_item.payment_cancel_id). 부분 취소로 무료배송 기준이 깨지면 shipping_fee_adjust로 배송비를 차감한다. 단, 등급 무료배송(shipment.free_reason = GRADE)은 금액과 무관하므로 차감하지 않는다.</div>
   <div class="callout"><b>부품 요청</b> — 구매한 조립식 상품의 누락 · 파손 부품은 주문 상품(order_item) 기준으로 part_request를 남기고, 요청 부품은 part_request_item에 담는다. 이사하거나 다른 곳에서 조립하는 경우가 있어 받는 분 · 주소를 요청마다 기록하고(기본값은 주문 배송지), 품목에는 요청 시점 부품 코드 · 이름 · 단가를 남겨 부품 정보가 바뀌어도 금액이 그대로다. 상태는 REQUESTED → APPROVED → SHIPPED → DELIVERED, 반려 REJECTED, 접수 단계에서만 고객 철회 CANCELED. 부품 목록과 조립 설명서는 상품 영역(product_part · assembly_step)에 있다(4장 조립식 부품 요청 흐름 참고).</div>
+</section>
+<section class="page">
+  ${fig('반품 · 교환 흐름 — order_claim · order_claim_item', mm(D.claim), '대상은 주문 상품 한 줄 단위. 귀책(고객 · 회사)에 따라 회수 배송비 부담이 정해지고, 회수 · 검수가 끝나면 환불 또는 교환품을 보낸다')}
+  <div class="callout"><b>반품 · 교환 규칙</b> — 단순 변심은 수령 후 7일, 하자 · 오배송 · 배송 중 파손은 수령 후 3개월까지 접수한다(전자상거래법). 주문제작(MADE_TO_ORDER)은 단순 변심 반품을 받지 않고, 리퍼 · 전시 상품은 order_item.condition_grade에 따라 상품별 반품 규정을 적용한다. 가구는 회수 비용이 커서 귀책(fault_party)이 핵심이다: 고객 귀책이면 shipping_policy.return_fee 기준 회수 배송비(return_fee_amount)를 환불 금액에서 빼고, 회사 귀책(하자 · 오배송 · 해피콜 판단 오류로 인한 반입 실패)이면 0이다. 환불은 payment_cancel(cancel_amount = 대상 상품 final_amount 합 - 회수 배송비 + 배송비 조정), 재고는 stock_history(ref_type CLAIM, ref_id = claim_id)에 남긴다. 구매 확정 뒤 하자로 반품하면 누적 구매액에서 빼고 커뮤니티 구매 인증을 되돌린다. 클레임이 진행 중인 주문 상품은 자동 구매 확정에서 제외한다.</div>
+  <div class="callout"><b>가구 A/S</b> — 문짝 처짐 · 서랍 레일 고장처럼 구매 확정 후 몇 달 지나 생기는 문제는 as_request로 받는다. 품질보증 기간은 배송 완료일 + product.warranty_months(기본 12개월)로 계산해 접수할 때 warranty_until에 기록하고, 기간 안이고 고객 과실이 아니면 무상이다. 처리 방식은 기사 방문 수리(VISIT) · 부품 발송(PART, part_request와 연결) · 회수 수리(PICKUP) 중에서 관리자가 정한다. 방문지는 부품 요청처럼 접수 시점 주소를 기록한다.</div>
+  <div class="callout"><b>관리자 주문 메모</b> — "오후 2시 이후 설치 원함"처럼 상담 · 일정 조율 내용은 order_memo에 주문 또는 주문 상품 단위로 남긴다. 관리자만 보며, 중요한 메모는 상단에 고정(is_pinned)한다.</div>
 </section>
 ${erOf('order')}
 

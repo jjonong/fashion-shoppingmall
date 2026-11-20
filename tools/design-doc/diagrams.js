@@ -175,7 +175,25 @@ module.exports = {
   CANCEL_REQUESTED --> PREPARING: 거절
   PREPARING --> SHIPPED: 출고
   SHIPPED --> DELIVERED: 배송 · 설치 완료
-  DELIVERED --> CONFIRMED: 7일 후 자동 · 직접 확정`,
+  DELIVERED --> CONFIRMED: 7일 후 자동 · 직접 확정
+  DELIVERED --> RETURNED: 반품 완료 (order_claim)
+  CONFIRMED --> RETURNED: 하자 반품 (3개월 이내)`,
+  claim: `flowchart TB
+  A(["반품 · 교환 접수<br/>order_claim REQUESTED<br/>대상 주문 상품 order_claim_item"]) --> B{"관리자 확인<br/>기한 · 주문제작 · 리퍼 규정"}
+  B -- 불가 --> RJ["REJECTED<br/>reject_reason"]
+  B -- 승인 --> C["APPROVED<br/>귀책 fault_party 확정<br/>고객 귀책이면 회수 배송비 return_fee_amount"]
+  C --> D["COLLECTING<br/>회수 일정 · 송장<br/>화물 · 설치배송은 기사 회수"]
+  D --> E{"검수 inspect_result"}
+  E -- "DAMAGED_BY_CUSTOMER" --> RJ
+  E -- PASS --> F{"claim_type"}
+  F -- RETURN --> G["환불 payment_cancel<br/>final_amount 합 - 회수 배송비<br/>재고 복구 · order_item RETURNED"]
+  F -- EXCHANGE --> H["교환품 발송<br/>exchange_sku_id 재고 차감 · 회수 SKU 복구<br/>reship 송장"]
+  G --> Z["COMPLETED"]
+  H --> Z
+  classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
+  classDef good fill:#EAF7EF,stroke:#3C9A63,color:#1d5a37
+  class RJ bad
+  class Z good`,
   install: `flowchart TB
   A(["설치배송 상품 주문서"]) --> B["출고 가능일<br/>= 오늘 + lead_days + 권역 extra_lead_days<br/>(주문제작은 + make_days)"]
   B --> C["<b>install_slot</b> 조회<br/>배송지 권역 · 날짜 ≥ 출고 가능일<br/>is_closed = N · booked_count < capacity"]
