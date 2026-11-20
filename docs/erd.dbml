@@ -705,20 +705,20 @@ Table attribute [note: '[필터 속성] 카테고리별 필터 속성 (침대 �
 }
 
 Table attribute_value [note: '[필터 속성 값] 속성 값 (침대 사이즈 → SS/Q/K/LK)'] {
-  value_id bigint [pk, increment, note: '[속성 값 ID]']
-  attribute_id bigint [not null, note: '[속성 ID]']
-  value_code varchar(30) [not null, note: '[속성 값 코드]']
-  name_ko varchar(30) [not null, note: '[속성 값 이름]']
-  sort_order smallint [not null, note: '[속성 값 정렬 순서]']
+  value_id bigint [pk, increment, note: '[필터 속성 값 ID]']
+  attribute_id bigint [not null, note: '[필터 속성 ID]']
+  value_code varchar(30) [not null, note: '[필터 속성 값 코드]']
+  name_ko varchar(30) [not null, note: '[필터 속성 값 이름]']
+  sort_order smallint [not null, note: '[필터 속성 값 정렬 순서]']
 
   indexes {
     (attribute_id, value_code) [unique, name: 'uk_attribute_value']
   }
 }
 
-Table product_attribute_value [note: '[상품 속성 값] 상품별 속성 값'] {
+Table product_attribute_value [note: '[상품 속성 값] 상품별 필터 속성 값 (상품 ↔ 필터 속성 값 N:M 매핑). attribute.is_multi_select = N인 속성은 상품당 값 1개만 (앱 검증, PK로는 막지 않음)'] {
   product_id bigint [not null, note: '[상품 ID]']
-  value_id bigint [not null, note: '[속성 값 ID]']
+  value_id bigint [not null, note: '[필터 속성 값 ID]']
 
   indexes {
     (product_id, value_id) [pk]
