@@ -1,0 +1,78 @@
+/* 발표 자료 (A4 가로, 한 장 = .slide). head()가 넣는 style.css 뒤에 붙여 덮어쓴다 */
+@page { size: A4 landscape; margin: 0; }
+:root { --c: #2f6496; --c-soft: #EDF3F9; --ink: #1d2733; --sub: #5d6d7e; --line: #D7DEE6; --accent: #D98A2B; --accent-soft: #FFF3E3; --good: #3C9A63; }
+body { font-size: 12pt; line-height: 1.5; }
+
+.slide { width: 297mm; height: 210mm; position: relative; overflow: hidden; page-break-after: always; padding: 0 16mm; display: flex; flex-direction: column; }
+.slide:last-child { page-break-after: auto; }
+.slide > header { display: flex; align-items: baseline; gap: 12px; padding: 12mm 0 4mm; border-bottom: 2px solid var(--c); margin-bottom: 6mm; }
+.slide > header .no { font-size: 11pt; font-weight: bold; color: #fff; background: var(--c); border-radius: 4px; padding: 1px 8px; }
+.slide > header h2 { font-size: 21pt; color: var(--ink); border: 0; margin: 0; padding: 0; }
+.slide > header .kicker { margin-left: auto; font-size: 10pt; color: var(--sub); }
+.slide .body { flex: 1; min-height: 0; display: flex; gap: 8mm; }
+.slide .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4mm; }
+.slide .col.w2 { flex: 2; }
+.slide .col.w3 { flex: 3; }
+.slide > .pg { position: absolute; right: 16mm; bottom: 7mm; font-size: 9pt; color: #8795A1; }
+.slide > .pg::before { content: '상품 영역 설계 · '; }
+
+.lead { font-size: 14pt; color: var(--ink); margin: 0 0 2mm; }
+.lead b { color: var(--c); }
+.slide ul { margin: 0; padding-left: 20px; }
+.slide li { margin: 0 0 2.2mm; }
+.slide li::marker { color: var(--c); }
+.slide code { font-size: 10.5pt; }
+.slide table { font-size: 11pt; }
+.slide th { background: var(--c-soft); color: var(--ink); }
+.slide th, .slide td { padding: 5px 8px; }
+.phys { font-family: Consolas, monospace; font-size: 9pt; color: #8795A1; font-weight: normal; }
+
+.box { border: 1px solid var(--line); border-radius: 8px; padding: 4mm 5mm; background: #fff; }
+.box h3 { margin: 0 0 2mm; padding: 0; border: 0; font-size: 13pt; color: var(--c); }
+.box.hl { background: var(--accent-soft); border-color: #F0C78E; }
+.box.hl h3 { color: #9a5b12; }
+.box.soft { background: var(--c-soft); border-color: #C9DAEB; }
+.formula { font-size: 13pt; font-weight: bold; background: var(--c-soft); border-left: 5px solid var(--c); padding: 3mm 5mm; border-radius: 4px; }
+.formula small { display: block; font-weight: normal; font-size: 10pt; color: var(--sub); }
+.body.stack { flex-direction: column; gap: 4mm; }
+.body.stack .lead { margin: 0; }
+.row { display: flex; gap: 6mm; }
+.row > * { flex: 1; min-width: 0; }
+/* 남은 높이를 모두 쓰는 도식: 칸 크기에 맞춰 비율 유지로 늘리고 줄인다 (viewBox) */
+.dg.grow { flex: 1; min-height: 0; position: relative; margin-bottom: 8mm; }
+.dg.grow > * { position: absolute; inset: 0; }
+.dg.grow svg { width: 100% !important; height: 100% !important; max-height: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 2.5mm; }
+.chips span { background: var(--c-soft); border: 1px solid #C9DAEB; border-radius: 14px; padding: 1mm 4mm; font-size: 11pt; }
+.note { font-size: 10pt; color: var(--sub); margin-bottom: 8mm; }
+.dg { display: flex; align-items: center; justify-content: center; min-height: 0; }
+.dg pre.mermaid, .dg .gv { width: 100%; }
+/* 도식은 칸 폭에 맞춰 키운다 (Mermaid가 넣는 inline max-width를 덮어씀) */
+.dg svg { width: 100% !important; max-width: 100% !important; height: auto; max-height: 135mm; }
+
+/* 표지 */
+.slide.cover { padding: 0; background: linear-gradient(135deg, #1f3b57 0%, #2f6496 55%, #3a78b5 100%); color: #fff; justify-content: center; }
+.cover .inner { padding: 0 24mm; }
+.cover .eyebrow { font-size: 11pt; letter-spacing: 4px; opacity: .8; }
+.cover h1 { font-size: 40pt; margin: 6mm 0 4mm; line-height: 1.2; }
+.cover .sub { font-size: 16pt; opacity: .92; margin: 0 0 14mm; }
+.cover .stats { display: flex; gap: 8mm; }
+.cover .stats div { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 5mm 8mm; min-width: 44mm; }
+.cover .stats b { display: block; font-size: 28pt; line-height: 1.1; }
+.cover .stats span { font-size: 11pt; opacity: .85; }
+.cover .meta { position: absolute; left: 24mm; bottom: 14mm; font-size: 10pt; opacity: .75; }
+
+/* 한눈에 보기 카드 */
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; }
+.card { border: 1px solid var(--line); border-top: 5px solid var(--c); border-radius: 8px; padding: 4mm 5mm; background: #fff; }
+.card b { font-size: 12pt; display: block; padding-right: 8mm; }
+.card .n { float: right; font-size: 13pt; font-weight: bold; color: var(--c); }
+.card p { margin: 2mm 0 2mm; font-size: 10pt; color: #3f4d5a; line-height: 1.45; }
+.card .tbl { font-size: 8.5pt; color: #8795A1; font-family: Consolas, monospace; line-height: 1.4; }
+.card.core { border-top-color: var(--accent); background: var(--accent-soft); }
+
+/* 질문 · 답 */
+.qa { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.qa .box p { margin: 0; font-size: 11pt; color: #3f4d5a; }
+.qa .box h3::before { content: 'Q. '; color: var(--accent); }
+.tag { display: inline-block; font-size: 9.5pt; font-weight: bold; padding: 0 6px; border-radius: 3px; background: var(--c-soft); color: var(--c); margin-right: 4px; }

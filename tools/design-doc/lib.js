@@ -271,7 +271,8 @@ const mermaidInit = `<script>
 </script>`;
 
 // ---------- HTML → PDF ----------
-// name: 중간 HTML 파일 이름 (.build/<name>.html), footer: 페이지 하단 왼쪽 문구
+// name: 중간 HTML 파일 이름 (.build/<name>.html), footer: 페이지 하단 왼쪽 문구 (생략 시 바닥글 없음)
+// 용지 크기·방향은 각 문서 CSS의 @page를 따른다 (preferCSSPageSize)
 async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   fs.mkdirSync(path.join(__dirname, '.build'), { recursive: true });
   const htmlPath = path.join(__dirname, '.build', `${name}.html`);
@@ -287,7 +288,8 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('diagrams=', await page.evaluate(() => document.querySelectorAll('.mermaid svg').length), 'failed=', failed);
   await page.pdf({
     path: outPdf, format: 'A4', printBackground: true, preferCSSPageSize: true,
-    displayHeaderFooter: true, headerTemplate: '<div></div>',
+    // footer가 없으면(발표 자료) 머리글·바닥글 없이 페이지 여백 0으로 출력
+    displayHeaderFooter: !!footer, headerTemplate: '<div></div>',
     footerTemplate: `<div style="width:100%;font-size:7.5px;color:#8795A1;font-family:Malgun Gothic;padding:0 12mm;display:flex;justify-content:space-between"><span>${esc(footer)}</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>`,
   });
   if (previewDir) {
