@@ -78,8 +78,8 @@
       cols += '</section>';
     });
     main.innerHTML = `<div class="overview">
-      <h1>인테리어 가구몰 + 커뮤니티 ERD</h1>
-      <p class="lead">자사 브랜드 가구를 직접 판매하는 쇼핑몰(장바구니·주문·결제·설치배송 포함)과 구매 고객 사진·집들이·브랜드 매거진 커뮤니티의 DB 설계입니다.
+      <h1>패션 마켓 입점형 쇼핑몰 ERD</h1>
+      <p class="lead">소호 쇼핑몰(마켓)이 입점해 의류·신발·가방·잡화를 판매하는 쇼핑몰의 DB 설계입니다. 고객 → 마켓 → 상품 순서로 묶음 단위로 설계 중입니다.
         영역을 고르면 ERD가 열리고, 테이블을 누르면 전체 컬럼과 관계를 볼 수 있습니다.</p>
       <div class="stats">
         <div class="stat"><b>${D.counts.tables}</b><span>테이블</span></div>
@@ -88,7 +88,7 @@
         <div class="stat"><b>MySQL 8.0</b><span>InnoDB · utf8mb4</span></div>
       </div>
       <h2 class="ov-h">전체 구조 <span>${D.counts.tables}개 테이블 · 영역별 묶음</span></h2>
-      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(고객 · 상품 · 커뮤니티 · 장바구니 · 주문 · 결제 · 배송 · 혜택), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
+      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(${D.stages.map((s) => s.name).join(" · ")}), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
       <div class="ov-erd">
         ${toolbarHtml('테이블을 끌어 옮기기 · 빈 곳을 끌어 화면 이동 · 누르면 그 영역으로 · Ctrl + 휠로 확대')}
         <div class="canvas" id="canvas"><div class="pad"></div></div>

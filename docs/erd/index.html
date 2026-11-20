@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>인테리어몰 ERD</title>
-<meta name="description" content="인테리어 가구몰 + 커뮤니티 DB 설계 ERD (MySQL 8.0, 4개 테이블). docs/erd.dbml에서 자동 생성">
+<title>패션 마켓 ERD</title>
+<meta name="description" content="패션 마켓 입점형 쇼핑몰 DB 설계 ERD (MySQL 8.0, 4개 테이블). docs/erd.dbml에서 자동 생성">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%232f6496'/%3E%3Cpath d='M3 12h26M12 12v15' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
 <style>:root {
   --bg: #f4f6f9;
@@ -535,7 +535,7 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
 <body>
 <header class="top">
   <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기">☰</button>
-  <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>인테리어몰 ERD</span></a>
+  <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>패션 마켓 ERD</span></a>
   <span class="meta">MySQL 8.0 · 테이블 4 · 관계 3</span>
   <div class="search">
     <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
@@ -957,8 +957,8 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
       cols += '</section>';
     });
     main.innerHTML = `<div class="overview">
-      <h1>인테리어 가구몰 + 커뮤니티 ERD</h1>
-      <p class="lead">자사 브랜드 가구를 직접 판매하는 쇼핑몰(장바구니·주문·결제·설치배송 포함)과 구매 고객 사진·집들이·브랜드 매거진 커뮤니티의 DB 설계입니다.
+      <h1>패션 마켓 입점형 쇼핑몰 ERD</h1>
+      <p class="lead">소호 쇼핑몰(마켓)이 입점해 의류·신발·가방·잡화를 판매하는 쇼핑몰의 DB 설계입니다. 고객 → 마켓 → 상품 순서로 묶음 단위로 설계 중입니다.
         영역을 고르면 ERD가 열리고, 테이블을 누르면 전체 컬럼과 관계를 볼 수 있습니다.</p>
       <div class="stats">
         <div class="stat"><b>${D.counts.tables}</b><span>테이블</span></div>
@@ -967,7 +967,7 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
         <div class="stat"><b>MySQL 8.0</b><span>InnoDB · utf8mb4</span></div>
       </div>
       <h2 class="ov-h">전체 구조 <span>${D.counts.tables}개 테이블 · 영역별 묶음</span></h2>
-      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(고객 · 상품 · 커뮤니티 · 장바구니 · 주문 · 결제 · 배송 · 혜택), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
+      <p class="ov-sub">테이블 이름만 표시한 전체 관계도입니다. 색은 영역(${D.stages.map((s) => s.name).join(" · ")}), 선은 FK(까마귀발 쪽이 여러 개). 관리자 감사 컬럼(created_by 등) 선은 생략했습니다.</p>
       <div class="ov-erd">
         ${toolbarHtml('테이블을 끌어 옮기기 · 빈 곳을 끌어 화면 이동 · 누르면 그 영역으로 · Ctrl + 휠로 확대')}
         <div class="canvas" id="canvas"><div class="pad"></div></div>

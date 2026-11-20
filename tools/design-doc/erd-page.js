@@ -12,7 +12,7 @@ const out = process.argv[3] || path.join(ROOT, 'docs', 'erd', 'index.html');
 const ctx = load(src);
 const { S, tableMap, groups, groupOf, refs, fk, compositePk } = ctx;
 
-// 영역(고객·상품·커뮤니티·장바구니·주문·결제·배송)은 lib.AREAS 기준
+// 영역(고객·마켓·상품)은 lib.AREAS 기준
 const STAGES = AREAS.map(({ prefix, name }) => ({ prefix, name }));
 const gTitle = (g) => noteOf(g.note).replace(/^[^-]+- /, '');
 const fmtDefault = (d) => (!d ? '' : d.type === 'expression' ? d.value : d.type === 'string' ? `'${d.value}'` : String(d.value));
@@ -170,15 +170,15 @@ async function main() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>인테리어몰 ERD</title>
-<meta name="description" content="인테리어 가구몰 + 커뮤니티 DB 설계 ERD (MySQL 8.0, ${data.counts.tables}개 테이블). docs/erd.dbml에서 자동 생성">
+<title>패션 마켓 ERD</title>
+<meta name="description" content="패션 마켓 입점형 쇼핑몰 DB 설계 ERD (MySQL 8.0, ${data.counts.tables}개 테이블). docs/erd.dbml에서 자동 생성">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%232f6496'/%3E%3Cpath d='M3 12h26M12 12v15' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
 <style>${css}</style>
 </head>
 <body>
 <header class="top">
   <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기">☰</button>
-  <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>인테리어몰 ERD</span></a>
+  <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>패션 마켓 ERD</span></a>
   <span class="meta">MySQL 8.0 · 테이블 ${data.counts.tables} · 관계 ${data.counts.refs}</span>
   <div class="search">
     <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
