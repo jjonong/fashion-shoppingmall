@@ -59,7 +59,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - **이름**: 테이블·컬럼·인덱스 모두 **소문자 snake_case**. 인덱스 이름 접두사 `uk_`(unique), `ux_`(함수 기반 unique), `ix_`(일반). PK 제약 이름은 MySQL에서 항상 `PRIMARY`.
 - **논리명(한글 이름)**: 모든 테이블·컬럼의 note 맨 앞에 `[논리명]`을 둔다 (예: `note: '[회원 상태] ACTIVE/DORMANT/...'`). 생성 도구가 `lib.logicalOf`로 읽어 표시한다. 컬럼 논리명은 **그 자체로 뜻이 통하게 구체적으로**(`이름`이 아니라 `회원 이름`, 참조는 역할까지: `소셜 연동 회원 ID`). 표시는 논리명 우선, 물리명은 뒤에 작게.
 - **예약어 회피**: `member`는 MySQL 8.0.17+ 예약어라 회원 테이블은 **`member_account`** (PK `member_id`). `order`도 예약어(주문은 나중에 `orders`). 새 이름을 만들 때 MySQL 예약어인지 확인한다.
-- **PK**: `bigint` AUTO_INCREMENT(`increment`). 1:1 확장 테이블(`member_body` 등)은 부모 PK를 그대로 PK로. 매핑 테이블은 복합 PK.
+- **PK** (사용자 요청: 자동 증가 대리키는 꼭 필요할 때만): 자연스러운 복합키가 있으면 그것을 PK로 쓴다(예: `member_social` = (member_id, provider)). 1:1 확장 테이블(`member_body` 등)은 부모 PK를 그대로 PK로, 매핑 테이블은 복합 PK. `bigint` AUTO_INCREMENT(`increment`) 대리키는 다른 테이블이 참조하거나 자연키가 바뀔 수 있는 엔터티(`member_account`, `address` 등)에만 둔다.
 - **타입**: ID·금액 `bigint`, 카운트 `int`, 작은 수 `smallint`/`tinyint`, 비율·평점 `decimal(p,s)`, 문자열 `varchar(n)`(글자 수), 본문 `text`(상세페이지·약관은 `mediumtext`), 시각 `datetime`(TIMESTAMP 2038년 제한·시간대 변환 회피).
 - **상태값**: `varchar` + CHECK (허용 값은 컬럼 `note`에 `A/B/C` 형식, 대문자). **Y/N**은 `char(1)` + CHECK.
 - **시간**: `created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP`, `updated_at`은 DDL에서 `ON UPDATE CURRENT_TIMESTAMP` (DBML로는 표현 불가).
@@ -75,7 +75,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 
 ### 1. 고객 · 회원 기본 (`member_basic`)
 - `member_account`: 구매 고객 계정만 (마켓 관리자·운영자 계정은 별도 테이블 예정). 성별·생년월일은 선택 입력(맞춤 추천 피드 기본값). 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN, **로그인 5회 실패 잠금은 상태가 아니라 `locked_until`**. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
-- `member_social`: 제공자 KAKAO/NAVER/APPLE/GOOGLE, 같은 소셜 계정은 한 회원에게만, 회원당 제공자별 1개.
+- `member_social`: PK (member_id, provider)로 회원당 제공자별 1개(대리키 없음). 제공자 KAKAO/NAVER/APPLE/GOOGLE, 같은 소셜 계정은 한 회원에게만(UK provider, provider_user_id).
 - `member_body` (1:1): 키·몸무게·평소 상의/하의 사이즈·신발 사이즈(mm)·발볼. 사이즈 추천과 "나와 비슷한 체형" 리뷰 필터, 리뷰 공개 여부 `is_review_public`.
 - `address`: 회원당 여러 개, 기본 배송지 1개(함수 기반 unique), 배송 요청사항은 주문 시 기본값으로 복사.
 

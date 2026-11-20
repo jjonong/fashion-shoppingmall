@@ -56,16 +56,15 @@ Table member_account [note: '[회원] 구매 고객 계정. 마켓 관리자·�
 }
 
 Table member_social [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개)'] {
-  social_id bigint [pk, increment, note: '[소셜 계정 연동 ID]']
   member_id bigint [not null, note: '[소셜 연동 회원 ID]']
-  provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/APPLE/GOOGLE']
+  provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/APPLE/GOOGLE. 회원당 제공자별 1개라 (회원 ID, 제공자)를 PK로 사용 (대리키 없음)']
   provider_user_id varchar(100) [not null, note: '[소셜 제공자 회원 식별값] 소셜 서비스의 회원 고유 ID']
   provider_email varchar(100) [note: '[소셜 계정 이메일] 제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[소셜 계정 연동일시]']
 
   indexes {
     (provider, provider_user_id) [unique, name: 'uk_member_social_provider', note: '같은 소셜 계정은 한 회원에게만']
-    (member_id, provider) [unique, name: 'uk_member_social_member', note: '회원당 제공자별 1개. member_id 선두라 FK 인덱스 겸용']
+    (member_id, provider) [pk, note: '회원당 제공자별 1개. member_id 선두라 FK 인덱스 겸용']
   }
 }
 
