@@ -72,7 +72,7 @@ module.exports = {
   C -- "Y 또는 행 없음" --> D["기본 배송비<br/>free_threshold 이상이면 0"]
   D --> E["권역 extra_fee 추가"]
   E --> T["배송비 합계 shipment.fee_total<br/>= 기본 배송비 + 권역 추가비"]
-  T --> R["출고 예정 = lead_days<br/>+ 권역 extra_lead_days"]
+  T --> R["출고 예정 = lead_days<br/>+ 권역 extra_lead_days<br/>(주문제작은 + make_days)"]
   E -.-> F{"엘리베이터 없음 · 고층?<br/>address.has_elevator · floor_no"}
   F -- 예 --> Q["현장 추가 비용 안내<br/>shipping_policy.onsite_fee_notice<br/>사다리차 · 계단 운반비는 고객 현장 정산<br/>(결제 금액에 포함 안 함)"]
   classDef bad fill:#FDECEC,stroke:#C0392B,color:#7b1d14
@@ -177,7 +177,7 @@ module.exports = {
   SHIPPED --> DELIVERED: 배송 · 설치 완료
   DELIVERED --> CONFIRMED: 7일 후 자동 · 직접 확정`,
   install: `flowchart TB
-  A(["설치배송 상품 주문서"]) --> B["출고 가능일<br/>= 오늘 + lead_days + 권역 extra_lead_days"]
+  A(["설치배송 상품 주문서"]) --> B["출고 가능일<br/>= 오늘 + lead_days + 권역 extra_lead_days<br/>(주문제작은 + make_days)"]
   B --> C["<b>install_slot</b> 조회<br/>배송지 권역 · 날짜 ≥ 출고 가능일<br/>is_closed = N · booked_count < capacity"]
   C --> D["고객이 희망일 · 오전/오후 선택<br/>shipment.desired_date"]
   D --> E{"슬롯 예약<br/>조건부 UPDATE"}
