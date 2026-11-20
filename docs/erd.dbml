@@ -12,7 +12,8 @@ Project fashion_market {
   Note: '''
   패션 마켓 입점형 쇼핑몰 포트폴리오 DB (MySQL 8.0, InnoDB, utf8mb4 / utf8mb4_0900_ai_ci)
   - 소호 쇼핑몰(마켓)이 입점해 의류·신발·가방·잡화를 판매
-  - 이름은 소문자 snake_case, PK는 BIGINT AUTO_INCREMENT
+  - 이름은 소문자 snake_case
+  - AUTO_INCREMENT 쓰지 않음: 회원은 아이디(varchar)가 PK, 하위 테이블은 부모 키 + 번호/코드 복합키
   - 상태값은 VARCHAR + CHECK, Y/N은 CHAR(1) + CHECK
   - created_at DEFAULT CURRENT_TIMESTAMP, updated_at은 ON UPDATE CURRENT_TIMESTAMP
   - 탈퇴는 soft delete + 개인정보 마스킹
@@ -24,11 +25,11 @@ Project fashion_market {
 // =====================================================================
 
 Table member_account [note: '[회원] 구매 고객 계정. 마켓 관리자·운영자 계정은 별도 테이블'] {
-  member_id bigint [pk, increment, note: '[회원 ID]']
-  email varchar(100) [not null, note: '[회원 로그인 이메일] 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{ID}@deleted.local로 마스킹']
+  member_id varchar(20) [pk, note: '[회원 아이디] 가입 시 직접 입력(소셜 가입도 한 번 정함). 영문 소문자로 시작, 영문 소문자·숫자 4~20자 (앱 검증). 변경 불가, 탈퇴 후에도 행이 남아 재사용 불가']
+  email varchar(100) [not null, note: '[회원 이메일] 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{아이디}@deleted.local로 마스킹']
   password_hash varchar(255) [note: '[회원 비밀번호 해시] bcrypt 등 단방향 해시. 소셜 전용 가입은 NULL']
   name varchar(50) [not null, note: '[회원 이름] 실명. 탈퇴 시 탈퇴회원']
-  nickname varchar(20) [not null, note: '[회원 닉네임] 리뷰·문의에 표시. 2~12자 한글/영문/숫자/_ (앱 검증). 탈퇴 시 deleted_{ID}']
+  nickname varchar(20) [not null, note: '[회원 닉네임] 리뷰·문의에 표시. 2~12자 한글/영문/숫자/_ (앱 검증). 탈퇴 시 deleted_{아이디}']
   phone_enc varchar(255) [note: '[회원 휴대폰 번호(암호화)] AES-256 암호문']
   phone_hash char(64) [note: '[회원 휴대폰 번호 해시] SHA-256. 번호로 계정 찾기·중복 확인']
   birth_date date [note: '[회원 생년월일] 선택 입력. 생일 쿠폰, 연령대 맞춤 추천 기본값']
@@ -56,8 +57,8 @@ Table member_account [note: '[회원] 구매 고객 계정. 마켓 관리자·�
 }
 
 Table member_social [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개)'] {
-  member_id bigint [not null, note: '[소셜 연동 회원 ID]']
-  provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/APPLE/GOOGLE. 회원당 제공자별 1개라 (회원 ID, 제공자)를 PK로 사용 (대리키 없음)']
+  member_id varchar(20) [not null, note: '[소셜 연동 회원 아이디]']
+  provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/APPLE/GOOGLE. 회원당 제공자별 1개라 (회원 아이디, 제공자)를 PK로 사용']
   provider_user_id varchar(100) [not null, note: '[소셜 제공자 회원 식별값] 소셜 서비스의 회원 고유 ID']
   provider_email varchar(100) [note: '[소셜 계정 이메일] 제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[소셜 계정 연동일시]']
@@ -69,7 +70,7 @@ Table member_social [note: '[소셜 계정 연동] 한 회원이 여러 소셜 �
 }
 
 Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추천, "나와 비슷한 체형" 리뷰 필터'] {
-  member_id bigint [pk, note: '[체형 정보 회원 ID] member_account와 1:1']
+  member_id varchar(20) [pk, note: '[체형 정보 회원 아이디] member_account와 1:1']
   height_cm smallint [note: '[회원 키(cm)]']
   weight_kg smallint [note: '[회원 몸무게(kg)]']
   top_size varchar(10) [note: '[회원 평소 상의 사이즈] XS/S/M/L/XL/XXL/FREE']
@@ -81,8 +82,8 @@ Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추�
 }
 
 Table address [note: '[배송지] 회원당 여러 개, 기본 배송지는 1개'] {
-  address_id bigint [pk, increment, note: '[배송지 ID]']
-  member_id bigint [not null, note: '[배송지 소유 회원 ID]']
+  member_id varchar(20) [not null, note: '[배송지 소유 회원 아이디]']
+  address_no smallint [not null, note: '[배송지 번호] 회원별 1부터. 앱이 그 회원의 MAX+1로 부여 (AUTO_INCREMENT 아님)']
   address_name varchar(20) [note: '[배송지 이름] 집/회사']
   recipient_name varchar(50) [not null, note: '[배송지 받는 분 이름]']
   recipient_phone_enc varchar(255) [not null, note: '[배송지 받는 분 연락처(암호화)] AES-256 암호문']
@@ -95,7 +96,7 @@ Table address [note: '[배송지] 회원당 여러 개, 기본 배송지는 1개
   updated_at datetime [note: '[배송지 수정일시]']
 
   indexes {
-    member_id [name: 'ix_address_member']
+    (member_id, address_no) [pk, note: 'member_id 선두라 FK 인덱스 겸용']
     `CASE WHEN is_default = 'Y' THEN member_id END` [unique, name: 'ux_address_default', note: '회원당 기본 배송지 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
   }
 }
