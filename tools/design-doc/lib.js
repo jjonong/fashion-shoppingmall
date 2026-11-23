@@ -116,10 +116,10 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
     `<TD ALIGN="LEFT" BGCOLOR="${opts.bg}"><FONT FACE="Consolas" POINT-SIZE="7.5" COLOR="#777777">${type}</FONT></TD>` +
     `<TD PORT="${port}_o" ALIGN="RIGHT" BGCOLOR="${opts.bg}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#000000' : '#777777'}"><B>${key}</B></FONT></TD></TR>`;
   const title = (t, name, bg, sub) =>
-    `<TR><TD ALIGN="LEFT" BGCOLOR="${bg}" CELLPADDING="4"><FONT COLOR="white" POINT-SIZE="11">&nbsp;&nbsp;&nbsp;<B>${xesc(logicalOf(t.note) || name)}${gap(logicalOf(t.note))}</B></FONT><FONT COLOR="${sub}" POINT-SIZE="8.5">&nbsp;&nbsp;${name}${wide(logicalOf(t.note))}&nbsp;&nbsp;&nbsp;</FONT></TD></TR>` +
-    '<TR><TD HEIGHT="5" CELLPADDING="0"></TD></TR>';
+    `<TR><TD ALIGN="LEFT" BGCOLOR="${bg}" CELLPADDING="4"><FONT COLOR="white" POINT-SIZE="11">&nbsp;&nbsp;&nbsp;<B>${xesc(logicalOf(t.note) || name)}${gap(logicalOf(t.note))}</B></FONT><FONT COLOR="${sub}" POINT-SIZE="8.5">&nbsp;&nbsp;${name}${wide(logicalOf(t.note))}&nbsp;&nbsp;&nbsp;</FONT></TD></TR>`;
+  // 제목행과 행 상자 사이 간격은 CELLSPACING으로 (빈 행은 Graphviz 최소 높이 때문에 너무 넓어짐, 사용자 요청으로 좁힘)
   const table = (head, rows) =>
-    `<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">${head}` +
+    `<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2" CELLPADDING="0">${head}` +
     `<TR><TD><TABLE BORDER="1" COLOR="#DDDDDD" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">${rows}</TABLE></TD></TR></TABLE>`;
   const nodeDot = {};
   for (const name of inner) {
