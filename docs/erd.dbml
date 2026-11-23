@@ -130,14 +130,14 @@ Table member_refund_account [note: '[회원 환불 계좌] member_account와 1:1
 
 Table member_withdrawal [note: '[회원 탈퇴 정보] member_account와 1:1. 탈퇴한 회원만 행이 생김(아이디 재사용 불가라 회원당 최대 1번). 탈퇴 상태·일시는 member_account'] {
   member_id varchar(20) [pk, note: '[탈퇴 회원 아이디] member_account와 1:1']
-  withdraw_reason varchar(20) [not null, note: '[회원 탈퇴 사유] LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC. 탈퇴 신청 시 선택, 사유별 통계']
-  withdraw_comment varchar(500) [note: '[회원 탈퇴 의견] 탈퇴 신청 시 자유 의견. 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL(배치)']
+  withdraw_reason_code varchar(20) [not null, note: '[탈퇴 사유 선택 항목] 탈퇴 화면의 보기 중 하나를 고른 값(필수). LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC (이용 빈도 낮음/원하는 상품 없음/가격/배송/서비스 불만/개인정보 우려/재가입/기타). 사유별 통계']
+  withdraw_free_text varchar(500) [note: '[탈퇴 시 직접 쓴 의견] 탈퇴 화면의 입력칸에 회원이 자유롭게 쓴 글(선택). 사유 선택 항목을 보충하는 서비스 개선용. 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL(배치)']
   ci_hash char(64) [note: '[재가입 제한 확인값(CI)] 탈퇴 시 member_account.ci_hash를 옮겨 둠. 약관에 명시한 탈퇴 후 30일 재가입 제한(신규 가입 혜택 반복 수령 방지) 확인용. 30일 지나면 NULL(배치)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 탈퇴 신청일시]']
-  updated_at datetime [note: '[회원 탈퇴 정보 수정일시] 탈퇴 의견 NULL 처리 배치 등']
+  updated_at datetime [note: '[회원 탈퇴 정보 수정일시] 직접 쓴 의견 NULL 처리 배치 등']
 
   indexes {
-    withdraw_reason [name: 'ix_member_withdrawal_reason', note: '탈퇴 사유별 집계']
+    withdraw_reason_code [name: 'ix_member_withdrawal_reason', note: '탈퇴 사유별 집계']
     ci_hash [name: 'ix_member_withdrawal_ci', note: '가입 시 30일 내 탈퇴 이력 확인']
   }
 }
