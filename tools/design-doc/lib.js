@@ -69,6 +69,16 @@ const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 
 // ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
 // tables: 그릴 테이블 이름 배열. 이 테이블들이 참조하는 다른 테이블은 회색(PK만)으로 함께 그린다.
 // leftOf: { hub, tables } — hub 테이블을 참조하는 자식 중 tables에 든 것은 hub 왼쪽에 배치 (허브형 배치)
+// 테이블 제목줄 색 (렌더 후 pill()이 이 색의 사각형을 알약 모양으로 바꾼다)
+const PILL = '#2B2B2B', PILL_EXT = '#BDBDBD';
+function pill(svg) {
+  return svg.replace(/<polygon fill="(#2b2b2b|#bdbdbd)" stroke="[^"]*" points="([^"]+)"\s*\/>/gi, (m, c, pts) => {
+    const p = pts.trim().split(/\s+/).map((q) => q.split(',').map(Number));
+    const xs = p.map((q) => q[0]), ys = p.map((q) => q[1]);
+    const x = Math.min(...xs), y = Math.min(...ys), w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+    return `<rect class="hd" fill="${c}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" ry="${h / 2}"/>`;
+  });
+}
 function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   const { tableMap, refs, fieldOf, compositePk, baseType, keyFields, keyMark } = ctx;
   const inner = new Set(tables);
@@ -83,27 +93,33 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   // Graphviz(viz.js)는 한글 폭을 실제보다 좁게 계산해 옆 칸과 겹치므로, 한글 글자 수만큼 공백을 덧붙여 칸 폭을 맞춘다
   const wide = (s) => '&nbsp;'.repeat(Math.ceil(((s || '').match(/[^\x00-\x7f]/g) || []).length * 1.4));
   // 구조 설계 단계라 논리명(한글)을 앞에 크게, 물리명은 뒤에 작은 회색 고정폭으로
+  // 테이블 모양 (사용자 참고 이미지 docs/화면 캡처_erd.png): 검정 알약 모양 제목줄(논리명 굵게 + 물리명 작게),
+  // 테두리 없이 회색/흰색 줄무늬 행, 행은 제목줄보다 양옆으로 조금 안쪽. 알약 모양은 렌더 후 pill()이 rect rx로 바꾼다
+  const SIDE = '<TD WIDTH="7" CELLPADDING="0"></TD>';
+  const zebra = (i) => (i % 2 === 0 ? '#F2F2F2' : '#FFFFFF');
   const row = (port, name, type, key, opts = {}) =>
-    `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="9.5" COLOR="#111111">${opts.b ? '<B>' + xesc(opts.lg || name) + '</B>' : xesc(opts.lg || name)}${wide(opts.lg)}</FONT></TD>` +
-    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#8a8a8a">${name}</FONT></TD>` +
-    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#666666">${type}</FONT></TD>` +
-    `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#000000' : '#777777'}"><B>${key}</B></FONT></TD></TR>`;
+    `<TR>${SIDE}<TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg}"><FONT POINT-SIZE="9.5" COLOR="#111111">${opts.b ? '<B>' + xesc(opts.lg || name) + '</B>' : xesc(opts.lg || name)}${wide(opts.lg)}</FONT></TD>` +
+    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#8a8a8a">${name}</FONT></TD>` +
+    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#666666">${type}</FONT></TD>` +
+    `<TD PORT="${port}_o" ALIGN="RIGHT" BGCOLOR="${opts.bg}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#000000' : '#777777'}"><B>${key}</B></FONT></TD>${SIDE}</TR>`;
+  const title = (t, name, bg, sub) =>
+    `<TR><TD COLSPAN="6" ALIGN="LEFT" BGCOLOR="${bg}" CELLPADDING="9"><FONT COLOR="white" POINT-SIZE="11">&nbsp;&nbsp;&nbsp;<B>${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT COLOR="${sub}" POINT-SIZE="8.5">&nbsp;&nbsp;${name}&nbsp;&nbsp;&nbsp;</FONT></TD></TR>` +
+    '<TR><TD COLSPAN="6" HEIGHT="6" CELLPADDING="0"></TD></TR>';
+  const table = (body) => `<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5">${body}</TABLE>`;
   const nodeDot = {};
   for (const name of inner) {
     const t = tableMap[name];
     const kf = keyFields(t);
     const others = t.fields.length - kf.length;
-    let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#F3F3F3' : 'white', lg: logicalOf(f.note) })).join('');
-    if (others > 0) rows += `<TR><TD COLSPAN="4" ALIGN="LEFT" BGCOLOR="#FAFAFA"><FONT POINT-SIZE="8" COLOR="#999999">+ ${others} columns</FONT></TD></TR>`;
-    nodeDot[name] = `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#111111">
-      <TR><TD COLSPAN="4" BGCOLOR="#111111"><FONT COLOR="white" POINT-SIZE="11"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#9a9a9a" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${rows}</TABLE>>];\n`;
+    let rows = kf.map((f, i) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: zebra(i), lg: logicalOf(f.note) })).join('');
+    if (others > 0) rows += `<TR>${SIDE}<TD COLSPAN="4" ALIGN="LEFT" BGCOLOR="${zebra(kf.length)}"><FONT POINT-SIZE="8" COLOR="#999999">+ ${others} columns</FONT></TD>${SIDE}</TR>`;
+    nodeDot[name] = `  ${name} [label=<${table(title(t, name, PILL, '#bdbdbd') + rows)}>];\n`;
   }
   dot += Object.values(nodeDot).join('');
   for (const name of ext) {
     const t = tableMap[name];
     const pk = t.fields.filter((f) => f.pk || compositePk(t).includes(f.name));
-    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#bdbdbd">
-      <TR><TD COLSPAN="4" BGCOLOR="#bdbdbd"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#f2f2f2" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#FAFAFA', lg: logicalOf(f.note) })).join('')}</TABLE>>];\n`;
+    dot += `  ${name} [label=<${table(title(t, name, PILL_EXT, '#f2f2f2') + pk.map((f, i) => row(f.name, f.name, baseType(f), 'PK', { bg: zebra(i), lg: logicalOf(f.note) })).join(''))}>];\n`;
   }
   for (const r of rels) {
     const f = fieldOf(r.child, r.ccol);
@@ -129,7 +145,7 @@ function erSvg(ctx, tables, { hideAudit = false, W = 510, H = 600, leftOf = null
   const { dot, ext } = erDot(ctx, tables, { hideAudit, leftOf });
   let best = null;
   for (const dir of leftOf ? ['LR'] : ['LR', 'TB']) {
-    const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');
+    const s = pill(VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1'));
     const w0 = parseFloat(s.match(/width="([\d.]+)pt"/)[1]);
     const h0 = parseFloat(s.match(/height="([\d.]+)pt"/)[1]);
     const k0 = Math.min(1.15, W / w0, H / h0);
@@ -178,7 +194,7 @@ function areaSvg(ctx, clusters, { hideAudit = false, W = 1100, H = 680 } = {}) {
     e.filter((t) => !all.has(t)).forEach((t) => ext.add(t));
     // 각 묶음은 좌→우 / 위→아래 두 가지로 그려 두고, 아래에서 상자 배치와 함께 고른다
     const cands = ['LR', 'TB'].map((dir) => {
-      const s = VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1');
+      const s = pill(VIZ.renderString(dot.replace('rankdir=LR', `rankdir=${dir}`), { format: 'svg', engine: 'dot' }).replace(/^[\s\S]*?(<svg)/, '$1'));
       const w = parseFloat(s.match(/width="([\d.]+)pt"/)[1]);
       const h = parseFloat(s.match(/height="([\d.]+)pt"/)[1]);
       // 묶음마다 id 접두사를 달아 겹치지 않게 하고, 바깥 svg 안에 넣을 수 있도록 크기 속성을 뺀다

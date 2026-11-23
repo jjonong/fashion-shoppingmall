@@ -361,6 +361,8 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
 .canvas g.node { cursor: pointer; }
 .canvas g.node text { cursor: help; }
 .canvas g.node:hover polygon[fill="none"] { stroke-width: 2.5; }
+.canvas g.node:hover rect.hd, .canvas g.node.sel rect.hd { fill: #000000; }
+.canvas g.node.sel rect.hd { stroke: #000000; stroke-width: 3; }
 .canvas.has-sel g.node:not(.sel):not(.rel) { opacity: .35; }
 .canvas.has-sel g.edge:not(.rel) { opacity: .15; }
 .canvas g.node.sel polygon[fill="none"] { stroke: #111111; stroke-width: 3; }
