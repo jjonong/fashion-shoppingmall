@@ -8,14 +8,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`.
 - 판매 방식: **브랜드 입점형 (W컨셉식)** (사용자 확정). 상품은 브랜드에 속한다. 지금 단계의 판매자 범위는 **브랜드 기본만**(브랜드 정보·브랜드 관리자 계정·입점 상태·브랜드 좋아요). 브랜드 유형(입점 디자이너 브랜드·자체 브랜드 등)은 브랜드 묶음에서 정한다. 수수료·정산은 주문/결제 단계에서 다룬다.
-- 품목: **의류 + 신발 + 가방·잡화** (사용자 확정). 품목군마다 사이즈 체계·실측 항목·상품정보제공고시 유형이 다르다.
+- 품목: **의류 + 신발 + 가방·잡화** (사용자 확정). 뷰티는 제외(W컨셉에는 있지만 범위 밖, 회원 뷰티 정보도 두지 않음). 품목군마다 사이즈 체계·실측 항목·상품정보제공고시 유형이 다르다.
 - **진행 방식** (사용자 요청: "너무 광범위하지 않게, 상세하게"): 고객 → 브랜드 기본 → 상품 순서로, **묶음(TableGroup) 단위로 컬럼까지 확정**하며 하나씩 추가한다. 사용자가 확인하기 전에 다음 묶음 테이블을 미리 넣지 않는다. 주문·결제·배송·혜택·커뮤니티는 아직 범위 밖.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
 ### 로드맵 (목록만, 컬럼은 묶음마다 확정)
 | 순서 | 묶음 | 후보 테이블 | 상태 |
 |---|---|---|---|
-| 1 | 고객 · 회원 기본 `member_basic` | `member_account`, `member_social`, `member_body`, `address` | 반영 |
+| 1 | 고객 · 회원 기본 `member_basic` | `member_account`, `member_social`, `member_body`, `address`, `member_refund_account` | 반영 |
 | 2 | 고객 · 약관·알림 | `terms`, `member_terms_agreement`, `member_notification_setting` | 대기 |
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history`, `admin_user`, `privacy_access_log` | 대기 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
@@ -75,10 +75,12 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 ## 확정된 설계 (묶음별)
 
 ### 1. 고객 · 회원 기본 (`member_basic`)
-- `member_account`: 구매 고객 계정만 (브랜드 관리자·운영자 계정은 별도 테이블 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. 성별·생년월일은 선택 입력(맞춤 추천 피드 기본값). 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN, **로그인 5회 실패 잠금은 상태가 아니라 `locked_until`**. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
-- `member_social`: PK (member_id, provider)로 회원당 제공자별 1개. 제공자 KAKAO/NAVER/APPLE/GOOGLE, 같은 소셜 계정은 한 회원에게만(UK provider, provider_user_id).
+- `member_account`: 구매 고객 계정만 (브랜드 관리자·운영자 계정은 별도 테이블 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. **가입 시 휴대폰 본인인증 필수**: 이름·휴대폰·생년월일·성별·CI는 인증 결과로 채움(직접 입력 아님, NOT NULL, 만 14세 미만 가입 불가). 프로필 사진·소개글은 선택. 가입 수단(`join_method` EMAIL/소셜 6종)·가입 경로(`join_channel` PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID). 탈퇴 사유(코드)·탈퇴 의견 저장, 탈퇴 시 프로필 사진·소개글도 NULL. 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN, **로그인 5회 실패 잠금은 상태가 아니라 `locked_until`**. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
+- `member_social`: PK (member_id, provider)로 회원당 제공자별 1개. 제공자 KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE (W컨셉 가입 수단 기준), 같은 소셜 계정은 한 회원에게만(UK provider, provider_user_id).
 - `member_body` (1:1): 키·몸무게·평소 상의/하의 사이즈·신발 사이즈(mm)·발볼. 사이즈 추천과 "나와 비슷한 체형" 리뷰 필터, 리뷰 공개 여부 `is_review_public`.
 - `address`: PK (member_id, address_no), 배송지 번호는 회원별 1부터 앱이 부여. 회원당 여러 개, 기본 배송지 1개(함수 기반 unique), 배송 요청사항은 주문 시 기본값으로 복사.
+- `member_refund_account` (1:1): 환불 계좌. 은행 코드(금융결제원 3자리)·계좌번호(`account_no_enc` AES-256, 법정 암호화 대상)·예금주·실명 확인일시. 탈퇴 시 행 삭제.
+- W컨셉 고객 정보 중 나중 묶음으로 미룬 것: 사이즈 정보 추천 동의(약관), 새 기기 로그인 인증·알림·신뢰기기(보안), 등급·쿠폰·포인트·상품권(주문·혜택), 찜·장바구니·비회원 주문조회(상품·주문).
 
 ## 저장소 메모
 
