@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>패션 쇼핑몰 ERD</title>
-<meta name="description" content="패션 브랜드 입점형 쇼핑몰 DB 설계 ERD (MySQL 8.0, 7개 테이블). docs/erd.dbml에서 자동 생성">
+<meta name="description" content="패션 브랜드 입점형 쇼핑몰 DB 설계 ERD (MySQL 8.0, 10개 테이블). docs/erd.dbml에서 자동 생성">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%232f6496'/%3E%3Cpath d='M3 12h26M12 12v15' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
 <script>try { var t = localStorage.getItem('erd-theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -674,7 +674,7 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <header class="top">
   <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기" aria-expanded="false">☰</button>
   <a class="brand" href="#" aria-label="개요로 이동"><span>Fashion Mall</span><small>ERD</small></a>
-  <span class="meta">MySQL 8.0 · 테이블 7 · 관계 6</span>
+  <span class="meta">MySQL 8.0 · 테이블 10 · 관계 11</span>
   <div class="search">
     <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
     <div id="results" class="results" hidden></div>
@@ -688,481 +688,877 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 </div>
 <div class="scrim" id="scrim" hidden></div>
 <template id="svg-member_basic"><svg
- viewBox="0.00 0.00 557.78 602.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ viewBox="0.00 0.00 884.96 602.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="g0_graph0" class="graph" transform="scale(1 1) rotate(0) translate(7.2 594.8)">
 
 <!-- member_account -->
 <g id="g0_node1" class="node">
 <title>member_account</title>
-<rect class="hd" fill="#2b2b2b" x="2" y="-328.6" width="195.14" height="21.200000000000045" rx="5" ry="5"/>
-<text text-anchor="start" x="6" y="-314.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="22.5" y="-314.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원  </text>
-<text text-anchor="start" x="50" y="-314.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_account      </text>
-<polygon fill="#ffffff" stroke="none" points="3,-281.6 3,-304.4 82.5,-304.4 82.5,-281.6 3,-281.6"/>
-<text text-anchor="start" x="9" y="-291.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 아이디</text>
-<text text-anchor="start" x="45" y="-291.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
-<polygon fill="#ffffff" stroke="none" points="82.5,-281.6 82.5,-304.4 134.09,-304.4 134.09,-281.6 82.5,-281.6"/>
-<text text-anchor="start" x="88.5" y="-290.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="134.09,-281.6 134.09,-304.4 173.03,-304.4 173.03,-281.6 134.09,-281.6"/>
-<text text-anchor="start" x="140.09" y="-290.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="173.03,-281.6 173.03,-304.4 196.14,-304.4 196.14,-281.6 173.03,-281.6"/>
-<text text-anchor="start" x="179.03" y="-291.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
-<polygon fill="#f5f5f5" stroke="none" points="3,-260 3,-281.6 196.14,-281.6 196.14,-260 3,-260"/>
-<text text-anchor="start" x="9" y="-268.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 20개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="277.53" y="-329" width="246.79000000000008" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="281.53" y="-314.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="298.03" y="-314.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원  </text>
+<text text-anchor="start" x="325.53" y="-314.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_account      </text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-282 278.53,-304.8 405.28,-304.8 405.28,-282 278.53,-282"/>
+<text text-anchor="start" x="284.53" y="-291.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 아이디</text>
+<text text-anchor="start" x="320.53" y="-291.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
+<polygon fill="#ffffff" stroke="none" points="405.28,-282 405.28,-304.8 461.27,-304.8 461.27,-282 405.28,-282"/>
+<text text-anchor="start" x="411.28" y="-291" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="461.27,-282 461.27,-304.8 500.21,-304.8 500.21,-282 461.27,-282"/>
+<text text-anchor="start" x="467.27" y="-291.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="500.21,-282 500.21,-304.8 523.32,-304.8 523.32,-282 500.21,-282"/>
+<text text-anchor="start" x="506.21" y="-292" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#f5f5f5" stroke="none" points="278.53,-259.2 278.53,-282 405.28,-282 405.28,-259.2 278.53,-259.2"/>
+<text text-anchor="start" x="284.53" y="-267.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">회원 현재 등급 코드            </text>
+<polygon fill="#f5f5f5" stroke="none" points="405.28,-259.2 405.28,-282 461.27,-282 461.27,-259.2 405.28,-259.2"/>
+<text text-anchor="start" x="411.28" y="-268.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#f5f5f5" stroke="none" points="461.27,-259.2 461.27,-282 500.21,-282 500.21,-259.2 461.27,-259.2"/>
+<text text-anchor="start" x="467.27" y="-268.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#f5f5f5" stroke="none" points="500.21,-259.2 500.21,-282 523.32,-282 523.32,-259.2 500.21,-259.2"/>
+<text text-anchor="start" x="506.21" y="-269.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#777777">FK</text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-237.6 278.53,-259.2 523.32,-259.2 523.32,-237.6 278.53,-237.6"/>
+<text text-anchor="start" x="284.53" y="-246" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 20개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="2" y="-305.4" width="195.14" height="46.39999999999998" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="277.53" y="-305.8" width="246.79000000000008" height="69.20000000000002" rx="5" ry="5"/></g>
 <!-- member_login -->
 <g id="g0_node2" class="node">
 <title>member_login</title>
-<rect class="hd" fill="#2b2b2b" x="259.26" y="-585.6" width="277.99" height="21.200000000000045" rx="5" ry="5"/>
-<text text-anchor="start" x="263.26" y="-571.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="279.76" y="-571.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 로그인 상태     </text>
-<text text-anchor="start" x="370.51" y="-571.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_login             </text>
-<polygon fill="#ffffff" stroke="none" points="260.26,-538.6 260.26,-561.4 409.51,-561.4 409.51,-538.6 260.26,-538.6"/>
-<text text-anchor="start" x="266.26" y="-548.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">로그인 상태 회원 아이디</text>
-<text text-anchor="start" x="340.51" y="-548.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
-<polygon fill="#ffffff" stroke="none" points="409.51,-538.6 409.51,-561.4 461.1,-561.4 461.1,-538.6 409.51,-538.6"/>
-<text text-anchor="start" x="415.51" y="-547.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="461.1,-538.6 461.1,-561.4 500.04,-561.4 500.04,-538.6 461.1,-538.6"/>
-<text text-anchor="start" x="467.1" y="-547.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="500.04,-538.6 500.04,-561.4 536.25,-561.4 536.25,-538.6 500.04,-538.6"/>
-<text text-anchor="start" x="506.04" y="-548.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="260.26,-517 260.26,-538.6 536.25,-538.6 536.25,-517 260.26,-517"/>
-<text text-anchor="start" x="266.26" y="-525.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="586.44" y="-585.6" width="278" height="21.200000000000045" rx="5" ry="5"/>
+<text text-anchor="start" x="590.44" y="-571.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="606.94" y="-571.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 로그인 상태     </text>
+<text text-anchor="start" x="697.69" y="-571.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_login             </text>
+<polygon fill="#ffffff" stroke="none" points="587.44,-538.6 587.44,-561.4 736.69,-561.4 736.69,-538.6 587.44,-538.6"/>
+<text text-anchor="start" x="593.44" y="-548.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">로그인 상태 회원 아이디</text>
+<text text-anchor="start" x="667.69" y="-548.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
+<polygon fill="#ffffff" stroke="none" points="736.69,-538.6 736.69,-561.4 788.28,-561.4 788.28,-538.6 736.69,-538.6"/>
+<text text-anchor="start" x="742.69" y="-547.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="788.28,-538.6 788.28,-561.4 827.22,-561.4 827.22,-538.6 788.28,-538.6"/>
+<text text-anchor="start" x="794.28" y="-547.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="827.22,-538.6 827.22,-561.4 863.44,-561.4 863.44,-538.6 827.22,-538.6"/>
+<text text-anchor="start" x="833.22" y="-548.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="587.44,-517 587.44,-538.6 863.44,-538.6 863.44,-517 587.44,-517"/>
+<text text-anchor="start" x="593.44" y="-525.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="259.26" y="-562.4" width="277.99" height="46.39999999999998" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="586.44" y="-562.4" width="278" height="46.39999999999998" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_login -->
 <g id="g0_edge1" class="edge">
 <title>member_account:e&#45;&gt;member_login:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M204,-293.32C304.54,-303.13 153.81,-535.29 249.56,-549.34"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="197.67,-296.53 198,-289.54 199.4,-289.6 199.07,-296.59 197.67,-296.53"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="197.14,-293 200.63,-293.16"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="201.17,-296.69 201.49,-289.7 202.89,-289.76 202.57,-296.76 201.17,-296.69"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="200.63,-293.16 204.13,-293.33"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="258.8,-546.46 258.32,-553.44 256.93,-553.35 257.4,-546.36 258.8,-546.46"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="259.26,-550 255.77,-549.76"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="252.53" cy="-549.54" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.18,-293.72C631.57,-303.51 481.15,-535.31 576.75,-549.34"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="524.85,-296.93 525.18,-289.94 526.58,-290 526.25,-296.99 524.85,-296.93"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.56"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.35,-297.09 528.68,-290.1 530.08,-290.16 529.75,-297.16 528.35,-297.09"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.56 531.31,-293.73"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="585.98,-546.46 585.5,-553.44 584.11,-553.35 584.59,-546.36 585.98,-546.46"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="586.44,-550 582.95,-549.76"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="579.71" cy="-549.54" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_social_account -->
 <g id="g0_node3" class="node">
 <title>member_social_account</title>
-<rect class="hd" fill="#2b2b2b" x="264.88" y="-492" width="266.75" height="21.19999999999999" rx="5" ry="5"/>
-<text text-anchor="start" x="268.88" y="-477.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="285.38" y="-477.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">소셜 계정 연동     </text>
-<text text-anchor="start" x="367.88" y="-477.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_social_account            </text>
-<polygon fill="#ffffff" stroke="none" points="265.88,-445 265.88,-467.8 403.88,-467.8 403.88,-445 265.88,-445"/>
-<text text-anchor="start" x="271.88" y="-454.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 연동 회원 아이디</text>
-<text text-anchor="start" x="339.38" y="-454.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
-<polygon fill="#ffffff" stroke="none" points="403.88,-445 403.88,-467.8 455.47,-467.8 455.47,-445 403.88,-445"/>
-<text text-anchor="start" x="409.88" y="-454" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="455.47,-445 455.47,-467.8 494.41,-467.8 494.41,-445 455.47,-445"/>
-<text text-anchor="start" x="461.47" y="-454.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="494.41,-445 494.41,-467.8 530.63,-467.8 530.63,-445 494.41,-445"/>
-<text text-anchor="start" x="500.41" y="-455" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="265.88,-422.2 265.88,-445 403.88,-445 403.88,-422.2 265.88,-422.2"/>
-<text text-anchor="start" x="271.88" y="-431.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 제공자</text>
-<text text-anchor="start" x="307.88" y="-431.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
-<polygon fill="#f5f5f5" stroke="none" points="403.88,-422.2 403.88,-445 455.47,-445 455.47,-422.2 403.88,-422.2"/>
-<text text-anchor="start" x="409.88" y="-431.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">provider</text>
-<polygon fill="#f5f5f5" stroke="none" points="455.47,-422.2 455.47,-445 494.41,-445 494.41,-422.2 455.47,-422.2"/>
-<text text-anchor="start" x="461.47" y="-431.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#f5f5f5" stroke="none" points="494.41,-422.2 494.41,-445 530.63,-445 530.63,-422.2 494.41,-422.2"/>
-<text text-anchor="start" x="513.52" y="-432.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
-<polygon fill="#ffffff" stroke="none" points="265.88,-400.6 265.88,-422.2 530.63,-422.2 530.63,-400.6 265.88,-400.6"/>
-<text text-anchor="start" x="271.88" y="-409" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="592.07" y="-492" width="266.7399999999999" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="596.07" y="-477.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="612.57" y="-477.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">소셜 계정 연동     </text>
+<text text-anchor="start" x="695.07" y="-477.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_social_account            </text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-445 593.07,-467.8 731.07,-467.8 731.07,-445 593.07,-445"/>
+<text text-anchor="start" x="599.07" y="-454.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 연동 회원 아이디</text>
+<text text-anchor="start" x="666.57" y="-454.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="731.07,-445 731.07,-467.8 782.65,-467.8 782.65,-445 731.07,-445"/>
+<text text-anchor="start" x="737.07" y="-454" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="782.65,-445 782.65,-467.8 821.59,-467.8 821.59,-445 782.65,-445"/>
+<text text-anchor="start" x="788.65" y="-454.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="821.59,-445 821.59,-467.8 857.81,-467.8 857.81,-445 821.59,-445"/>
+<text text-anchor="start" x="827.59" y="-455" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="593.07,-422.2 593.07,-445 731.07,-445 731.07,-422.2 593.07,-422.2"/>
+<text text-anchor="start" x="599.07" y="-431.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 제공자</text>
+<text text-anchor="start" x="635.07" y="-431.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
+<polygon fill="#f5f5f5" stroke="none" points="731.07,-422.2 731.07,-445 782.65,-445 782.65,-422.2 731.07,-422.2"/>
+<text text-anchor="start" x="737.07" y="-431.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">provider</text>
+<polygon fill="#f5f5f5" stroke="none" points="782.65,-422.2 782.65,-445 821.59,-445 821.59,-422.2 782.65,-422.2"/>
+<text text-anchor="start" x="788.65" y="-431.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#f5f5f5" stroke="none" points="821.59,-422.2 821.59,-445 857.81,-445 857.81,-422.2 821.59,-422.2"/>
+<text text-anchor="start" x="840.7" y="-432.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-400.6 593.07,-422.2 857.81,-422.2 857.81,-400.6 593.07,-400.6"/>
+<text text-anchor="start" x="599.07" y="-409" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="264.88" y="-468.8" width="266.75" height="69.19999999999999" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="592.07" y="-468.8" width="266.7399999999999" height="69.19999999999999" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_social_account -->
 <g id="g0_edge2" class="edge">
 <title>member_account:e&#45;&gt;member_social_account:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M204.02,-293.47C265.79,-302.4 199.19,-436.11 251.38,-454.35"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="197.6,-296.54 198.07,-289.56 199.47,-289.65 198.99,-296.63 197.6,-296.54"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="197.14,-293 200.63,-293.24"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="201.09,-296.78 201.56,-289.79 202.96,-289.89 202.49,-296.87 201.09,-296.78"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="200.63,-293.24 204.12,-293.48"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="257.67,-455.3 264.11,-459.47 261.42,-455.87 264.29,-456.31 264.29,-456.31 264.29,-456.31 261.42,-455.87 265.06,-453.24 257.67,-455.3"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="253.37" cy="-454.65" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.19,-293.87C592.84,-302.77 526.49,-436.16 578.59,-454.35"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="524.78,-296.94 525.25,-289.96 526.65,-290.05 526.18,-297.03 524.78,-296.94"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.64"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.27,-297.18 528.75,-290.19 530.14,-290.29 529.67,-297.27 528.27,-297.18"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.64 531.3,-293.88"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="584.85,-455.3 591.3,-459.47 588.61,-455.87 591.47,-456.31 591.47,-456.31 591.47,-456.31 588.61,-455.87 592.24,-453.24 584.85,-455.3"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="580.55" cy="-454.65" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_body -->
 <g id="g0_node4" class="node">
 <title>member_body</title>
-<rect class="hd" fill="#2b2b2b" x="264.88" y="-375.6" width="266.75" height="21.200000000000045" rx="5" ry="5"/>
-<text text-anchor="start" x="268.88" y="-361.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="285.38" y="-361.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 체형   </text>
-<text text-anchor="start" x="337.63" y="-361.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_body         </text>
-<polygon fill="#ffffff" stroke="none" points="265.88,-328.6 265.88,-351.4 403.88,-351.4 403.88,-328.6 265.88,-328.6"/>
-<text text-anchor="start" x="271.88" y="-338.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">체형 정보 회원 아이디</text>
-<text text-anchor="start" x="339.38" y="-338.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
-<polygon fill="#ffffff" stroke="none" points="403.88,-328.6 403.88,-351.4 455.47,-351.4 455.47,-328.6 403.88,-328.6"/>
-<text text-anchor="start" x="409.88" y="-337.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="455.47,-328.6 455.47,-351.4 494.41,-351.4 494.41,-328.6 455.47,-328.6"/>
-<text text-anchor="start" x="461.47" y="-337.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="494.41,-328.6 494.41,-351.4 530.63,-351.4 530.63,-328.6 494.41,-328.6"/>
-<text text-anchor="start" x="500.41" y="-338.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="265.88,-307 265.88,-328.6 530.63,-328.6 530.63,-307 265.88,-307"/>
-<text text-anchor="start" x="271.88" y="-315.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 8개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="592.07" y="-375.6" width="266.7399999999999" height="21.200000000000045" rx="5" ry="5"/>
+<text text-anchor="start" x="596.07" y="-361.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="612.57" y="-361.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 체형   </text>
+<text text-anchor="start" x="664.82" y="-361.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_body         </text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-328.6 593.07,-351.4 731.07,-351.4 731.07,-328.6 593.07,-328.6"/>
+<text text-anchor="start" x="599.07" y="-338.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">체형 정보 회원 아이디</text>
+<text text-anchor="start" x="666.57" y="-338.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="731.07,-328.6 731.07,-351.4 782.65,-351.4 782.65,-328.6 731.07,-328.6"/>
+<text text-anchor="start" x="737.07" y="-337.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="782.65,-328.6 782.65,-351.4 821.59,-351.4 821.59,-328.6 782.65,-328.6"/>
+<text text-anchor="start" x="788.65" y="-337.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="821.59,-328.6 821.59,-351.4 857.81,-351.4 857.81,-328.6 821.59,-328.6"/>
+<text text-anchor="start" x="827.59" y="-338.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="593.07,-307 593.07,-328.6 857.81,-328.6 857.81,-307 593.07,-307"/>
+<text text-anchor="start" x="599.07" y="-315.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 8개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="264.88" y="-352.4" width="266.75" height="46.39999999999998" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="592.07" y="-352.4" width="266.7399999999999" height="46.39999999999998" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_body -->
 <g id="g0_edge3" class="edge">
 <title>member_account:e&#45;&gt;member_body:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M203.9,-293.59C230.14,-298.46 230.86,-331.75 255.21,-338.72"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="197.53,-296.55 198.14,-289.57 199.53,-289.7 198.92,-296.67 197.53,-296.55"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="197.14,-293 200.62,-293.31"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="201.01,-296.85 201.63,-289.88 203.02,-290 202.41,-296.98 201.01,-296.85"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="200.62,-293.31 204.11,-293.61"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="264.65,-336.44 263.73,-343.38 262.34,-343.2 263.26,-336.26 264.65,-336.44"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="264.88,-340 261.41,-339.54"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="258.19" cy="-339.12" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.07,-293.99C557.25,-298.81 558.1,-331.82 582.41,-338.73"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="524.71,-296.95 525.32,-289.97 526.71,-290.1 526.11,-297.07 524.71,-296.95"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.7"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.2,-297.25 528.81,-290.28 530.2,-290.4 529.59,-297.37 528.2,-297.25"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.7 531.29,-294.01"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="591.83,-336.44 590.92,-343.38 589.53,-343.2 590.44,-336.26 591.83,-336.44"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="592.07,-340 588.6,-339.54"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="585.37" cy="-339.12" rx="2.8" ry="2.8"/>
 </g>
 <!-- address -->
 <g id="g0_node5" class="node">
 <title>address</title>
-<rect class="hd" fill="#2b2b2b" x="255.14" y="-282" width="286.24" height="21.19999999999999" rx="5" ry="5"/>
-<text text-anchor="start" x="259.14" y="-267.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="275.64" y="-267.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">배송지  </text>
-<text text-anchor="start" x="311.39" y="-267.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  address        </text>
-<polygon fill="#ffffff" stroke="none" points="256.14,-235 256.14,-257.8 405.39,-257.8 405.39,-235 256.14,-235"/>
-<text text-anchor="start" x="262.14" y="-244.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 소유 회원 아이디</text>
-<text text-anchor="start" x="336.39" y="-244.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
-<polygon fill="#ffffff" stroke="none" points="405.39,-235 405.39,-257.8 461.37,-257.8 461.37,-235 405.39,-235"/>
-<text text-anchor="start" x="411.39" y="-244" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="461.37,-235 461.37,-257.8 504.16,-257.8 504.16,-235 461.37,-235"/>
-<text text-anchor="start" x="467.37" y="-244.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="504.16,-235 504.16,-257.8 540.38,-257.8 540.38,-235 504.16,-235"/>
-<text text-anchor="start" x="510.16" y="-245" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="256.14,-212.2 256.14,-235 405.39,-235 405.39,-212.2 256.14,-212.2"/>
-<text text-anchor="start" x="262.14" y="-221.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 번호</text>
-<text text-anchor="start" x="298.14" y="-221.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
-<polygon fill="#f5f5f5" stroke="none" points="405.39,-212.2 405.39,-235 461.37,-235 461.37,-212.2 405.39,-212.2"/>
-<text text-anchor="start" x="411.39" y="-221.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">address_no</text>
-<polygon fill="#f5f5f5" stroke="none" points="461.37,-212.2 461.37,-235 504.16,-235 504.16,-212.2 461.37,-212.2"/>
-<text text-anchor="start" x="467.37" y="-221.5" font-family="Consolas" font-size="7.00" fill="#777777">SMALLINT</text>
-<polygon fill="#f5f5f5" stroke="none" points="504.16,-212.2 504.16,-235 540.38,-235 540.38,-212.2 504.16,-212.2"/>
-<text text-anchor="start" x="523.27" y="-222.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
-<polygon fill="#ffffff" stroke="none" points="256.14,-190.6 256.14,-212.2 540.38,-212.2 540.38,-190.6 256.14,-190.6"/>
-<text text-anchor="start" x="262.14" y="-199" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 10개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="582.32" y="-282" width="286.2399999999999" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="586.32" y="-267.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="602.82" y="-267.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">배송지  </text>
+<text text-anchor="start" x="638.57" y="-267.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  address        </text>
+<polygon fill="#ffffff" stroke="none" points="583.32,-235 583.32,-257.8 732.57,-257.8 732.57,-235 583.32,-235"/>
+<text text-anchor="start" x="589.32" y="-244.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 소유 회원 아이디</text>
+<text text-anchor="start" x="663.57" y="-244.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
+<polygon fill="#ffffff" stroke="none" points="732.57,-235 732.57,-257.8 788.55,-257.8 788.55,-235 732.57,-235"/>
+<text text-anchor="start" x="738.57" y="-244" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="788.55,-235 788.55,-257.8 831.34,-257.8 831.34,-235 788.55,-235"/>
+<text text-anchor="start" x="794.55" y="-244.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="831.34,-235 831.34,-257.8 867.56,-257.8 867.56,-235 831.34,-235"/>
+<text text-anchor="start" x="837.34" y="-245" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="583.32,-212.2 583.32,-235 732.57,-235 732.57,-212.2 583.32,-212.2"/>
+<text text-anchor="start" x="589.32" y="-221.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 번호</text>
+<text text-anchor="start" x="625.32" y="-221.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
+<polygon fill="#f5f5f5" stroke="none" points="732.57,-212.2 732.57,-235 788.55,-235 788.55,-212.2 732.57,-212.2"/>
+<text text-anchor="start" x="738.57" y="-221.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">address_no</text>
+<polygon fill="#f5f5f5" stroke="none" points="788.55,-212.2 788.55,-235 831.34,-235 831.34,-212.2 788.55,-212.2"/>
+<text text-anchor="start" x="794.55" y="-221.5" font-family="Consolas" font-size="7.00" fill="#777777">SMALLINT</text>
+<polygon fill="#f5f5f5" stroke="none" points="831.34,-212.2 831.34,-235 867.56,-235 867.56,-212.2 831.34,-212.2"/>
+<text text-anchor="start" x="850.45" y="-222.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="583.32,-190.6 583.32,-212.2 867.56,-212.2 867.56,-190.6 583.32,-190.6"/>
+<text text-anchor="start" x="589.32" y="-199" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 10개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="255.14" y="-258.8" width="286.24" height="69.20000000000002" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="582.32" y="-258.8" width="286.2399999999999" height="69.20000000000002" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;address -->
 <g id="g0_edge4" class="edge">
 <title>member_account:e&#45;&gt;address:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M203.85,-292.27C224.66,-287.4 225.24,-259.66 241.67,-249.84"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="198.21,-296.4 197.45,-289.44 198.84,-289.29 199.6,-296.25 198.21,-296.4"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="197.14,-293 200.62,-292.62"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="201.69,-296.02 200.93,-289.07 202.32,-288.91 203.08,-295.87 201.69,-296.02"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="200.62,-292.62 204.09,-292.24"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="248.06,-248.21 255.62,-249.53 251.74,-247.27 254.55,-246.55 254.55,-246.55 254.55,-246.55 251.74,-247.27 254.06,-243.42 248.06,-248.21"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="243.85" cy="-249.28" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.05,-292.66C552.11,-287.71 552.39,-259.23 569.3,-249.59"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="525.4,-296.8 524.63,-289.84 526.02,-289.69 526.79,-296.65 525.4,-296.8"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.8,-293.02"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.87,-296.42 528.11,-289.46 529.5,-289.31 530.27,-296.27 528.87,-296.42"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.8,-293.02 531.28,-292.64"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="575.23,-248.14 582.78,-249.53 578.92,-247.23 581.73,-246.54 581.73,-246.54 581.73,-246.54 578.92,-247.23 581.28,-243.41 575.23,-248.14"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="571.01" cy="-249.17" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_refund_account -->
 <g id="g0_node6" class="node">
 <title>member_refund_account</title>
-<rect class="hd" fill="#2b2b2b" x="264.88" y="-165.6" width="266.75" height="21.19999999999999" rx="5" ry="5"/>
-<text text-anchor="start" x="268.88" y="-151.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="285.38" y="-151.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 환불 계좌     </text>
-<text text-anchor="start" x="367.88" y="-151.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_refund_account            </text>
-<polygon fill="#ffffff" stroke="none" points="265.88,-118.6 265.88,-141.4 403.88,-141.4 403.88,-118.6 265.88,-118.6"/>
-<text text-anchor="start" x="271.88" y="-128.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">환불 계좌 회원 아이디</text>
-<text text-anchor="start" x="339.38" y="-128.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
-<polygon fill="#ffffff" stroke="none" points="403.88,-118.6 403.88,-141.4 455.47,-141.4 455.47,-118.6 403.88,-118.6"/>
-<text text-anchor="start" x="409.88" y="-127.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="455.47,-118.6 455.47,-141.4 494.41,-141.4 494.41,-118.6 455.47,-118.6"/>
-<text text-anchor="start" x="461.47" y="-127.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="494.41,-118.6 494.41,-141.4 530.63,-141.4 530.63,-118.6 494.41,-118.6"/>
-<text text-anchor="start" x="500.41" y="-128.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="265.88,-97 265.88,-118.6 530.63,-118.6 530.63,-97 265.88,-97"/>
-<text text-anchor="start" x="271.88" y="-105.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="592.07" y="-165.6" width="266.7399999999999" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="596.07" y="-151.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="612.57" y="-151.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 환불 계좌     </text>
+<text text-anchor="start" x="695.07" y="-151.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_refund_account            </text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-118.6 593.07,-141.4 731.07,-141.4 731.07,-118.6 593.07,-118.6"/>
+<text text-anchor="start" x="599.07" y="-128.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">환불 계좌 회원 아이디</text>
+<text text-anchor="start" x="666.57" y="-128.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="731.07,-118.6 731.07,-141.4 782.65,-141.4 782.65,-118.6 731.07,-118.6"/>
+<text text-anchor="start" x="737.07" y="-127.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="782.65,-118.6 782.65,-141.4 821.59,-141.4 821.59,-118.6 782.65,-118.6"/>
+<text text-anchor="start" x="788.65" y="-127.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="821.59,-118.6 821.59,-141.4 857.81,-141.4 857.81,-118.6 821.59,-118.6"/>
+<text text-anchor="start" x="827.59" y="-128.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="593.07,-97 593.07,-118.6 857.81,-118.6 857.81,-97 593.07,-97"/>
+<text text-anchor="start" x="599.07" y="-105.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="264.88" y="-142.4" width="266.75" height="46.400000000000006" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="592.07" y="-142.4" width="266.7399999999999" height="46.400000000000006" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_refund_account -->
 <g id="g0_edge5" class="edge">
 <title>member_account:e&#45;&gt;member_refund_account:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M204.01,-292.53C267.08,-283.42 196.18,-144.03 255.2,-130.98"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="198.07,-296.44 197.6,-289.46 198.99,-289.37 199.47,-296.35 198.07,-296.44"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="197.14,-293 200.63,-292.76"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="201.56,-296.21 201.09,-289.22 202.49,-289.13 202.96,-296.11 201.56,-296.21"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="200.63,-292.76 204.12,-292.52"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="263.84,-126.59 264.54,-133.55 263.15,-133.69 262.44,-126.73 263.84,-126.59"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="264.88,-130 261.4,-130.35"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="258.17" cy="-130.68" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.21,-292.93C594.4,-283.8 523.23,-144.06 582.37,-130.98"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="525.25,-296.84 524.78,-289.86 526.18,-289.77 526.65,-296.75 525.25,-296.84"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.16"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.75,-296.61 528.27,-289.62 529.67,-289.53 530.14,-296.51 528.75,-296.61"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.16 531.3,-292.92"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="591.02,-126.59 591.72,-133.55 590.33,-133.69 589.63,-126.73 591.02,-126.59"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="592.07,-130 588.58,-130.35"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="585.35" cy="-130.68" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_withdrawal -->
 <g id="g0_node7" class="node">
 <title>member_withdrawal</title>
-<rect class="hd" fill="#2b2b2b" x="279.51" y="-71.6" width="237.49" height="21.199999999999996" rx="5" ry="5"/>
-<text text-anchor="start" x="283.51" y="-57.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="300.01" y="-57.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 탈퇴 정보     </text>
-<text text-anchor="start" x="382.51" y="-57.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_withdrawal            </text>
-<polygon fill="#ffffff" stroke="none" points="280.51,-24.6 280.51,-47.4 389.26,-47.4 389.26,-24.6 280.51,-24.6"/>
-<text text-anchor="start" x="286.51" y="-34.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">탈퇴 회원 아이디</text>
-<text text-anchor="start" x="338.26" y="-34.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">          </text>
-<polygon fill="#ffffff" stroke="none" points="389.26,-24.6 389.26,-47.4 440.85,-47.4 440.85,-24.6 389.26,-24.6"/>
-<text text-anchor="start" x="395.26" y="-33.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="440.85,-24.6 440.85,-47.4 479.79,-47.4 479.79,-24.6 440.85,-24.6"/>
-<text text-anchor="start" x="446.85" y="-33.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="479.79,-24.6 479.79,-47.4 516,-47.4 516,-24.6 479.79,-24.6"/>
-<text text-anchor="start" x="485.79" y="-34.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="280.51,-3 280.51,-24.6 516,-24.6 516,-3 280.51,-3"/>
-<text text-anchor="start" x="286.51" y="-11.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="606.69" y="-71.6" width="237.5" height="21.199999999999996" rx="5" ry="5"/>
+<text text-anchor="start" x="610.69" y="-57.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="627.19" y="-57.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 탈퇴 정보     </text>
+<text text-anchor="start" x="709.69" y="-57.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_withdrawal            </text>
+<polygon fill="#ffffff" stroke="none" points="607.69,-24.6 607.69,-47.4 716.44,-47.4 716.44,-24.6 607.69,-24.6"/>
+<text text-anchor="start" x="613.69" y="-34.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">탈퇴 회원 아이디</text>
+<text text-anchor="start" x="665.44" y="-34.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">          </text>
+<polygon fill="#ffffff" stroke="none" points="716.44,-24.6 716.44,-47.4 768.03,-47.4 768.03,-24.6 716.44,-24.6"/>
+<text text-anchor="start" x="722.44" y="-33.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="768.03,-24.6 768.03,-47.4 806.97,-47.4 806.97,-24.6 768.03,-24.6"/>
+<text text-anchor="start" x="774.03" y="-33.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="806.97,-24.6 806.97,-47.4 843.19,-47.4 843.19,-24.6 806.97,-24.6"/>
+<text text-anchor="start" x="812.97" y="-34.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="607.69,-3 607.69,-24.6 843.19,-24.6 843.19,-3 607.69,-3"/>
+<text text-anchor="start" x="613.69" y="-11.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="279.51" y="-48.4" width="237.49" height="46.4" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="606.69" y="-48.4" width="237.5" height="46.4" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_withdrawal -->
 <g id="g0_edge6" class="edge">
 <title>member_account:e&#45;&gt;member_withdrawal:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M203.85,-292.71C307.79,-283.35 170.7,-50.74 269.55,-36.67"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="197.99,-296.47 197.68,-289.47 199.08,-289.41 199.39,-296.41 197.99,-296.47"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="197.14,-293 200.63,-292.85"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="201.48,-296.32 201.18,-289.32 202.58,-289.26 202.88,-296.25 201.48,-296.32"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="200.63,-292.85 204.13,-292.7"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="278.58,-32.55 279.04,-39.54 277.65,-39.63 277.18,-32.65 278.58,-32.55"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="279.51,-36 276.02,-36.23"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="272.77" cy="-36.45" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.04,-293.11C635.12,-283.74 497.74,-50.76 596.72,-36.67"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="525.17,-296.87 524.87,-289.87 526.27,-289.81 526.57,-296.81 525.17,-296.87"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.82,-293.25"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.67,-296.72 528.36,-289.72 529.76,-289.66 530.06,-296.65 528.67,-296.72"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.82,-293.25 531.31,-293.1"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="605.76,-32.55 606.23,-39.54 604.83,-39.63 604.36,-32.65 605.76,-32.55"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="606.69,-36 603.2,-36.23"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="599.96" cy="-36.45" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_grade -->
+<g id="g0_node8" class="node">
+<title>member_grade</title>
+<rect class="hd" fill="#bdbdbd" x="2" y="-306.8" width="217.53" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="6" y="-292.20" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="22.5" y="-292.20" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급   </text>
+<text text-anchor="start" x="74.75" y="-292.20" font-family="Malgun Gothic" font-size="8.00" fill="#f2f2f2">  member_grade         </text>
+<polygon fill="#ffffff" stroke="none" points="3,-259.8 3,-282.6 100.5,-282.6 100.5,-259.8 3,-259.8"/>
+<text text-anchor="start" x="9" y="-268.5" font-family="Malgun Gothic" font-size="9.00" fill="#111111">회원 등급 코드         </text>
+<polygon fill="#ffffff" stroke="none" points="100.5,-259.8 100.5,-282.6 156.48,-282.6 156.48,-259.8 100.5,-259.8"/>
+<text text-anchor="start" x="106.5" y="-268.8" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="156.48,-259.8 156.48,-282.6 195.42,-282.6 195.42,-259.8 156.48,-259.8"/>
+<text text-anchor="start" x="162.48" y="-269.1" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="195.42,-259.8 195.42,-282.6 218.53,-282.6 218.53,-259.8 195.42,-259.8"/>
+<text text-anchor="start" x="201.42" y="-269.8" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="2" y="-283.6" width="217.53" height="24.80000000000001" rx="5" ry="5"/></g>
+<!-- member_grade&#45;&gt;member_account -->
+<g id="g0_edge7" class="edge">
+<title>member_grade:e&#45;&gt;member_account:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M226.31,-271.19C242.07,-271.11 250.12,-270.8 263.77,-270.67"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="220.24,-274.7 220.23,-267.7 221.63,-267.7 221.64,-274.7 220.24,-274.7"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-271.2 223.03,-271.19"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="223.74,-274.69 223.73,-267.69 225.13,-267.69 225.14,-274.69 223.74,-274.69"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="223.03,-271.19 226.53,-271.18"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.23,-270.63 277.25,-273.75 274.03,-270.62 276.93,-270.6 276.93,-270.6 276.93,-270.6 274.03,-270.62 277.22,-267.45 270.23,-270.63"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="265.89" cy="-270.66" rx="2.8" ry="2.8"/>
 </g>
 </g>
 </svg>
 </template>
-<template id="svg-member__all"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1771.0 284.0">
+<template id="svg-member_grading"><svg
+ viewBox="0.00 0.00 587.07 273.60" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="g1_graph0" class="graph" transform="scale(1 1) rotate(0) translate(7.2 266.4)">
+
+<!-- member_grade -->
+<g id="g1_node1" class="node">
+<title>member_grade</title>
+<rect class="hd" fill="#2b2b2b" x="2" y="-185" width="217.53" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="6" y="-170.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="22.5" y="-170.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급   </text>
+<text text-anchor="start" x="74.75" y="-170.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_grade         </text>
+<polygon fill="#ffffff" stroke="none" points="3,-138 3,-160.8 100.5,-160.8 100.5,-138 3,-138"/>
+<text text-anchor="start" x="9" y="-147.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 등급 코드</text>
+<text text-anchor="start" x="54" y="-147.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">         </text>
+<polygon fill="#ffffff" stroke="none" points="100.5,-138 100.5,-160.8 156.48,-160.8 156.48,-138 100.5,-138"/>
+<text text-anchor="start" x="106.5" y="-147" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="156.48,-138 156.48,-160.8 195.42,-160.8 195.42,-138 156.48,-138"/>
+<text text-anchor="start" x="162.48" y="-147.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="195.42,-138 195.42,-160.8 218.53,-160.8 218.53,-138 195.42,-138"/>
+<text text-anchor="start" x="201.42" y="-148" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#f5f5f5" stroke="none" points="3,-116.4 3,-138 218.53,-138 218.53,-116.4 3,-116.4"/>
+<text text-anchor="start" x="9" y="-124.8" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 10개 컬럼 더 있음</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="2" y="-161.8" width="217.53" height="46.400000000000006" rx="5" ry="5"/></g>
+<!-- member_grade_benefit -->
+<g id="g1_node2" class="node">
+<title>member_grade_benefit</title>
+<rect class="hd" fill="#2b2b2b" x="279.86" y="-94.4" width="288.49" height="21.200000000000003" rx="5" ry="5"/>
+<text text-anchor="start" x="283.86" y="-79.80" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="300.36" y="-79.80" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급 혜택     </text>
+<text text-anchor="start" x="382.86" y="-79.80" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_grade_benefit            </text>
+<polygon fill="#ffffff" stroke="none" points="280.86,-47.4 280.86,-70.2 432.36,-70.2 432.36,-47.4 280.86,-47.4"/>
+<text text-anchor="start" x="286.86" y="-57.1" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">혜택 대상 회원 등급 코드</text>
+<text text-anchor="start" x="363.36" y="-57.1" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
+<polygon fill="#ffffff" stroke="none" points="432.36,-47.4 432.36,-70.2 488.34,-70.2 488.34,-47.4 432.36,-47.4"/>
+<text text-anchor="start" x="438.36" y="-56.4" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="488.34,-47.4 488.34,-70.2 531.13,-70.2 531.13,-47.4 488.34,-47.4"/>
+<text text-anchor="start" x="494.34" y="-56.7" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="531.13,-47.4 531.13,-70.2 567.35,-70.2 567.35,-47.4 531.13,-47.4"/>
+<text text-anchor="start" x="537.13" y="-57.4" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="280.86,-24.6 280.86,-47.4 432.36,-47.4 432.36,-24.6 280.86,-24.6"/>
+<text text-anchor="start" x="286.86" y="-34.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 등급 혜택 번호</text>
+<text text-anchor="start" x="347.61" y="-34.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">            </text>
+<polygon fill="#f5f5f5" stroke="none" points="432.36,-24.6 432.36,-47.4 488.34,-47.4 488.34,-24.6 432.36,-24.6"/>
+<text text-anchor="start" x="438.36" y="-33.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">benefit_no</text>
+<polygon fill="#f5f5f5" stroke="none" points="488.34,-24.6 488.34,-47.4 531.13,-47.4 531.13,-24.6 488.34,-24.6"/>
+<text text-anchor="start" x="494.34" y="-33.9" font-family="Consolas" font-size="7.00" fill="#777777">SMALLINT</text>
+<polygon fill="#f5f5f5" stroke="none" points="531.13,-24.6 531.13,-47.4 567.35,-47.4 567.35,-24.6 531.13,-24.6"/>
+<text text-anchor="start" x="550.24" y="-34.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="280.86,-3 280.86,-24.6 567.35,-24.6 567.35,-3 280.86,-3"/>
+<text text-anchor="start" x="286.86" y="-11.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 9개 컬럼 더 있음</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="279.86" y="-71.2" width="288.49" height="69.2" rx="5" ry="5"/></g>
+<!-- member_grade&#45;&gt;member_grade_benefit -->
+<g id="g1_edge1" class="edge">
+<title>member_grade:e&#45;&gt;member_grade_benefit:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M226.27,-148.72C259.96,-141.4 240.14,-76.93 266.63,-61.91"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="220.58,-152.81 219.88,-145.85 221.27,-145.71 221.97,-152.67 220.58,-152.81"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-149.4 223.02,-149.05"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="224.06,-152.46 223.36,-145.5 224.76,-145.36 225.46,-152.32 224.06,-152.46"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="223.02,-149.05 226.5,-148.7"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="272.75,-60.47 280.28,-61.94 276.45,-59.6 279.27,-58.94 279.27,-58.94 279.27,-58.94 276.45,-59.6 278.84,-55.8 272.75,-60.47"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="268.52" cy="-61.47" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_grade_history -->
+<g id="g1_node3" class="node">
+<title>member_grade_history</title>
+<rect class="hd" fill="#2b2b2b" x="277.53" y="-256.2" width="293.14" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="281.53" y="-241.60" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="298.03" y="-241.60" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급 이력     </text>
+<text text-anchor="start" x="380.53" y="-241.60" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_grade_history            </text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-209.2 278.53,-232 416.53,-232 416.53,-209.2 278.53,-209.2"/>
+<text text-anchor="start" x="284.53" y="-218.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">등급 이력 회원 아이디</text>
+<text text-anchor="start" x="352.03" y="-218.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="416.53,-209.2 416.53,-232 494.51,-232 494.51,-209.2 416.53,-209.2"/>
+<text text-anchor="start" x="422.53" y="-218.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="494.51,-209.2 494.51,-232 533.45,-232 533.45,-209.2 494.51,-209.2"/>
+<text text-anchor="start" x="500.51" y="-218.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="533.45,-209.2 533.45,-232 569.67,-232 569.67,-209.2 533.45,-209.2"/>
+<text text-anchor="start" x="539.45" y="-219.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="278.53,-186.4 278.53,-209.2 416.53,-209.2 416.53,-186.4 278.53,-186.4"/>
+<text text-anchor="start" x="284.53" y="-196.1" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 등급 이력 번호</text>
+<text text-anchor="start" x="345.28" y="-196.1" font-family="Malgun Gothic" font-size="9.00" fill="#111111">            </text>
+<polygon fill="#f5f5f5" stroke="none" points="416.53,-186.4 416.53,-209.2 494.51,-209.2 494.51,-186.4 416.53,-186.4"/>
+<text text-anchor="start" x="422.53" y="-195.4" font-family="Consolas" font-size="8.00" fill="#9a9a9a">history_no</text>
+<polygon fill="#f5f5f5" stroke="none" points="494.51,-186.4 494.51,-209.2 533.45,-209.2 533.45,-186.4 494.51,-186.4"/>
+<text text-anchor="start" x="500.51" y="-195.7" font-family="Consolas" font-size="7.00" fill="#777777">INT</text>
+<polygon fill="#f5f5f5" stroke="none" points="533.45,-186.4 533.45,-209.2 569.67,-209.2 569.67,-186.4 533.45,-186.4"/>
+<text text-anchor="start" x="552.56" y="-196.4" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-163.6 278.53,-186.4 416.53,-186.4 416.53,-163.6 278.53,-163.6"/>
+<text text-anchor="start" x="284.53" y="-172.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">이전 회원 등급 코드            </text>
+<polygon fill="#ffffff" stroke="none" points="416.53,-163.6 416.53,-186.4 494.51,-186.4 494.51,-163.6 416.53,-163.6"/>
+<text text-anchor="start" x="422.53" y="-172.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">prev_grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="494.51,-163.6 494.51,-186.4 533.45,-186.4 533.45,-163.6 494.51,-163.6"/>
+<text text-anchor="start" x="500.51" y="-172.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="533.45,-163.6 533.45,-186.4 569.67,-186.4 569.67,-163.6 533.45,-163.6"/>
+<text text-anchor="start" x="552.56" y="-173.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#777777">FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="278.53,-140.8 278.53,-163.6 416.53,-163.6 416.53,-140.8 278.53,-140.8"/>
+<text text-anchor="start" x="284.53" y="-149.5" font-family="Malgun Gothic" font-size="9.00" fill="#111111">적용 회원 등급 코드            </text>
+<polygon fill="#f5f5f5" stroke="none" points="416.53,-140.8 416.53,-163.6 494.51,-163.6 494.51,-140.8 416.53,-140.8"/>
+<text text-anchor="start" x="422.53" y="-149.8" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#f5f5f5" stroke="none" points="494.51,-140.8 494.51,-163.6 533.45,-163.6 533.45,-140.8 494.51,-140.8"/>
+<text text-anchor="start" x="500.51" y="-150.1" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#f5f5f5" stroke="none" points="533.45,-140.8 533.45,-163.6 569.67,-163.6 569.67,-140.8 533.45,-140.8"/>
+<text text-anchor="start" x="552.56" y="-150.8" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#777777">FK</text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-119.2 278.53,-140.8 569.67,-140.8 569.67,-119.2 278.53,-119.2"/>
+<text text-anchor="start" x="284.53" y="-127.6" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 11개 컬럼 더 있음</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="277.53" y="-233" width="293.14" height="114.8" rx="5" ry="5"/></g>
+<!-- member_grade&#45;&gt;member_grade_history -->
+<g id="g1_edge3" class="edge">
+<title>member_grade:e&#45;&gt;member_grade_history:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M226.31,-149.47C242.09,-149.8 250.11,-151.25 263.76,-151.89"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="220.2,-152.91 220.27,-145.91 221.67,-145.92 221.6,-152.92 220.2,-152.91"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-149.4 223.03,-149.44"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="223.7,-152.94 223.77,-145.94 225.17,-145.96 225.1,-152.96 223.7,-152.94"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="223.03,-149.44 226.53,-149.47"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.23,-152.04 277.16,-155.34 274.04,-152.12 276.93,-152.19 276.93,-152.19 276.93,-152.19 274.04,-152.12 277.3,-149.04 270.23,-152.04"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="265.89" cy="-151.94" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_grade&#45;&gt;member_grade_history -->
+<g id="g1_edge4" class="edge">
+<title>member_grade:e&#45;&gt;member_grade_history:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M229.22,-150.57C244.34,-154.48 250.34,-167.19 263.95,-172.57"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="219.81,-152.96 220.65,-146.01 222.04,-146.18 221.2,-153.13 219.81,-152.96"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-149.4 223.01,-149.82"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="226.24" cy="-150.21" rx="2.8" ry="2.8"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.35,-173.71 276.68,-178.05 274.09,-174.38 276.94,-174.89 276.94,-174.89 276.94,-174.89 274.09,-174.38 277.79,-171.85 270.35,-173.71"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="266.07" cy="-172.95" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_account -->
+<g id="g1_node4" class="node">
+<title>member_account</title>
+<rect class="hd" fill="#bdbdbd" x="13.2" y="-257.2" width="195.13000000000002" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="17.2" y="-242.60" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="33.7" y="-242.60" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원  </text>
+<text text-anchor="start" x="61.2" y="-242.60" font-family="Malgun Gothic" font-size="8.00" fill="#f2f2f2">  member_account      </text>
+<polygon fill="#ffffff" stroke="none" points="14.2,-210.2 14.2,-233 93.7,-233 93.7,-210.2 14.2,-210.2"/>
+<text text-anchor="start" x="20.2" y="-218.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">회원 아이디       </text>
+<polygon fill="#ffffff" stroke="none" points="93.7,-210.2 93.7,-233 145.29,-233 145.29,-210.2 93.7,-210.2"/>
+<text text-anchor="start" x="99.7" y="-219.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="145.29,-210.2 145.29,-233 184.23,-233 184.23,-210.2 145.29,-210.2"/>
+<text text-anchor="start" x="151.29" y="-219.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="184.23,-210.2 184.23,-233 207.33,-233 207.33,-210.2 184.23,-210.2"/>
+<text text-anchor="start" x="190.23" y="-220.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="13.2" y="-234" width="195.13000000000002" height="24.80000000000001" rx="5" ry="5"/></g>
+<!-- member_account&#45;&gt;member_grade_history -->
+<g id="g1_edge2" class="edge">
+<title>member_account:e&#45;&gt;member_grade_history:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M215.14,-221.58C235.79,-221.47 245.41,-220.89 263.68,-220.68"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="209.04,-225.1 209.03,-218.1 210.43,-218.09 210.44,-225.09 209.04,-225.1"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="208.33,-221.6 211.83,-221.59"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="212.54,-225.09 212.53,-218.09 213.93,-218.09 213.94,-225.09 212.54,-225.09"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="211.83,-221.59 215.33,-221.58"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.23,-220.64 277.25,-223.75 274.03,-220.62 276.93,-220.6 276.93,-220.6 276.93,-220.6 274.03,-220.62 277.22,-217.45 270.23,-220.64"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="265.89" cy="-220.66" rx="2.8" ry="2.8"/>
+</g>
+</g>
+</svg>
+</template>
+<template id="svg-member__all"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1538.0 648.0">
 <g class="cluster"><title>cluster_member_basic</title>
-<rect x="0" y="0" width="1771" height="284" fill="none" stroke="#cccccc" stroke-width="1"/>
+<rect x="0" y="0" width="909" height="648" fill="none" stroke="#cccccc" stroke-width="1"/>
 <text x="12" y="17" font-family="Malgun Gothic" font-size="13" font-weight="700" fill="#111111">회원 기본</text></g>
-<svg viewBox="0.00 0.00 1747.44 238.40" data-cluster="member_basic" overflow="visible" x="12" y="34" width="1747" height="238">
-<g id="member__all_c0_graph0" class="graph" transform="scale(1 1) rotate(0) translate(7.2 231.2)">
+<svg viewBox="0.00 0.00 884.96 602.00" data-cluster="member_basic" overflow="visible" x="12" y="34" width="885" height="602">
+<g id="member__all_c0_graph0" class="graph" transform="scale(1 1) rotate(0) translate(7.2 594.8)">
 
 <!-- member_account -->
 <g id="member__all_c0_node1" class="node">
 <title>member_account</title>
-<rect class="hd" fill="#2b2b2b" x="555.72" y="-222" width="195.14" height="21.19999999999999" rx="5" ry="5"/>
-<text text-anchor="start" x="559.72" y="-207.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="576.22" y="-207.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원  </text>
-<text text-anchor="start" x="603.72" y="-207.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_account      </text>
-<polygon fill="#ffffff" stroke="none" points="556.72,-175 556.72,-197.8 636.22,-197.8 636.22,-175 556.72,-175"/>
-<text text-anchor="start" x="562.72" y="-184.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 아이디</text>
-<text text-anchor="start" x="598.72" y="-184.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
-<polygon fill="#ffffff" stroke="none" points="636.22,-175 636.22,-197.8 687.81,-197.8 687.81,-175 636.22,-175"/>
-<text text-anchor="start" x="642.22" y="-184" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="687.81,-175 687.81,-197.8 726.75,-197.8 726.75,-175 687.81,-175"/>
-<text text-anchor="start" x="693.81" y="-184.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="726.75,-175 726.75,-197.8 749.86,-197.8 749.86,-175 726.75,-175"/>
-<text text-anchor="start" x="732.75" y="-185" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
-<polygon fill="#f5f5f5" stroke="none" points="556.72,-153.4 556.72,-175 749.86,-175 749.86,-153.4 556.72,-153.4"/>
-<text text-anchor="start" x="562.72" y="-161.8" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 20개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="277.53" y="-329" width="246.79000000000008" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="281.53" y="-314.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="298.03" y="-314.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원  </text>
+<text text-anchor="start" x="325.53" y="-314.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_account      </text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-282 278.53,-304.8 405.28,-304.8 405.28,-282 278.53,-282"/>
+<text text-anchor="start" x="284.53" y="-291.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 아이디</text>
+<text text-anchor="start" x="320.53" y="-291.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
+<polygon fill="#ffffff" stroke="none" points="405.28,-282 405.28,-304.8 461.27,-304.8 461.27,-282 405.28,-282"/>
+<text text-anchor="start" x="411.28" y="-291" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="461.27,-282 461.27,-304.8 500.21,-304.8 500.21,-282 461.27,-282"/>
+<text text-anchor="start" x="467.27" y="-291.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="500.21,-282 500.21,-304.8 523.32,-304.8 523.32,-282 500.21,-282"/>
+<text text-anchor="start" x="506.21" y="-292" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#f5f5f5" stroke="none" points="278.53,-259.2 278.53,-282 405.28,-282 405.28,-259.2 278.53,-259.2"/>
+<text text-anchor="start" x="284.53" y="-267.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">회원 현재 등급 코드            </text>
+<polygon fill="#f5f5f5" stroke="none" points="405.28,-259.2 405.28,-282 461.27,-282 461.27,-259.2 405.28,-259.2"/>
+<text text-anchor="start" x="411.28" y="-268.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#f5f5f5" stroke="none" points="461.27,-259.2 461.27,-282 500.21,-282 500.21,-259.2 461.27,-259.2"/>
+<text text-anchor="start" x="467.27" y="-268.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#f5f5f5" stroke="none" points="500.21,-259.2 500.21,-282 523.32,-282 523.32,-259.2 500.21,-259.2"/>
+<text text-anchor="start" x="506.21" y="-269.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#777777">FK</text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-237.6 278.53,-259.2 523.32,-259.2 523.32,-237.6 278.53,-237.6"/>
+<text text-anchor="start" x="284.53" y="-246" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 20개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="555.72" y="-198.8" width="195.14" height="46.400000000000006" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="277.53" y="-305.8" width="246.79000000000008" height="69.20000000000002" rx="5" ry="5"/></g>
 <!-- member_login -->
 <g id="member__all_c0_node2" class="node">
 <title>member_login</title>
-<rect class="hd" fill="#2b2b2b" x="10.29" y="-83" width="278" height="21.200000000000003" rx="5" ry="5"/>
-<text text-anchor="start" x="14.29" y="-68.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="30.79" y="-68.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 로그인 상태     </text>
-<text text-anchor="start" x="121.54" y="-68.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_login             </text>
-<polygon fill="#ffffff" stroke="none" points="11.29,-36 11.29,-58.8 160.54,-58.8 160.54,-36 11.29,-36"/>
-<text text-anchor="start" x="17.29" y="-45.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">로그인 상태 회원 아이디</text>
-<text text-anchor="start" x="91.54" y="-45.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
-<polygon fill="#ffffff" stroke="none" points="160.54,-36 160.54,-58.8 212.13,-58.8 212.13,-36 160.54,-36"/>
-<text text-anchor="start" x="166.54" y="-45" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="212.13,-36 212.13,-58.8 251.07,-58.8 251.07,-36 212.13,-36"/>
-<text text-anchor="start" x="218.13" y="-45.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="251.07,-36 251.07,-58.8 287.29,-58.8 287.29,-36 251.07,-36"/>
-<text text-anchor="start" x="257.07" y="-46" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="11.29,-14.4 11.29,-36 287.29,-36 287.29,-14.4 11.29,-14.4"/>
-<text text-anchor="start" x="17.29" y="-22.8" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="586.44" y="-585.6" width="278" height="21.200000000000045" rx="5" ry="5"/>
+<text text-anchor="start" x="590.44" y="-571.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="606.94" y="-571.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 로그인 상태     </text>
+<text text-anchor="start" x="697.69" y="-571.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_login             </text>
+<polygon fill="#ffffff" stroke="none" points="587.44,-538.6 587.44,-561.4 736.69,-561.4 736.69,-538.6 587.44,-538.6"/>
+<text text-anchor="start" x="593.44" y="-548.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">로그인 상태 회원 아이디</text>
+<text text-anchor="start" x="667.69" y="-548.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
+<polygon fill="#ffffff" stroke="none" points="736.69,-538.6 736.69,-561.4 788.28,-561.4 788.28,-538.6 736.69,-538.6"/>
+<text text-anchor="start" x="742.69" y="-547.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="788.28,-538.6 788.28,-561.4 827.22,-561.4 827.22,-538.6 788.28,-538.6"/>
+<text text-anchor="start" x="794.28" y="-547.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="827.22,-538.6 827.22,-561.4 863.44,-561.4 863.44,-538.6 827.22,-538.6"/>
+<text text-anchor="start" x="833.22" y="-548.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="587.44,-517 587.44,-538.6 863.44,-538.6 863.44,-517 587.44,-517"/>
+<text text-anchor="start" x="593.44" y="-525.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="10.29" y="-59.8" width="278" height="46.4" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="586.44" y="-562.4" width="278" height="46.39999999999998" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_login -->
 <g id="member__all_c0_edge1" class="edge">
 <title>member_account:e&#45;&gt;member_login:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M757.24,-184.43C764.64,-178.41 758.94,-160.05 749.86,-150.4 636.93,-30.42 124.15,-205.05 11.29,-85 2.88,-76.06 -2.73,-59.97 1.5,-52.06"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="752.56,-189.54 750.49,-182.85 751.83,-182.44 753.89,-189.13 752.56,-189.54"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="750.86,-186.4 754.2,-185.37"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="755.9,-188.51 753.84,-181.82 755.18,-181.41 757.24,-188.09 755.9,-188.51"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="754.2,-185.37 757.55,-184.34"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="8.03,-44.63 11.31,-50.82 10.07,-51.48 6.8,-45.29 8.03,-44.63"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="10.29,-47.4 7.2,-49.04"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="4.33" cy="-50.56" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.18,-293.72C631.57,-303.51 481.15,-535.31 576.75,-549.34"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="524.85,-296.93 525.18,-289.94 526.58,-290 526.25,-296.99 524.85,-296.93"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.56"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.35,-297.09 528.68,-290.1 530.08,-290.16 529.75,-297.16 528.35,-297.09"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.56 531.31,-293.73"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="585.98,-546.46 585.5,-553.44 584.11,-553.35 584.59,-546.36 585.98,-546.46"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="586.44,-550 582.95,-549.76"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="579.71" cy="-549.54" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_social_account -->
 <g id="member__all_c0_node3" class="node">
 <title>member_social_account</title>
-<rect class="hd" fill="#2b2b2b" x="311.92" y="-94.4" width="266.73999999999995" height="21.200000000000003" rx="5" ry="5"/>
-<text text-anchor="start" x="315.92" y="-79.80" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="332.42" y="-79.80" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">소셜 계정 연동     </text>
-<text text-anchor="start" x="414.92" y="-79.80" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_social_account            </text>
-<polygon fill="#ffffff" stroke="none" points="312.92,-47.4 312.92,-70.2 450.92,-70.2 450.92,-47.4 312.92,-47.4"/>
-<text text-anchor="start" x="318.92" y="-57.1" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 연동 회원 아이디</text>
-<text text-anchor="start" x="386.42" y="-57.1" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
-<polygon fill="#ffffff" stroke="none" points="450.92,-47.4 450.92,-70.2 502.5,-70.2 502.5,-47.4 450.92,-47.4"/>
-<text text-anchor="start" x="456.92" y="-56.4" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="502.5,-47.4 502.5,-70.2 541.44,-70.2 541.44,-47.4 502.5,-47.4"/>
-<text text-anchor="start" x="508.5" y="-56.7" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="541.44,-47.4 541.44,-70.2 577.66,-70.2 577.66,-47.4 541.44,-47.4"/>
-<text text-anchor="start" x="547.44" y="-57.4" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="312.92,-24.6 312.92,-47.4 450.92,-47.4 450.92,-24.6 312.92,-24.6"/>
-<text text-anchor="start" x="318.92" y="-34.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 제공자</text>
-<text text-anchor="start" x="354.92" y="-34.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
-<polygon fill="#f5f5f5" stroke="none" points="450.92,-24.6 450.92,-47.4 502.5,-47.4 502.5,-24.6 450.92,-24.6"/>
-<text text-anchor="start" x="456.92" y="-33.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">provider</text>
-<polygon fill="#f5f5f5" stroke="none" points="502.5,-24.6 502.5,-47.4 541.44,-47.4 541.44,-24.6 502.5,-24.6"/>
-<text text-anchor="start" x="508.5" y="-33.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#f5f5f5" stroke="none" points="541.44,-24.6 541.44,-47.4 577.66,-47.4 577.66,-24.6 541.44,-24.6"/>
-<text text-anchor="start" x="560.55" y="-34.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
-<polygon fill="#ffffff" stroke="none" points="312.92,-3 312.92,-24.6 577.66,-24.6 577.66,-3 312.92,-3"/>
-<text text-anchor="start" x="318.92" y="-11.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="592.07" y="-492" width="266.7399999999999" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="596.07" y="-477.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="612.57" y="-477.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">소셜 계정 연동     </text>
+<text text-anchor="start" x="695.07" y="-477.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_social_account            </text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-445 593.07,-467.8 731.07,-467.8 731.07,-445 593.07,-445"/>
+<text text-anchor="start" x="599.07" y="-454.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 연동 회원 아이디</text>
+<text text-anchor="start" x="666.57" y="-454.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="731.07,-445 731.07,-467.8 782.65,-467.8 782.65,-445 731.07,-445"/>
+<text text-anchor="start" x="737.07" y="-454" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="782.65,-445 782.65,-467.8 821.59,-467.8 821.59,-445 782.65,-445"/>
+<text text-anchor="start" x="788.65" y="-454.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="821.59,-445 821.59,-467.8 857.81,-467.8 857.81,-445 821.59,-445"/>
+<text text-anchor="start" x="827.59" y="-455" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="593.07,-422.2 593.07,-445 731.07,-445 731.07,-422.2 593.07,-422.2"/>
+<text text-anchor="start" x="599.07" y="-431.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">소셜 제공자</text>
+<text text-anchor="start" x="635.07" y="-431.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
+<polygon fill="#f5f5f5" stroke="none" points="731.07,-422.2 731.07,-445 782.65,-445 782.65,-422.2 731.07,-422.2"/>
+<text text-anchor="start" x="737.07" y="-431.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">provider</text>
+<polygon fill="#f5f5f5" stroke="none" points="782.65,-422.2 782.65,-445 821.59,-445 821.59,-422.2 782.65,-422.2"/>
+<text text-anchor="start" x="788.65" y="-431.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#f5f5f5" stroke="none" points="821.59,-422.2 821.59,-445 857.81,-445 857.81,-422.2 821.59,-422.2"/>
+<text text-anchor="start" x="840.7" y="-432.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-400.6 593.07,-422.2 857.81,-422.2 857.81,-400.6 593.07,-400.6"/>
+<text text-anchor="start" x="599.07" y="-409" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="311.92" y="-71.2" width="266.73999999999995" height="69.2" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="592.07" y="-468.8" width="266.7399999999999" height="69.19999999999999" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_social_account -->
 <g id="member__all_c0_edge2" class="edge">
 <title>member_account:e&#45;&gt;member_social_account:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M757.23,-184.44C764.58,-178.46 758.77,-160.21 749.86,-150.4 618.23,-5.61 444.45,-241.27 312.92,-96.4 306.07,-88.86 300.99,-76.55 301.84,-68.08"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="752.55,-189.54 750.5,-182.85 751.84,-182.44 753.89,-189.13 752.55,-189.54"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="750.86,-186.4 754.2,-185.37"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="755.9,-188.51 753.84,-181.82 755.18,-181.41 757.24,-188.1 755.9,-188.51"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="754.2,-185.37 757.55,-184.35"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="306.55,-63.75 313.83,-61.32 309.34,-61.17 311.47,-59.21 311.47,-59.21 311.47,-59.21 309.34,-61.17 309.56,-56.69 306.55,-63.75"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="303.35" cy="-66.69" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.19,-293.87C592.84,-302.77 526.49,-436.16 578.59,-454.35"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="524.78,-296.94 525.25,-289.96 526.65,-290.05 526.18,-297.03 524.78,-296.94"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.64"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.27,-297.18 528.75,-290.19 530.14,-290.29 529.67,-297.27 528.27,-297.18"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.64 531.3,-293.88"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="584.85,-455.3 591.3,-459.47 588.61,-455.87 591.47,-456.31 591.47,-456.31 591.47,-456.31 588.61,-455.87 592.24,-453.24 584.85,-455.3"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="580.55" cy="-454.65" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_body -->
 <g id="member__all_c0_node4" class="node">
 <title>member_body</title>
-<rect class="hd" fill="#2b2b2b" x="602.92" y="-83" width="266.74" height="21.200000000000003" rx="5" ry="5"/>
-<text text-anchor="start" x="606.92" y="-68.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="623.42" y="-68.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 체형   </text>
-<text text-anchor="start" x="675.67" y="-68.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_body         </text>
-<polygon fill="#ffffff" stroke="none" points="603.92,-36 603.92,-58.8 741.92,-58.8 741.92,-36 603.92,-36"/>
-<text text-anchor="start" x="609.92" y="-45.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">체형 정보 회원 아이디</text>
-<text text-anchor="start" x="677.42" y="-45.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
-<polygon fill="#ffffff" stroke="none" points="741.92,-36 741.92,-58.8 793.5,-58.8 793.5,-36 741.92,-36"/>
-<text text-anchor="start" x="747.92" y="-45" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="793.5,-36 793.5,-58.8 832.44,-58.8 832.44,-36 793.5,-36"/>
-<text text-anchor="start" x="799.5" y="-45.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="832.44,-36 832.44,-58.8 868.66,-58.8 868.66,-36 832.44,-36"/>
-<text text-anchor="start" x="838.44" y="-46" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="603.92,-14.4 603.92,-36 868.66,-36 868.66,-14.4 603.92,-14.4"/>
-<text text-anchor="start" x="609.92" y="-22.8" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 8개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="592.07" y="-375.6" width="266.7399999999999" height="21.200000000000045" rx="5" ry="5"/>
+<text text-anchor="start" x="596.07" y="-361.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="612.57" y="-361.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 체형   </text>
+<text text-anchor="start" x="664.82" y="-361.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_body         </text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-328.6 593.07,-351.4 731.07,-351.4 731.07,-328.6 593.07,-328.6"/>
+<text text-anchor="start" x="599.07" y="-338.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">체형 정보 회원 아이디</text>
+<text text-anchor="start" x="666.57" y="-338.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="731.07,-328.6 731.07,-351.4 782.65,-351.4 782.65,-328.6 731.07,-328.6"/>
+<text text-anchor="start" x="737.07" y="-337.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="782.65,-328.6 782.65,-351.4 821.59,-351.4 821.59,-328.6 782.65,-328.6"/>
+<text text-anchor="start" x="788.65" y="-337.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="821.59,-328.6 821.59,-351.4 857.81,-351.4 857.81,-328.6 821.59,-328.6"/>
+<text text-anchor="start" x="827.59" y="-338.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="593.07,-307 593.07,-328.6 857.81,-328.6 857.81,-307 593.07,-307"/>
+<text text-anchor="start" x="599.07" y="-315.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 8개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="602.92" y="-59.8" width="266.74" height="46.4" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="592.07" y="-352.4" width="266.7399999999999" height="46.39999999999998" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_body -->
 <g id="member__all_c0_edge3" class="edge">
 <title>member_account:e&#45;&gt;member_body:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M757.47,-184.22C763.79,-178.22 757.08,-161.22 749.86,-150.4 710.39,-91.28 643.34,-144.14 603.92,-85 597.25,-75 591.01,-59.95 594.24,-52.28"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="752.62,-189.5 750.42,-182.86 751.75,-182.42 753.95,-189.07 752.62,-189.5"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="750.86,-186.4 754.18,-185.3"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="755.94,-188.41 753.75,-181.76 755.08,-181.32 757.27,-187.97 755.94,-188.41"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="754.18,-185.3 757.5,-184.21"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="600.59,-44.69 604.02,-50.79 602.8,-51.48 599.37,-45.38 600.59,-44.69"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="602.92,-47.4 599.86,-49.12"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="597.03" cy="-50.71" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.07,-293.99C557.25,-298.81 558.1,-331.82 582.41,-338.73"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="524.71,-296.95 525.32,-289.97 526.71,-290.1 526.11,-297.07 524.71,-296.95"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.7"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.2,-297.25 528.81,-290.28 530.2,-290.4 529.59,-297.37 528.2,-297.25"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.7 531.29,-294.01"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="591.83,-336.44 590.92,-343.38 589.53,-343.2 590.44,-336.26 591.83,-336.44"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="592.07,-340 588.6,-339.54"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="585.37" cy="-339.12" rx="2.8" ry="2.8"/>
 </g>
 <!-- address -->
 <g id="member__all_c0_node5" class="node">
 <title>address</title>
-<rect class="hd" fill="#2b2b2b" x="893.17" y="-94.4" width="286.2400000000001" height="21.200000000000003" rx="5" ry="5"/>
-<text text-anchor="start" x="897.17" y="-79.80" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="913.67" y="-79.80" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">배송지  </text>
-<text text-anchor="start" x="949.42" y="-79.80" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  address        </text>
-<polygon fill="#ffffff" stroke="none" points="894.17,-47.4 894.17,-70.2 1043.42,-70.2 1043.42,-47.4 894.17,-47.4"/>
-<text text-anchor="start" x="900.17" y="-57.1" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 소유 회원 아이디</text>
-<text text-anchor="start" x="974.42" y="-57.1" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
-<polygon fill="#ffffff" stroke="none" points="1043.42,-47.4 1043.42,-70.2 1099.4,-70.2 1099.4,-47.4 1043.42,-47.4"/>
-<text text-anchor="start" x="1049.42" y="-56.4" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="1099.4,-47.4 1099.4,-70.2 1142.19,-70.2 1142.19,-47.4 1099.4,-47.4"/>
-<text text-anchor="start" x="1105.4" y="-56.7" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="1142.19,-47.4 1142.19,-70.2 1178.41,-70.2 1178.41,-47.4 1142.19,-47.4"/>
-<text text-anchor="start" x="1148.19" y="-57.4" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="894.17,-24.6 894.17,-47.4 1043.42,-47.4 1043.42,-24.6 894.17,-24.6"/>
-<text text-anchor="start" x="900.17" y="-34.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 번호</text>
-<text text-anchor="start" x="936.17" y="-34.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
-<polygon fill="#f5f5f5" stroke="none" points="1043.42,-24.6 1043.42,-47.4 1099.4,-47.4 1099.4,-24.6 1043.42,-24.6"/>
-<text text-anchor="start" x="1049.42" y="-33.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">address_no</text>
-<polygon fill="#f5f5f5" stroke="none" points="1099.4,-24.6 1099.4,-47.4 1142.19,-47.4 1142.19,-24.6 1099.4,-24.6"/>
-<text text-anchor="start" x="1105.4" y="-33.9" font-family="Consolas" font-size="7.00" fill="#777777">SMALLINT</text>
-<polygon fill="#f5f5f5" stroke="none" points="1142.19,-24.6 1142.19,-47.4 1178.41,-47.4 1178.41,-24.6 1142.19,-24.6"/>
-<text text-anchor="start" x="1161.3" y="-34.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
-<polygon fill="#ffffff" stroke="none" points="894.17,-3 894.17,-24.6 1178.41,-24.6 1178.41,-3 894.17,-3"/>
-<text text-anchor="start" x="900.17" y="-11.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 10개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="582.32" y="-282" width="286.2399999999999" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="586.32" y="-267.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="602.82" y="-267.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">배송지  </text>
+<text text-anchor="start" x="638.57" y="-267.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  address        </text>
+<polygon fill="#ffffff" stroke="none" points="583.32,-235 583.32,-257.8 732.57,-257.8 732.57,-235 583.32,-235"/>
+<text text-anchor="start" x="589.32" y="-244.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 소유 회원 아이디</text>
+<text text-anchor="start" x="663.57" y="-244.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
+<polygon fill="#ffffff" stroke="none" points="732.57,-235 732.57,-257.8 788.55,-257.8 788.55,-235 732.57,-235"/>
+<text text-anchor="start" x="738.57" y="-244" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="788.55,-235 788.55,-257.8 831.34,-257.8 831.34,-235 788.55,-235"/>
+<text text-anchor="start" x="794.55" y="-244.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="831.34,-235 831.34,-257.8 867.56,-257.8 867.56,-235 831.34,-235"/>
+<text text-anchor="start" x="837.34" y="-245" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="583.32,-212.2 583.32,-235 732.57,-235 732.57,-212.2 583.32,-212.2"/>
+<text text-anchor="start" x="589.32" y="-221.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">배송지 번호</text>
+<text text-anchor="start" x="625.32" y="-221.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">       </text>
+<polygon fill="#f5f5f5" stroke="none" points="732.57,-212.2 732.57,-235 788.55,-235 788.55,-212.2 732.57,-212.2"/>
+<text text-anchor="start" x="738.57" y="-221.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">address_no</text>
+<polygon fill="#f5f5f5" stroke="none" points="788.55,-212.2 788.55,-235 831.34,-235 831.34,-212.2 788.55,-212.2"/>
+<text text-anchor="start" x="794.55" y="-221.5" font-family="Consolas" font-size="7.00" fill="#777777">SMALLINT</text>
+<polygon fill="#f5f5f5" stroke="none" points="831.34,-212.2 831.34,-235 867.56,-235 867.56,-212.2 831.34,-212.2"/>
+<text text-anchor="start" x="850.45" y="-222.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="583.32,-190.6 583.32,-212.2 867.56,-212.2 867.56,-190.6 583.32,-190.6"/>
+<text text-anchor="start" x="589.32" y="-199" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 10개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="893.17" y="-71.2" width="286.2400000000001" height="69.2" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="582.32" y="-258.8" width="286.2399999999999" height="69.20000000000002" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;address -->
 <g id="member__all_c0_edge4" class="edge">
 <title>member_account:e&#45;&gt;address:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M757.7,-186.29C822.52,-184.16 840.82,-151.16 881.29,-96.4 887.15,-88.47 884.63,-77.57 884.42,-69.54"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="751.61,-189.89 751.5,-182.89 752.9,-182.87 753.01,-189.87 751.61,-189.89"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="750.86,-186.4 754.36,-186.34"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="755.11,-189.83 755,-182.83 756.4,-182.81 756.51,-189.81 755.11,-189.83"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="754.36,-186.34 757.86,-186.29"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="888.56,-64.46 895.42,-61.02 890.96,-61.51 892.79,-59.27 892.79,-59.27 892.79,-59.27 890.96,-61.51 890.53,-57.04 888.56,-64.46"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="885.81" cy="-67.83" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.05,-292.66C552.11,-287.71 552.39,-259.23 569.3,-249.59"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="525.4,-296.8 524.63,-289.84 526.02,-289.69 526.79,-296.65 525.4,-296.8"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.8,-293.02"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.87,-296.42 528.11,-289.46 529.5,-289.31 530.27,-296.27 528.87,-296.42"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.8,-293.02 531.28,-292.64"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="575.23,-248.14 582.78,-249.53 578.92,-247.23 581.73,-246.54 581.73,-246.54 581.73,-246.54 578.92,-247.23 581.28,-243.41 575.23,-248.14"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="571.01" cy="-249.17" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_refund_account -->
 <g id="member__all_c0_node6" class="node">
 <title>member_refund_account</title>
-<rect class="hd" fill="#2b2b2b" x="1202.92" y="-83" width="266.74" height="21.200000000000003" rx="5" ry="5"/>
-<text text-anchor="start" x="1206.92" y="-68.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="1223.42" y="-68.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 환불 계좌     </text>
-<text text-anchor="start" x="1305.92" y="-68.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_refund_account            </text>
-<polygon fill="#ffffff" stroke="none" points="1203.92,-36 1203.92,-58.8 1341.92,-58.8 1341.92,-36 1203.92,-36"/>
-<text text-anchor="start" x="1209.92" y="-45.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">환불 계좌 회원 아이디</text>
-<text text-anchor="start" x="1277.42" y="-45.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
-<polygon fill="#ffffff" stroke="none" points="1341.92,-36 1341.92,-58.8 1393.5,-58.8 1393.5,-36 1341.92,-36"/>
-<text text-anchor="start" x="1347.92" y="-45" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="1393.5,-36 1393.5,-58.8 1432.44,-58.8 1432.44,-36 1393.5,-36"/>
-<text text-anchor="start" x="1399.5" y="-45.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="1432.44,-36 1432.44,-58.8 1468.66,-58.8 1468.66,-36 1432.44,-36"/>
-<text text-anchor="start" x="1438.44" y="-46" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="1203.92,-14.4 1203.92,-36 1468.66,-36 1468.66,-14.4 1203.92,-14.4"/>
-<text text-anchor="start" x="1209.92" y="-22.8" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="592.07" y="-165.6" width="266.7399999999999" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="596.07" y="-151.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="612.57" y="-151.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 환불 계좌     </text>
+<text text-anchor="start" x="695.07" y="-151.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_refund_account            </text>
+<polygon fill="#ffffff" stroke="none" points="593.07,-118.6 593.07,-141.4 731.07,-141.4 731.07,-118.6 593.07,-118.6"/>
+<text text-anchor="start" x="599.07" y="-128.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">환불 계좌 회원 아이디</text>
+<text text-anchor="start" x="666.57" y="-128.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="731.07,-118.6 731.07,-141.4 782.65,-141.4 782.65,-118.6 731.07,-118.6"/>
+<text text-anchor="start" x="737.07" y="-127.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="782.65,-118.6 782.65,-141.4 821.59,-141.4 821.59,-118.6 782.65,-118.6"/>
+<text text-anchor="start" x="788.65" y="-127.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="821.59,-118.6 821.59,-141.4 857.81,-141.4 857.81,-118.6 821.59,-118.6"/>
+<text text-anchor="start" x="827.59" y="-128.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="593.07,-97 593.07,-118.6 857.81,-118.6 857.81,-97 593.07,-97"/>
+<text text-anchor="start" x="599.07" y="-105.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 6개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="1202.92" y="-59.8" width="266.74" height="46.4" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="592.07" y="-142.4" width="266.7399999999999" height="46.400000000000006" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_refund_account -->
 <g id="member__all_c0_edge5" class="edge">
 <title>member_account:e&#45;&gt;member_refund_account:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M757.84,-186.37C862.73,-185.46 1121.16,-164.36 1191.29,-96.4 1203.72,-84.35 1190.49,-61.63 1194.21,-51.95"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="751.57,-189.9 751.54,-182.9 752.94,-182.89 752.97,-189.89 751.57,-189.9"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="750.86,-186.4 754.36,-186.38"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="755.07,-189.88 755.04,-182.88 756.44,-182.87 756.47,-189.87 755.07,-189.88"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="754.36,-186.38 757.86,-186.37"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="1200.67,-44.62 1203.92,-50.83 1202.68,-51.47 1199.43,-45.27 1200.67,-44.62"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="1202.92,-47.4 1199.81,-49.02"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="1196.93" cy="-50.53" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.21,-292.93C594.4,-283.8 523.23,-144.06 582.37,-130.98"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="525.25,-296.84 524.78,-289.86 526.18,-289.77 526.65,-296.75 525.25,-296.84"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.81,-293.16"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.75,-296.61 528.27,-289.62 529.67,-289.53 530.14,-296.51 528.75,-296.61"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.81,-293.16 531.3,-292.92"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="591.02,-126.59 591.72,-133.55 590.33,-133.69 589.63,-126.73 591.02,-126.59"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="592.07,-130 588.58,-130.35"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="585.35" cy="-130.68" rx="2.8" ry="2.8"/>
 </g>
 <!-- member_withdrawal -->
 <g id="member__all_c0_node7" class="node">
 <title>member_withdrawal</title>
-<rect class="hd" fill="#2b2b2b" x="1493.54" y="-83" width="237.5" height="21.200000000000003" rx="5" ry="5"/>
-<text text-anchor="start" x="1497.54" y="-68.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
-<text text-anchor="start" x="1514.04" y="-68.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 탈퇴 정보     </text>
-<text text-anchor="start" x="1596.54" y="-68.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_withdrawal            </text>
-<polygon fill="#ffffff" stroke="none" points="1494.54,-36 1494.54,-58.8 1603.29,-58.8 1603.29,-36 1494.54,-36"/>
-<text text-anchor="start" x="1500.54" y="-45.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">탈퇴 회원 아이디</text>
-<text text-anchor="start" x="1552.29" y="-45.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">          </text>
-<polygon fill="#ffffff" stroke="none" points="1603.29,-36 1603.29,-58.8 1654.88,-58.8 1654.88,-36 1603.29,-36"/>
-<text text-anchor="start" x="1609.29" y="-45" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
-<polygon fill="#ffffff" stroke="none" points="1654.88,-36 1654.88,-58.8 1693.82,-58.8 1693.82,-36 1654.88,-36"/>
-<text text-anchor="start" x="1660.88" y="-45.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
-<polygon fill="#ffffff" stroke="none" points="1693.82,-36 1693.82,-58.8 1730.04,-58.8 1730.04,-36 1693.82,-36"/>
-<text text-anchor="start" x="1699.82" y="-46" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
-<polygon fill="#f5f5f5" stroke="none" points="1494.54,-14.4 1494.54,-36 1730.04,-36 1730.04,-14.4 1494.54,-14.4"/>
-<text text-anchor="start" x="1500.54" y="-22.8" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
+<rect class="hd" fill="#2b2b2b" x="606.69" y="-71.6" width="237.5" height="21.199999999999996" rx="5" ry="5"/>
+<text text-anchor="start" x="610.69" y="-57.00" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="627.19" y="-57.00" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 탈퇴 정보     </text>
+<text text-anchor="start" x="709.69" y="-57.00" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_withdrawal            </text>
+<polygon fill="#ffffff" stroke="none" points="607.69,-24.6 607.69,-47.4 716.44,-47.4 716.44,-24.6 607.69,-24.6"/>
+<text text-anchor="start" x="613.69" y="-34.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">탈퇴 회원 아이디</text>
+<text text-anchor="start" x="665.44" y="-34.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">          </text>
+<polygon fill="#ffffff" stroke="none" points="716.44,-24.6 716.44,-47.4 768.03,-47.4 768.03,-24.6 716.44,-24.6"/>
+<text text-anchor="start" x="722.44" y="-33.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="768.03,-24.6 768.03,-47.4 806.97,-47.4 806.97,-24.6 768.03,-24.6"/>
+<text text-anchor="start" x="774.03" y="-33.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="806.97,-24.6 806.97,-47.4 843.19,-47.4 843.19,-24.6 806.97,-24.6"/>
+<text text-anchor="start" x="812.97" y="-34.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="607.69,-3 607.69,-24.6 843.19,-24.6 843.19,-3 607.69,-3"/>
+<text text-anchor="start" x="613.69" y="-11.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 5개 컬럼 더 있음</text>
 
-<rect class="box" fill="none" stroke="#dddddd" x="1493.54" y="-59.8" width="237.5" height="46.4" rx="5" ry="5"/></g>
+<rect class="box" fill="none" stroke="#dddddd" x="606.69" y="-48.4" width="237.5" height="46.4" rx="5" ry="5"/></g>
 <!-- member_account&#45;&gt;member_withdrawal -->
 <g id="member__all_c0_edge6" class="edge">
 <title>member_account:e&#45;&gt;member_withdrawal:w</title>
-<path fill="none" stroke="#555555" stroke-width="0.9" d="M757.73,-186.34C861,-184.64 1421.53,-149.25 1481.29,-96.4 1494.29,-84.9 1481.08,-61.88 1484.81,-52.03"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="751.59,-189.89 751.52,-182.89 752.92,-182.88 752.99,-189.88 751.59,-189.89"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="750.86,-186.4 754.36,-186.37"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="755.09,-189.86 755.02,-182.86 756.42,-182.85 756.49,-189.85 755.09,-189.86"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="754.36,-186.37 757.86,-186.33"/>
-<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="1491.28,-44.64 1494.56,-50.82 1493.33,-51.48 1490.04,-45.29 1491.28,-44.64"/>
-<polyline fill="none" stroke="#555555" stroke-width="0.9" points="1493.54,-47.4 1490.45,-49.04"/>
-<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="1487.58" cy="-50.57" rx="2.8" ry="2.8"/>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M531.04,-293.11C635.12,-283.74 497.74,-50.76 596.72,-36.67"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="525.17,-296.87 524.87,-289.87 526.27,-289.81 526.57,-296.81 525.17,-296.87"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="524.32,-293.4 527.82,-293.25"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="528.67,-296.72 528.36,-289.72 529.76,-289.66 530.06,-296.65 528.67,-296.72"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="527.82,-293.25 531.31,-293.1"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="605.76,-32.55 606.23,-39.54 604.83,-39.63 604.36,-32.65 605.76,-32.55"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="606.69,-36 603.2,-36.23"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="599.96" cy="-36.45" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_grade -->
+<g id="member__all_c0_node8" class="node">
+<title>member_grade</title>
+<rect class="hd" fill="#bdbdbd" x="2" y="-306.8" width="217.53" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="6" y="-292.20" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="22.5" y="-292.20" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급   </text>
+<text text-anchor="start" x="74.75" y="-292.20" font-family="Malgun Gothic" font-size="8.00" fill="#f2f2f2">  member_grade         </text>
+<polygon fill="#ffffff" stroke="none" points="3,-259.8 3,-282.6 100.5,-282.6 100.5,-259.8 3,-259.8"/>
+<text text-anchor="start" x="9" y="-268.5" font-family="Malgun Gothic" font-size="9.00" fill="#111111">회원 등급 코드         </text>
+<polygon fill="#ffffff" stroke="none" points="100.5,-259.8 100.5,-282.6 156.48,-282.6 156.48,-259.8 100.5,-259.8"/>
+<text text-anchor="start" x="106.5" y="-268.8" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="156.48,-259.8 156.48,-282.6 195.42,-282.6 195.42,-259.8 156.48,-259.8"/>
+<text text-anchor="start" x="162.48" y="-269.1" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="195.42,-259.8 195.42,-282.6 218.53,-282.6 218.53,-259.8 195.42,-259.8"/>
+<text text-anchor="start" x="201.42" y="-269.8" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="2" y="-283.6" width="217.53" height="24.80000000000001" rx="5" ry="5"/></g>
+<!-- member_grade&#45;&gt;member_account -->
+<g id="member__all_c0_edge7" class="edge">
+<title>member_grade:e&#45;&gt;member_account:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M226.31,-271.19C242.07,-271.11 250.12,-270.8 263.77,-270.67"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="220.24,-274.7 220.23,-267.7 221.63,-267.7 221.64,-274.7 220.24,-274.7"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-271.2 223.03,-271.19"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="223.74,-274.69 223.73,-267.69 225.13,-267.69 225.14,-274.69 223.74,-274.69"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="223.03,-271.19 226.53,-271.18"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.23,-270.63 277.25,-273.75 274.03,-270.62 276.93,-270.6 276.93,-270.6 276.93,-270.6 274.03,-270.62 277.22,-267.45 270.23,-270.63"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="265.89" cy="-270.66" rx="2.8" ry="2.8"/>
+</g>
+</g>
+</svg>
+
+<g class="cluster"><title>cluster_member_grading</title>
+<rect x="927" y="0" width="611" height="320" fill="none" stroke="#cccccc" stroke-width="1"/>
+<text x="939" y="17" font-family="Malgun Gothic" font-size="13" font-weight="700" fill="#111111">회원 등급</text></g>
+<svg viewBox="0.00 0.00 587.07 273.60" data-cluster="member_grading" overflow="visible" x="939" y="34" width="587" height="274">
+<g id="member__all_c1_graph0" class="graph" transform="scale(1 1) rotate(0) translate(7.2 266.4)">
+<title>G</title>
+<!-- member_grade -->
+<g id="member__all_c1_node1" class="node">
+<title>member_grade</title>
+<rect class="hd" fill="#2b2b2b" x="2" y="-185" width="217.53" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="6" y="-170.40" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="22.5" y="-170.40" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급   </text>
+<text text-anchor="start" x="74.75" y="-170.40" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_grade         </text>
+<polygon fill="#ffffff" stroke="none" points="3,-138 3,-160.8 100.5,-160.8 100.5,-138 3,-138"/>
+<text text-anchor="start" x="9" y="-147.7" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 등급 코드</text>
+<text text-anchor="start" x="54" y="-147.7" font-family="Malgun Gothic" font-size="9.00" fill="#111111">         </text>
+<polygon fill="#ffffff" stroke="none" points="100.5,-138 100.5,-160.8 156.48,-160.8 156.48,-138 100.5,-138"/>
+<text text-anchor="start" x="106.5" y="-147" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="156.48,-138 156.48,-160.8 195.42,-160.8 195.42,-138 156.48,-138"/>
+<text text-anchor="start" x="162.48" y="-147.3" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="195.42,-138 195.42,-160.8 218.53,-160.8 218.53,-138 195.42,-138"/>
+<text text-anchor="start" x="201.42" y="-148" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#f5f5f5" stroke="none" points="3,-116.4 3,-138 218.53,-138 218.53,-116.4 3,-116.4"/>
+<text text-anchor="start" x="9" y="-124.8" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 10개 컬럼 더 있음</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="2" y="-161.8" width="217.53" height="46.400000000000006" rx="5" ry="5"/></g>
+<!-- member_grade_benefit -->
+<g id="member__all_c1_node2" class="node">
+<title>member_grade_benefit</title>
+<rect class="hd" fill="#2b2b2b" x="279.86" y="-94.4" width="288.49" height="21.200000000000003" rx="5" ry="5"/>
+<text text-anchor="start" x="283.86" y="-79.80" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="300.36" y="-79.80" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급 혜택     </text>
+<text text-anchor="start" x="382.86" y="-79.80" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_grade_benefit            </text>
+<polygon fill="#ffffff" stroke="none" points="280.86,-47.4 280.86,-70.2 432.36,-70.2 432.36,-47.4 280.86,-47.4"/>
+<text text-anchor="start" x="286.86" y="-57.1" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">혜택 대상 회원 등급 코드</text>
+<text text-anchor="start" x="363.36" y="-57.1" font-family="Malgun Gothic" font-size="9.00" fill="#111111">              </text>
+<polygon fill="#ffffff" stroke="none" points="432.36,-47.4 432.36,-70.2 488.34,-70.2 488.34,-47.4 432.36,-47.4"/>
+<text text-anchor="start" x="438.36" y="-56.4" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="488.34,-47.4 488.34,-70.2 531.13,-70.2 531.13,-47.4 488.34,-47.4"/>
+<text text-anchor="start" x="494.34" y="-56.7" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="531.13,-47.4 531.13,-70.2 567.35,-70.2 567.35,-47.4 531.13,-47.4"/>
+<text text-anchor="start" x="537.13" y="-57.4" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="280.86,-24.6 280.86,-47.4 432.36,-47.4 432.36,-24.6 280.86,-24.6"/>
+<text text-anchor="start" x="286.86" y="-34.3" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 등급 혜택 번호</text>
+<text text-anchor="start" x="347.61" y="-34.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">            </text>
+<polygon fill="#f5f5f5" stroke="none" points="432.36,-24.6 432.36,-47.4 488.34,-47.4 488.34,-24.6 432.36,-24.6"/>
+<text text-anchor="start" x="438.36" y="-33.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">benefit_no</text>
+<polygon fill="#f5f5f5" stroke="none" points="488.34,-24.6 488.34,-47.4 531.13,-47.4 531.13,-24.6 488.34,-24.6"/>
+<text text-anchor="start" x="494.34" y="-33.9" font-family="Consolas" font-size="7.00" fill="#777777">SMALLINT</text>
+<polygon fill="#f5f5f5" stroke="none" points="531.13,-24.6 531.13,-47.4 567.35,-47.4 567.35,-24.6 531.13,-24.6"/>
+<text text-anchor="start" x="550.24" y="-34.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="280.86,-3 280.86,-24.6 567.35,-24.6 567.35,-3 280.86,-3"/>
+<text text-anchor="start" x="286.86" y="-11.4" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 9개 컬럼 더 있음</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="279.86" y="-71.2" width="288.49" height="69.2" rx="5" ry="5"/></g>
+<!-- member_grade&#45;&gt;member_grade_benefit -->
+<g id="member__all_c1_edge1" class="edge">
+<title>member_grade:e&#45;&gt;member_grade_benefit:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M226.27,-148.72C259.96,-141.4 240.14,-76.93 266.63,-61.91"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="220.58,-152.81 219.88,-145.85 221.27,-145.71 221.97,-152.67 220.58,-152.81"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-149.4 223.02,-149.05"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="224.06,-152.46 223.36,-145.5 224.76,-145.36 225.46,-152.32 224.06,-152.46"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="223.02,-149.05 226.5,-148.7"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="272.75,-60.47 280.28,-61.94 276.45,-59.6 279.27,-58.94 279.27,-58.94 279.27,-58.94 276.45,-59.6 278.84,-55.8 272.75,-60.47"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="268.52" cy="-61.47" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_grade_history -->
+<g id="member__all_c1_node3" class="node">
+<title>member_grade_history</title>
+<rect class="hd" fill="#2b2b2b" x="277.53" y="-256.2" width="293.14" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="281.53" y="-241.60" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="298.03" y="-241.60" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원 등급 이력     </text>
+<text text-anchor="start" x="380.53" y="-241.60" font-family="Malgun Gothic" font-size="8.00" fill="#bdbdbd">  member_grade_history            </text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-209.2 278.53,-232 416.53,-232 416.53,-209.2 278.53,-209.2"/>
+<text text-anchor="start" x="284.53" y="-218.9" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">등급 이력 회원 아이디</text>
+<text text-anchor="start" x="352.03" y="-218.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">             </text>
+<polygon fill="#ffffff" stroke="none" points="416.53,-209.2 416.53,-232 494.51,-232 494.51,-209.2 416.53,-209.2"/>
+<text text-anchor="start" x="422.53" y="-218.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="494.51,-209.2 494.51,-232 533.45,-232 533.45,-209.2 494.51,-209.2"/>
+<text text-anchor="start" x="500.51" y="-218.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="533.45,-209.2 533.45,-232 569.67,-232 569.67,-209.2 533.45,-209.2"/>
+<text text-anchor="start" x="539.45" y="-219.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="278.53,-186.4 278.53,-209.2 416.53,-209.2 416.53,-186.4 278.53,-186.4"/>
+<text text-anchor="start" x="284.53" y="-196.1" font-family="Malgun Gothic" font-weight="bold" font-size="9.00" fill="#111111">회원 등급 이력 번호</text>
+<text text-anchor="start" x="345.28" y="-196.1" font-family="Malgun Gothic" font-size="9.00" fill="#111111">            </text>
+<polygon fill="#f5f5f5" stroke="none" points="416.53,-186.4 416.53,-209.2 494.51,-209.2 494.51,-186.4 416.53,-186.4"/>
+<text text-anchor="start" x="422.53" y="-195.4" font-family="Consolas" font-size="8.00" fill="#9a9a9a">history_no</text>
+<polygon fill="#f5f5f5" stroke="none" points="494.51,-186.4 494.51,-209.2 533.45,-209.2 533.45,-186.4 494.51,-186.4"/>
+<text text-anchor="start" x="500.51" y="-195.7" font-family="Consolas" font-size="7.00" fill="#777777">INT</text>
+<polygon fill="#f5f5f5" stroke="none" points="533.45,-186.4 533.45,-209.2 569.67,-209.2 569.67,-186.4 533.45,-186.4"/>
+<text text-anchor="start" x="552.56" y="-196.4" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-163.6 278.53,-186.4 416.53,-186.4 416.53,-163.6 278.53,-163.6"/>
+<text text-anchor="start" x="284.53" y="-172.3" font-family="Malgun Gothic" font-size="9.00" fill="#111111">이전 회원 등급 코드            </text>
+<polygon fill="#ffffff" stroke="none" points="416.53,-163.6 416.53,-186.4 494.51,-186.4 494.51,-163.6 416.53,-163.6"/>
+<text text-anchor="start" x="422.53" y="-172.6" font-family="Consolas" font-size="8.00" fill="#9a9a9a">prev_grade_code</text>
+<polygon fill="#ffffff" stroke="none" points="494.51,-163.6 494.51,-186.4 533.45,-186.4 533.45,-163.6 494.51,-163.6"/>
+<text text-anchor="start" x="500.51" y="-172.9" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="533.45,-163.6 533.45,-186.4 569.67,-186.4 569.67,-163.6 533.45,-163.6"/>
+<text text-anchor="start" x="552.56" y="-173.6" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#777777">FK</text>
+<polygon fill="#f5f5f5" stroke="none" points="278.53,-140.8 278.53,-163.6 416.53,-163.6 416.53,-140.8 278.53,-140.8"/>
+<text text-anchor="start" x="284.53" y="-149.5" font-family="Malgun Gothic" font-size="9.00" fill="#111111">적용 회원 등급 코드            </text>
+<polygon fill="#f5f5f5" stroke="none" points="416.53,-140.8 416.53,-163.6 494.51,-163.6 494.51,-140.8 416.53,-140.8"/>
+<text text-anchor="start" x="422.53" y="-149.8" font-family="Consolas" font-size="8.00" fill="#9a9a9a">grade_code</text>
+<polygon fill="#f5f5f5" stroke="none" points="494.51,-140.8 494.51,-163.6 533.45,-163.6 533.45,-140.8 494.51,-140.8"/>
+<text text-anchor="start" x="500.51" y="-150.1" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#f5f5f5" stroke="none" points="533.45,-140.8 533.45,-163.6 569.67,-163.6 569.67,-140.8 533.45,-140.8"/>
+<text text-anchor="start" x="552.56" y="-150.8" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#777777">FK</text>
+<polygon fill="#ffffff" stroke="none" points="278.53,-119.2 278.53,-140.8 569.67,-140.8 569.67,-119.2 278.53,-119.2"/>
+<text text-anchor="start" x="284.53" y="-127.6" font-family="Malgun Gothic" font-size="8.00" fill="#9a9a9a">+ 11개 컬럼 더 있음</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="277.53" y="-233" width="293.14" height="114.8" rx="5" ry="5"/></g>
+<!-- member_grade&#45;&gt;member_grade_history -->
+<g id="member__all_c1_edge3" class="edge">
+<title>member_grade:e&#45;&gt;member_grade_history:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M226.31,-149.47C242.09,-149.8 250.11,-151.25 263.76,-151.89"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="220.2,-152.91 220.27,-145.91 221.67,-145.92 221.6,-152.92 220.2,-152.91"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-149.4 223.03,-149.44"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="223.7,-152.94 223.77,-145.94 225.17,-145.96 225.1,-152.96 223.7,-152.94"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="223.03,-149.44 226.53,-149.47"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.23,-152.04 277.16,-155.34 274.04,-152.12 276.93,-152.19 276.93,-152.19 276.93,-152.19 274.04,-152.12 277.3,-149.04 270.23,-152.04"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="265.89" cy="-151.94" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_grade&#45;&gt;member_grade_history -->
+<g id="member__all_c1_edge4" class="edge">
+<title>member_grade:e&#45;&gt;member_grade_history:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M229.22,-150.57C244.34,-154.48 250.34,-167.19 263.95,-172.57"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="219.81,-152.96 220.65,-146.01 222.04,-146.18 221.2,-153.13 219.81,-152.96"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="219.53,-149.4 223.01,-149.82"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="226.24" cy="-150.21" rx="2.8" ry="2.8"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.35,-173.71 276.68,-178.05 274.09,-174.38 276.94,-174.89 276.94,-174.89 276.94,-174.89 274.09,-174.38 277.79,-171.85 270.35,-173.71"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="266.07" cy="-172.95" rx="2.8" ry="2.8"/>
+</g>
+<!-- member_account -->
+<g id="member__all_c1_node4" class="node">
+<title>member_account</title>
+<rect class="hd" fill="#bdbdbd" x="13.2" y="-257.2" width="195.13000000000002" height="21.19999999999999" rx="5" ry="5"/>
+<text text-anchor="start" x="17.2" y="-242.60" font-family="Malgun Gothic" font-size="11.00" fill="white">   </text>
+<text text-anchor="start" x="33.7" y="-242.60" font-family="Malgun Gothic" font-weight="bold" font-size="11.00" fill="white">회원  </text>
+<text text-anchor="start" x="61.2" y="-242.60" font-family="Malgun Gothic" font-size="8.00" fill="#f2f2f2">  member_account      </text>
+<polygon fill="#ffffff" stroke="none" points="14.2,-210.2 14.2,-233 93.7,-233 93.7,-210.2 14.2,-210.2"/>
+<text text-anchor="start" x="20.2" y="-218.9" font-family="Malgun Gothic" font-size="9.00" fill="#111111">회원 아이디       </text>
+<polygon fill="#ffffff" stroke="none" points="93.7,-210.2 93.7,-233 145.29,-233 145.29,-210.2 93.7,-210.2"/>
+<text text-anchor="start" x="99.7" y="-219.2" font-family="Consolas" font-size="8.00" fill="#9a9a9a">member_id</text>
+<polygon fill="#ffffff" stroke="none" points="145.29,-210.2 145.29,-233 184.23,-233 184.23,-210.2 145.29,-210.2"/>
+<text text-anchor="start" x="151.29" y="-219.5" font-family="Consolas" font-size="7.00" fill="#777777">VARCHAR</text>
+<polygon fill="#ffffff" stroke="none" points="184.23,-210.2 184.23,-233 207.33,-233 207.33,-210.2 184.23,-210.2"/>
+<text text-anchor="start" x="190.23" y="-220.2" font-family="Malgun Gothic" font-weight="bold" font-size="8.00" fill="#000000">PK</text>
+
+<rect class="box" fill="none" stroke="#dddddd" x="13.2" y="-234" width="195.13000000000002" height="24.80000000000001" rx="5" ry="5"/></g>
+<!-- member_account&#45;&gt;member_grade_history -->
+<g id="member__all_c1_edge2" class="edge">
+<title>member_account:e&#45;&gt;member_grade_history:w</title>
+<path fill="none" stroke="#555555" stroke-width="0.9" d="M215.14,-221.58C235.79,-221.47 245.41,-220.89 263.68,-220.68"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="209.04,-225.1 209.03,-218.1 210.43,-218.09 210.44,-225.09 209.04,-225.1"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="208.33,-221.6 211.83,-221.59"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="212.54,-225.09 212.53,-218.09 213.93,-218.09 213.94,-225.09 212.54,-225.09"/>
+<polyline fill="none" stroke="#555555" stroke-width="0.9" points="211.83,-221.59 215.33,-221.58"/>
+<polygon fill="#555555" stroke="#555555" stroke-width="0.9" points="270.23,-220.64 277.25,-223.75 274.03,-220.62 276.93,-220.6 276.93,-220.6 276.93,-220.6 274.03,-220.62 277.22,-217.45 270.23,-220.64"/>
+<ellipse fill="none" stroke="#555555" stroke-width="0.9" cx="265.89" cy="-220.66" rx="2.8" ry="2.8"/>
 </g>
 </g>
 </svg>
 
 </svg></template>
 <template id="svg-__all"><svg
- viewBox="0.00 0.00 458.51 328.96" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ viewBox="0.00 0.00 924.38 328.96" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="all_graph0" class="graph" transform="scale(1 1) rotate(0) translate(14.4 314.56)">
 
 <g id="all_clust1" class="cluster">
@@ -1170,12 +1566,17 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <polygon fill="#f7f7f7" stroke="#111111" points="0,0 0,-300.16 429.71,-300.16 429.71,0 0,0"/>
 <text text-anchor="middle" x="214.86" y="-280.86" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 기본</text>
 </g>
+<g id="all_clust2" class="cluster">
+<title>cluster_member_grading</title>
+<polygon fill="#f7f7f7" stroke="#111111" points="501.56,-7.31 501.56,-292.8 895.58,-292.8 895.58,-7.31 501.56,-7.31"/>
+<text text-anchor="middle" x="698.57" y="-273.5" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 등급</text>
+</g>
 <!-- member_account -->
 <g id="all_node1" class="node">
 <title>member_account</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="149.97,-241.76 20.11,-241.76 20.11,-200 149.97,-200 149.97,-241.76"/>
-<text text-anchor="middle" x="85.04" y="-225.38" font-family="Consolas" font-size="15.00">회원</text>
-<text text-anchor="middle" x="85.04" y="-207.38" font-family="Consolas" font-size="15.00">member_account</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="150.5,-242.2 20.64,-242.2 20.64,-200.44 150.5,-200.44 150.5,-242.2"/>
+<text text-anchor="middle" x="85.57" y="-225.82" font-family="Consolas" font-size="15.00">회원</text>
+<text text-anchor="middle" x="85.57" y="-207.82" font-family="Consolas" font-size="15.00">member_account</text>
 </g>
 <!-- member_login -->
 <g id="all_node2" class="node">
@@ -1187,9 +1588,9 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <!-- member_account&#45;&gt;member_login -->
 <g id="all_edge1" class="edge">
 <title>member_account&#45;&gt;member_login</title>
-<path fill="none" stroke="#9a9a9a" d="M89.81,-199.7C94.48,-178.92 101.61,-147.26 106.52,-125.4"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="103.66,-122.16 110.49,-123.7 110.19,-125.07 103.36,-123.53 103.66,-122.16"/>
-<polyline fill="none" stroke="#9a9a9a" points="107.23,-122.25 106.46,-125.66"/>
+<path fill="none" stroke="#9a9a9a" d="M90.24,-200.06C94.85,-179.08 101.9,-147.04 106.72,-125.09"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="103.85,-121.85 110.68,-123.36 110.38,-124.72 103.55,-123.22 103.85,-121.85"/>
+<polyline fill="none" stroke="#9a9a9a" points="107.42,-121.92 106.66,-125.34"/>
 </g>
 <!-- member_social_account -->
 <g id="all_node3" class="node">
@@ -1201,8 +1602,8 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <!-- member_account&#45;&gt;member_social_account -->
 <g id="all_edge2" class="edge">
 <title>member_account&#45;&gt;member_social_account</title>
-<path fill="none" stroke="#9a9a9a" d="M150.42,-202.62C160.24,-199.87 170.48,-197.01 180.61,-194.18"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="180.54,-194.2 188.13,-195.35 184.23,-193.17 186.96,-192.41 186.96,-192.41 186.96,-192.41 184.23,-193.17 186.43,-189.29 180.54,-194.2"/>
+<path fill="none" stroke="#9a9a9a" d="M150.76,-202.89C160.71,-200.08 171.09,-197.15 181.36,-194.25"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="181.38,-194.24 188.98,-195.37 185.07,-193.2 187.8,-192.43 187.8,-192.43 187.8,-192.43 185.07,-193.2 187.26,-189.31 181.38,-194.24"/>
 </g>
 <!-- member_body -->
 <g id="all_node4" class="node">
@@ -1214,9 +1615,9 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <!-- member_account&#45;&gt;member_body -->
 <g id="all_edge3" class="edge">
 <title>member_account&#45;&gt;member_body</title>
-<path fill="none" stroke="#9a9a9a" d="M150.43,-226.93C177.76,-229.46 209.42,-232.4 236.63,-234.92"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="239.56,-231.67 238.91,-238.64 237.52,-238.51 238.16,-231.54 239.56,-231.67"/>
-<polyline fill="none" stroke="#9a9a9a" points="239.93,-235.22 236.45,-234.9"/>
+<path fill="none" stroke="#9a9a9a" d="M150.8,-227.24C178.06,-229.72 209.64,-232.58 236.79,-235.05"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="239.7,-231.8 239.07,-238.77 237.67,-238.64 238.3,-231.67 239.7,-231.8"/>
+<polyline fill="none" stroke="#9a9a9a" points="240.08,-235.35 236.59,-235.03"/>
 </g>
 <!-- address -->
 <g id="all_node5" class="node">
@@ -1228,8 +1629,8 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <!-- member_account&#45;&gt;address -->
 <g id="all_edge4" class="edge">
 <title>member_account&#45;&gt;address</title>
-<path fill="none" stroke="#9a9a9a" d="M81.72,-199.82C76.31,-165.58 65.61,-97.81 59.53,-59.32"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="59.53,-59.28 61.54,-51.87 58.93,-55.49 58.49,-52.69 58.49,-52.69 58.49,-52.69 58.93,-55.49 55.32,-52.86 59.53,-59.28"/>
+<path fill="none" stroke="#9a9a9a" d="M82.18,-200.21C76.68,-165.89 65.79,-97.96 59.61,-59.39"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="59.6,-59.32 61.6,-51.91 58.99,-55.54 58.55,-52.74 58.55,-52.74 58.55,-52.74 58.99,-55.54 55.38,-52.91 59.6,-59.32"/>
 </g>
 <!-- member_refund_account -->
 <g id="all_node6" class="node">
@@ -1241,9 +1642,9 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <!-- member_account&#45;&gt;member_refund_account -->
 <g id="all_edge5" class="edge">
 <title>member_account&#45;&gt;member_refund_account</title>
-<path fill="none" stroke="#9a9a9a" d="M99.34,-199.82C123.55,-164.15 172.48,-92.1 197.89,-54.67"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="196.39,-50.65 202.18,-54.58 201.4,-55.74 195.6,-51.8 196.39,-50.65"/>
-<polyline fill="none" stroke="#9a9a9a" points="199.68,-52.03 197.71,-54.93"/>
+<path fill="none" stroke="#9a9a9a" d="M99.81,-200.21C123.92,-164.46 172.65,-92.24 197.96,-54.72"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="196.44,-50.71 202.25,-54.62 201.46,-55.78 195.66,-51.87 196.44,-50.71"/>
+<polyline fill="none" stroke="#9a9a9a" points="199.74,-52.08 197.78,-54.98"/>
 </g>
 <!-- member_withdrawal -->
 <g id="all_node7" class="node">
@@ -1255,14 +1656,59 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <!-- member_account&#45;&gt;member_withdrawal -->
 <g id="all_edge6" class="edge">
 <title>member_account&#45;&gt;member_withdrawal</title>
-<path fill="none" stroke="#9a9a9a" d="M128.56,-199.56C172.15,-178.21 239.01,-145.46 283.61,-123.62"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="284.35,-119.36 287.43,-125.65 286.17,-126.27 283.09,-119.98 284.35,-119.36"/>
-<polyline fill="none" stroke="#9a9a9a" points="286.52,-122.2 283.37,-123.74"/>
+<path fill="none" stroke="#9a9a9a" d="M128.71,-200.06C172.3,-178.59 239.42,-145.53 284.01,-123.56"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="284.74,-119.29 287.84,-125.57 286.58,-126.19 283.49,-119.91 284.74,-119.29"/>
+<polyline fill="none" stroke="#9a9a9a" points="286.92,-122.12 283.78,-123.67"/>
+</g>
+<!-- member_grade_history -->
+<g id="all_node10" class="node">
+<title>member_grade_history</title>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="690.9,-59.07 511.56,-59.07 511.56,-17.31 690.9,-17.31 690.9,-59.07"/>
+<text text-anchor="middle" x="601.23" y="-42.69" font-family="Consolas" font-size="15.00">회원 등급 이력</text>
+<text text-anchor="middle" x="601.23" y="-24.69" font-family="Consolas" font-size="15.00">member_grade_history</text>
+</g>
+<!-- member_account&#45;&gt;member_grade_history -->
+<g id="all_edge9" class="edge">
+<title>member_account&#45;&gt;member_grade_history</title>
+<path fill="none" stroke="#9a9a9a" d="M145.73,-199.95C242.73,-165.5 433.02,-97.93 534.22,-61.98"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="534.14,-62.01 541.79,-62.64 537.76,-60.73 540.43,-59.78 540.43,-59.78 540.43,-59.78 537.76,-60.73 539.69,-56.7 534.14,-62.01"/>
+</g>
+<!-- member_grade -->
+<g id="all_node8" class="node">
+<title>member_grade</title>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="687.1,-176.29 565.49,-176.29 565.49,-134.53 687.1,-134.53 687.1,-176.29"/>
+<text text-anchor="middle" x="626.29" y="-159.91" font-family="Consolas" font-size="15.00">회원 등급</text>
+<text text-anchor="middle" x="626.29" y="-141.91" font-family="Consolas" font-size="15.00">member_grade</text>
+</g>
+<!-- member_grade&#45;&gt;member_account -->
+<g id="all_edge7" class="edge">
+<title>member_grade&#45;&gt;member_account</title>
+<path fill="none" stroke="#9a9a9a" d="M565.05,-162.88C464.64,-175.12 265.45,-199.39 158.12,-212.48"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="158.15,-212.47 150.82,-210.19 154.34,-212.94 151.53,-213.28 151.53,-213.28 151.53,-213.28 154.34,-212.94 151.58,-216.45 158.15,-212.47"/>
+</g>
+<!-- member_grade_benefit -->
+<g id="all_node9" class="node">
+<title>member_grade_benefit</title>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="885.58,-254.4 706.24,-254.4 706.24,-212.64 885.58,-212.64 885.58,-254.4"/>
+<text text-anchor="middle" x="795.91" y="-238.02" font-family="Consolas" font-size="15.00">회원 등급 혜택</text>
+<text text-anchor="middle" x="795.91" y="-220.02" font-family="Consolas" font-size="15.00">member_grade_benefit</text>
+</g>
+<!-- member_grade&#45;&gt;member_grade_benefit -->
+<g id="all_edge8" class="edge">
+<title>member_grade&#45;&gt;member_grade_benefit</title>
+<path fill="none" stroke="#9a9a9a" d="M672.64,-176.76C694.42,-186.79 720.5,-198.8 743.05,-209.18"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="742.96,-209.14 748,-214.93 746.44,-210.74 749.01,-211.93 749.01,-211.93 749.01,-211.93 746.44,-210.74 750.63,-209.2 742.96,-209.14"/>
+</g>
+<!-- member_grade&#45;&gt;member_grade_history -->
+<g id="all_edge10" class="edge">
+<title>member_grade&#45;&gt;member_grade_history</title>
+<path fill="none" stroke="#9a9a9a" d="M621.75,-134.18C617.69,-115.18 611.71,-87.18 607.25,-66.31"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="607.27,-66.43 608.89,-58.93 606.47,-62.68 605.88,-59.91 605.88,-59.91 605.88,-59.91 606.47,-62.68 602.73,-60.24 607.27,-66.43"/>
 </g>
 </g>
 </svg>
 </template>
-<script>window.ERD = {"stages":[{"prefix":"member","name":"고객","all":"member__all","groups":["member_basic"]}],"groups":{"member_basic":{"title":"회원 기본","full":"고객 - 회원 기본","desc":"구매 고객 계정(본인인증 필수·프로필·가입 수단/경로·상태), 로그인 상태(마지막 로그인·로그인 잠금·휴면 안내, 1:1), 소셜 계정 연동(제공자별 1개), 체형(사이즈 추천·비슷한 체형 리뷰), 배송지(기본 배송지 1개), 환불 계좌(1:1), 탈퇴 정보(사유·의견, 1:1).","tables":["member_account","member_login","member_social_account","member_body","address","member_refund_account","member_withdrawal"],"ext":[],"hideAudit":false},"member__all":{"title":"고객 전체","full":"고객 - 전체","desc":"고객 영역의 테이블 7개를 한 장에 모았습니다. 묶음 상자는 세부 영역이고, 상자 제목을 누르면 그 세부 영역으로 이동합니다.","tables":["member_account","member_login","member_social_account","member_body","address","member_refund_account","member_withdrawal"],"ext":[],"hideAudit":false,"area":true}},"tables":{"member_account":{"name":"member_account","group":"member_basic","logical":"회원","note":"구매 고객 계정. 브랜드 관리자·운영자 계정은 별도 테이블","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 아이디","note":"가입 시 직접 입력(소셜 가입도 한 번 정함). 영문 소문자로 시작, 영문 소문자·숫자 4~20자 (앱 검증). 변경 불가, 탈퇴 후에도 행이 남아 재사용 불가"},{"name":"password_hash","type":"VARCHAR(255)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 비밀번호","note":"평문은 어디에도 저장하지 않고(로그 포함) bcrypt 단방향 해시(일방향 암호화, 개인정보 안전성 확보조치 기준). 솔트는 해시 문자열에 포함되어 별도 컬럼 없음. 원래 값으로 복원 불가라 비밀번호 찾기는 재설정만. 소셜 전용 가입은 NULL"},{"name":"name","type":"VARCHAR(50)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 이름","note":"실명. 가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 탈퇴 시 탈퇴회원"},{"name":"nickname","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 닉네임","note":"리뷰·문의에 표시. 2~12자 한글/영문/숫자/_ (앱 검증). 탈퇴 시 deleted_{아이디}"},{"name":"email","type":"VARCHAR(100)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 이메일","note":"평문 저장(법적 암호화 대상 아님, 암호화하면 UNIQUE·대소문자 무시 비교·아이디 찾기가 안 됨). 관리자 화면은 마스킹, 조회는 접근 기록. 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{아이디}@deleted.local로 마스킹"},{"name":"phone_enc","type":"VARCHAR(255)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 휴대폰 번호","note":"가입 시 휴대폰 본인인증 결과로 채움(활동 회원은 항상 값 있음, 앱 검증). 탈퇴 시 NULL. AES-256 암호문. 문자 발송·화면 표시처럼 실제 번호가 필요할 때 복호화. 같은 번호도 매번 다른 암호문(IV)이라 검색에는 phone_hash 사용. 법적 의무는 아니지만 유출 시 피해(스팸·피싱)가 커서 추가 보호"},{"name":"phone_hash","type":"CHAR(64)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 휴대폰 번호 검색값","note":"HMAC-SHA256(서버 비밀 키). 탈퇴 시 NULL. 같은 번호면 항상 같은 값이라 아이디 찾기·같은 번호 가입 확인에 검색용으로 사용. 번호는 경우의 수가 약 1억 개라 단순 SHA-256은 전부 대입해 풀리므로 키를 섞음"},{"name":"birth_date","type":"DATE","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 생년월일","note":"가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 만 14세 미만 가입 불가(앱 검증). 생일 쿠폰, 연령대 맞춤 추천 기본값"},{"name":"gender","type":"CHAR(1)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 성별","note":"F/M. 가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 맞춤 추천 피드 기본값"},{"name":"profile_image_url","type":"VARCHAR(500)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 프로필 사진 경로","note":"선택 입력. 리뷰·스타일 게시글에 표시. 탈퇴 시 NULL"},{"name":"profile_intro","type":"VARCHAR(200)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 소개글","note":"선택 입력. 탈퇴 시 NULL"},{"name":"ci_hash","type":"CHAR(64)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 중복 가입 확인값(CI)","note":"휴대폰 본인인증 시 본인확인기관이 주는 연계정보(CI, 같은 사람이면 어느 사이트든 같은 값)를 HMAC-SHA256(서버 비밀 키)으로 저장. 원래 값은 볼 일 없이 비교만 함. 같은 사람은 계정 1개만 허용(가입 혜택 반복 수령 방지). 탈퇴 시 member_withdrawal.ci_hash로 옮기고(30일 재가입 제한용) 여기는 NULL"},{"name":"join_method","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 가입 수단","note":"EMAIL/KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 처음 가입한 방법 (이후 연동한 소셜 계정은 member_social_account)"},{"name":"join_channel","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 가입 경로","note":"PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID"},{"name":"verified_at","type":"DATETIME","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 본인인증일시","note":"가입 시 휴대폰 본인인증 필수. 재인증 시 갱신"},{"name":"status","type":"VARCHAR(20)","keys":[],"nn":true,"def":"'ACTIVE'","inc":false,"ref":"","logical":"회원 상태","note":"ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 로그인 잠금은 상태가 아니라 member_login.locked_until로 판단"},{"name":"suspended_until","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 이용 정지 종료일시","note":"SUSPENDED 기한. 지나면 배치로 ACTIVE"},{"name":"nickname_changed_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 닉네임 변경일시","note":"변경 후 30일간 재변경 불가"},{"name":"withdrawn_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 탈퇴일시","note":"탈퇴 시 행은 남기고(아이디 재사용 방지, 거래 기록 참조) 마스킹: 이름·닉네임·이메일 변경, 휴대폰·ci_hash·프로필 사진·소개글 NULL. 로그인 상태·소셜 계정·체형·배송지·환불 계좌 행은 삭제. 탈퇴 사유·의견은 member_withdrawal"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 가입일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 정보 수정일시","note":"회원이 정보를 바꿀 때만 갱신. 로그인할 때마다 바뀌는 값은 member_login에 두어 이 값이 로그인으로 바뀌지 않게 함"}],"indexes":[{"name":"uk_member_email","pk":false,"unique":true,"cols":"email","note":""},{"name":"uk_member_nickname","pk":false,"unique":true,"cols":"nickname","note":""},{"name":"uk_member_ci","pk":false,"unique":true,"cols":"ci_hash","note":"같은 사람(CI)은 계정 1개. NULL(탈퇴)은 중복 허용"},{"name":"ix_member_phone_hash","pk":false,"unique":false,"cols":"phone_hash","note":"휴대폰 번호로 아이디 찾기·가입 확인"}],"out":[],"in":[{"table":"member_login","col":"member_id","one":true},{"table":"member_social_account","col":"member_id","one":false},{"table":"member_body","col":"member_id","one":true},{"table":"address","col":"member_id","one":false},{"table":"member_refund_account","col":"member_id","one":true},{"table":"member_withdrawal","col":"member_id","one":true}]},"member_login":{"name":"member_login","group":"member_basic","logical":"회원 로그인 상태","note":"member_account와 1:1, 가입 시 함께 생성, 탈퇴 시 삭제. 로그인할 때마다 바뀌는 값을 분리해 회원 정보 수정일시가 로그인으로 바뀌지 않게 하고, 회원 행 수정과의 잠금 경합을 줄임","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"로그인 상태 회원 아이디","note":"member_account와 1:1"},{"name":"last_login_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 마지막 로그인일시","note":"휴면 전환 배치 기준. 가입 직후는 NULL"},{"name":"login_fail_count","type":"TINYINT","keys":[],"nn":true,"def":"0","inc":false,"ref":"","logical":"회원 연속 로그인 실패 횟수","note":"로그인 성공 시 0으로 초기화"},{"name":"locked_until","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 로그인 잠금 해제일시","note":"5회 연속 실패 시 30분 뒤 시각으로 설정. 지나면 자동 해제(배치 불필요)"},{"name":"dormant_notice_sent_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 휴면 예정 안내일시","note":"마지막 로그인 11개월 시점에 안내, 1년 미접속 시 DORMANT. 안내 중복 발송 방지(NULL인 회원만 발송)와 안내 후 30일 경과 확인에 사용. 다시 로그인하면 NULL로 초기화"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"로그인 상태 등록일시","note":"가입일시와 같음"},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"로그인 상태 수정일시","note":""}],"indexes":[{"name":"ix_member_login_last","pk":false,"unique":false,"cols":"last_login_at","note":"휴면 안내·전환 대상 배치 조회 (member_account.status와 조인)"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]},"member_social_account":{"name":"member_social_account","group":"member_basic","logical":"소셜 계정 연동","note":"한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개). 연동 해제·탈퇴 시 제공자 연동 해제 API 호출 후 행 삭제. 비밀번호 없는 소셜 전용 회원은 마지막 남은 소셜 계정을 해제할 수 없음(앱 검증, 로그인 수단이 사라지므로)","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"소셜 연동 회원 아이디","note":""},{"name":"provider","type":"VARCHAR(20)","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"소셜 제공자","note":"KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 회원당 제공자별 1개라 (회원 아이디, 제공자)를 PK로 사용"},{"name":"provider_user_id","type":"VARCHAR(100)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"소셜 제공자 회원 식별값","note":"소셜 서비스의 회원 고유 ID"},{"name":"provider_email","type":"VARCHAR(100)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"소셜 계정 이메일","note":"제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음). 소셜 로그인 시 바뀌었으면 갱신"},{"name":"refresh_token_enc","type":"VARCHAR(1000)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"소셜 연동 해제용 토큰","note":"제공자가 준 리프레시 토큰의 AES-256 암호문. 연동 해제·탈퇴 시 해제(revoke) API에 사용(애플은 탈퇴 시 해제 의무, 네이버도 토큰 필요). 카카오는 서버 키로 해제 가능해 NULL 허용. 액세스 토큰은 금방 만료되어 저장 안 함"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"소셜 계정 연동일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"소셜 계정 정보 수정일시","note":""}],"indexes":[{"name":"uk_member_social_account_provider","pk":false,"unique":true,"cols":"provider, provider_user_id","note":"같은 소셜 계정은 한 회원에게만"},{"name":"","pk":true,"unique":false,"cols":"member_id, provider","note":"회원당 제공자별 1개. member_id 선두라 FK 인덱스 겸용"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":false}],"in":[]},"member_body":{"name":"member_body","group":"member_basic","logical":"회원 체형","note":"member_account와 1:1. 사이즈 추천, \"나와 비슷한 체형\" 리뷰 필터","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"체형 정보 회원 아이디","note":"member_account와 1:1"},{"name":"height_cm","type":"SMALLINT","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 키(cm)","note":""},{"name":"weight_kg","type":"SMALLINT","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 몸무게(kg)","note":""},{"name":"top_size","type":"VARCHAR(10)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 평소 상의 사이즈","note":"XS/S/M/L/XL/XXL/FREE"},{"name":"bottom_size","type":"VARCHAR(10)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 평소 하의 사이즈","note":"허리 inch(25~36) 또는 XS~XXL"},{"name":"shoe_size_mm","type":"SMALLINT","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 평소 신발 사이즈(mm)","note":"220~300, 5 단위 (앱 검증)"},{"name":"is_review_public","type":"CHAR(1)","keys":[],"nn":true,"def":"'Y'","inc":false,"ref":"","logical":"회원 체형 리뷰 공개 기본값","note":"Y/N. 리뷰 작성 화면의 \"체형 공개\" 체크박스 기본값. 리뷰를 쓸 때 그 시점의 체형과 공개 여부를 리뷰에 복사해 저장(상품 단계 리뷰 테이블). 나중에 체형을 바꿔도 지난 리뷰의 체형은 그대로"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 체형 등록일시","note":"처음 입력한 시각 (가입 후 나중에 입력 가능)"},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 체형 수정일시","note":""}],"indexes":[],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]},"address":{"name":"address","group":"member_basic","logical":"배송지","note":"회원당 여러 개, 기본 배송지는 1개","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"배송지 소유 회원 아이디","note":""},{"name":"address_no","type":"SMALLINT","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 번호","note":"회원별 1부터. 앱이 그 회원의 MAX+1로 부여 (AUTO_INCREMENT 아님)"},{"name":"address_name","type":"VARCHAR(20)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 이름","note":"집/회사"},{"name":"recipient_name","type":"VARCHAR(50)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 받는 분 이름","note":""},{"name":"recipient_phone_enc","type":"VARCHAR(255)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 받는 분 연락처","note":"AES-256 암호문"},{"name":"zipcode","type":"CHAR(5)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 우편번호","note":"5자리 국가기초구역번호"},{"name":"address1","type":"VARCHAR(200)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 기본 주소","note":"도로명 주소"},{"name":"address2","type":"VARCHAR(200)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 상세 주소","note":""},{"name":"is_default","type":"CHAR(1)","keys":[],"nn":true,"def":"'N'","inc":false,"ref":"","logical":"기본 배송지 여부","note":"Y/N"},{"name":"delivery_request","type":"VARCHAR(100)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 배송 요청사항","note":"예: 부재 시 문 앞. 주문 시 기본값으로 복사"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"배송지 등록일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 수정일시","note":""}],"indexes":[{"name":"","pk":true,"unique":false,"cols":"member_id, address_no","note":"member_id 선두라 FK 인덱스 겸용"},{"name":"ux_address_default","pk":false,"unique":true,"cols":"CASE WHEN is_default = 'Y' THEN member_id END","note":"회원당 기본 배송지 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":false}],"in":[]},"member_refund_account":{"name":"member_refund_account","group":"member_basic","logical":"회원 환불 계좌","note":"member_account와 1:1. 무통장·가상계좌 결제 취소 시 환불받을 계좌","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"환불 계좌 회원 아이디","note":"member_account와 1:1"},{"name":"bank_code","type":"CHAR(3)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"환불 은행 코드","note":"금융결제원 3자리 은행 코드 (예: 004 국민, 088 신한)"},{"name":"account_no_enc","type":"VARCHAR(255)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"환불 계좌번호","note":"AES-256 암호문. 계좌번호는 법정 암호화 대상. 화면에는 뒤 4자리만 표시"},{"name":"account_holder","type":"VARCHAR(50)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"환불 계좌 예금주","note":""},{"name":"verified_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"환불 계좌 실명 확인일시","note":"예금주 조회 API로 확인. NULL이면 미확인(환불 전 확인)"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"환불 계좌 등록일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"환불 계좌 수정일시","note":""}],"indexes":[],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]},"member_withdrawal":{"name":"member_withdrawal","group":"member_basic","logical":"회원 탈퇴 정보","note":"member_account와 1:1. 탈퇴한 회원만 행이 생김(아이디 재사용 불가라 회원당 최대 1번). 탈퇴 상태·일시는 member_account","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"탈퇴 회원 아이디","note":"member_account와 1:1"},{"name":"withdraw_reason","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 탈퇴 사유","note":"LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC. 탈퇴 신청 시 선택, 사유별 통계"},{"name":"withdraw_comment","type":"VARCHAR(500)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 탈퇴 의견","note":"탈퇴 신청 시 자유 의견. 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL(배치)"},{"name":"ci_hash","type":"CHAR(64)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"재가입 제한 확인값(CI)","note":"탈퇴 시 member_account.ci_hash를 옮겨 둠. 약관에 명시한 탈퇴 후 30일 재가입 제한(신규 가입 혜택 반복 수령 방지) 확인용. 30일 지나면 NULL(배치)"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 탈퇴 신청일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 탈퇴 정보 수정일시","note":"탈퇴 의견 NULL 처리 배치 등"}],"indexes":[{"name":"ix_member_withdrawal_reason","pk":false,"unique":false,"cols":"withdraw_reason","note":"탈퇴 사유별 집계"},{"name":"ix_member_withdrawal_ci","pk":false,"unique":false,"cols":"ci_hash","note":"가입 시 30일 내 탈퇴 이력 확인"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]}},"counts":{"tables":7,"refs":6,"groups":1},"layout":{}};</script>
+<script>window.ERD = {"stages":[{"prefix":"member","name":"고객","all":"member__all","groups":["member_basic","member_grading"]}],"groups":{"member_basic":{"title":"회원 기본","full":"고객 - 회원 기본","desc":"구매 고객 계정(본인인증 필수·프로필·가입 수단/경로·상태), 로그인 상태(마지막 로그인·로그인 잠금·휴면 안내, 1:1), 소셜 계정 연동(제공자별 1개), 체형(사이즈 추천·비슷한 체형 리뷰), 배송지(기본 배송지 1개), 환불 계좌(1:1), 탈퇴 정보(사유·의견, 1:1).","tables":["member_account","member_login","member_social_account","member_body","address","member_refund_account","member_withdrawal"],"ext":["member_grade"],"hideAudit":false},"member_grading":{"title":"회원 등급","full":"고객 - 회원 등급","desc":"회원 등급 기준표(GREEN/BLUE/GOLD/BLACK, 최소 점수·적립률), 등급별 혜택 목록, 등급 이력(가입·월 산정·예외 승급·관리자 조정, 산정 당시 점수). 회원등급점수 = 최근 6개월 배송완료 금액 + 활동포인트.","tables":["member_grade","member_grade_benefit","member_grade_history"],"ext":["member_account"],"hideAudit":false},"member__all":{"title":"고객 전체","full":"고객 - 전체","desc":"고객 영역의 테이블 10개를 한 장에 모았습니다. 묶음 상자는 세부 영역이고, 상자 제목을 누르면 그 세부 영역으로 이동합니다.","tables":["member_account","member_login","member_social_account","member_body","address","member_refund_account","member_withdrawal","member_grade","member_grade_benefit","member_grade_history"],"ext":[],"hideAudit":false,"area":true}},"tables":{"member_account":{"name":"member_account","group":"member_basic","logical":"회원","note":"구매 고객 계정. 브랜드 관리자·운영자 계정은 별도 테이블","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 아이디","note":"가입 시 직접 입력(소셜 가입도 한 번 정함). 영문 소문자로 시작, 영문 소문자·숫자 4~20자 (앱 검증). 변경 불가, 탈퇴 후에도 행이 남아 재사용 불가"},{"name":"password_hash","type":"VARCHAR(255)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 비밀번호","note":"평문은 어디에도 저장하지 않고(로그 포함) bcrypt 단방향 해시(일방향 암호화, 개인정보 안전성 확보조치 기준). 솔트는 해시 문자열에 포함되어 별도 컬럼 없음. 원래 값으로 복원 불가라 비밀번호 찾기는 재설정만. 소셜 전용 가입은 NULL"},{"name":"name","type":"VARCHAR(50)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 이름","note":"실명. 가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 탈퇴 시 탈퇴회원"},{"name":"nickname","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 닉네임","note":"리뷰·문의에 표시. 2~12자 한글/영문/숫자/_ (앱 검증). 탈퇴 시 deleted_{아이디}"},{"name":"email","type":"VARCHAR(100)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 이메일","note":"평문 저장(법적 암호화 대상 아님, 암호화하면 UNIQUE·대소문자 무시 비교·아이디 찾기가 안 됨). 관리자 화면은 마스킹, 조회는 접근 기록. 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{아이디}@deleted.local로 마스킹"},{"name":"phone_enc","type":"VARCHAR(255)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 휴대폰 번호","note":"가입 시 휴대폰 본인인증 결과로 채움(활동 회원은 항상 값 있음, 앱 검증). 탈퇴 시 NULL. AES-256 암호문. 문자 발송·화면 표시처럼 실제 번호가 필요할 때 복호화. 같은 번호도 매번 다른 암호문(IV)이라 검색에는 phone_hash 사용. 법적 의무는 아니지만 유출 시 피해(스팸·피싱)가 커서 추가 보호"},{"name":"phone_hash","type":"CHAR(64)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 휴대폰 번호 검색값","note":"HMAC-SHA256(서버 비밀 키). 탈퇴 시 NULL. 같은 번호면 항상 같은 값이라 아이디 찾기·같은 번호 가입 확인에 검색용으로 사용. 번호는 경우의 수가 약 1억 개라 단순 SHA-256은 전부 대입해 풀리므로 키를 섞음"},{"name":"birth_date","type":"DATE","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 생년월일","note":"가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 만 14세 미만 가입 불가(앱 검증). 생일 쿠폰, 연령대 맞춤 추천 기본값"},{"name":"gender","type":"CHAR(1)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 성별","note":"F/M. 가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 맞춤 추천 피드 기본값"},{"name":"profile_image_url","type":"VARCHAR(500)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 프로필 사진 경로","note":"선택 입력. 리뷰·스타일 게시글에 표시. 탈퇴 시 NULL"},{"name":"profile_intro","type":"VARCHAR(200)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 소개글","note":"선택 입력. 탈퇴 시 NULL"},{"name":"ci_hash","type":"CHAR(64)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 중복 가입 확인값(CI)","note":"휴대폰 본인인증 시 본인확인기관이 주는 연계정보(CI, 같은 사람이면 어느 사이트든 같은 값)를 HMAC-SHA256(서버 비밀 키)으로 저장. 원래 값은 볼 일 없이 비교만 함. 같은 사람은 계정 1개만 허용(가입 혜택 반복 수령 방지). 탈퇴 시 member_withdrawal.ci_hash로 옮기고(30일 재가입 제한용) 여기는 NULL"},{"name":"join_method","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 가입 수단","note":"EMAIL/KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 처음 가입한 방법 (이후 연동한 소셜 계정은 member_social_account)"},{"name":"join_channel","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 가입 경로","note":"PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID"},{"name":"verified_at","type":"DATETIME","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 본인인증일시","note":"가입 시 휴대폰 본인인증 필수. 재인증 시 갱신"},{"name":"grade_code","type":"VARCHAR(20)","keys":["FK"],"nn":true,"def":"'GREEN'","inc":false,"ref":"member_grade.grade_code","logical":"회원 현재 등급 코드","note":"매월 1일 배치로 갱신(member_grade_history에 이력). 신규 가입은 GREEN"},{"name":"status","type":"VARCHAR(20)","keys":[],"nn":true,"def":"'ACTIVE'","inc":false,"ref":"","logical":"회원 상태","note":"ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 로그인 잠금은 상태가 아니라 member_login.locked_until로 판단"},{"name":"suspended_until","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 이용 정지 종료일시","note":"SUSPENDED 기한. 지나면 배치로 ACTIVE"},{"name":"nickname_changed_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 닉네임 변경일시","note":"변경 후 30일간 재변경 불가"},{"name":"withdrawn_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 탈퇴일시","note":"탈퇴 시 행은 남기고(아이디 재사용 방지, 거래 기록 참조) 마스킹: 이름·닉네임·이메일 변경, 휴대폰·ci_hash·프로필 사진·소개글 NULL. 로그인 상태·소셜 계정·체형·배송지·환불 계좌 행은 삭제. 탈퇴 사유·의견은 member_withdrawal"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 가입일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 정보 수정일시","note":"회원이 정보를 바꿀 때만 갱신. 로그인할 때마다 바뀌는 값은 member_login에 두어 이 값이 로그인으로 바뀌지 않게 함"}],"indexes":[{"name":"uk_member_email","pk":false,"unique":true,"cols":"email","note":""},{"name":"uk_member_nickname","pk":false,"unique":true,"cols":"nickname","note":""},{"name":"uk_member_ci","pk":false,"unique":true,"cols":"ci_hash","note":"같은 사람(CI)은 계정 1개. NULL(탈퇴)은 중복 허용"},{"name":"ix_member_phone_hash","pk":false,"unique":false,"cols":"phone_hash","note":"휴대폰 번호로 아이디 찾기·가입 확인"},{"name":"ix_member_grade_code","pk":false,"unique":false,"cols":"grade_code","note":"FK 인덱스, 등급별 회원 조회"}],"out":[{"col":"grade_code","table":"member_grade","pcol":"grade_code","one":false}],"in":[{"table":"member_login","col":"member_id","one":true},{"table":"member_social_account","col":"member_id","one":false},{"table":"member_body","col":"member_id","one":true},{"table":"address","col":"member_id","one":false},{"table":"member_refund_account","col":"member_id","one":true},{"table":"member_withdrawal","col":"member_id","one":true},{"table":"member_grade_history","col":"member_id","one":false}]},"member_login":{"name":"member_login","group":"member_basic","logical":"회원 로그인 상태","note":"member_account와 1:1, 가입 시 함께 생성, 탈퇴 시 삭제. 로그인할 때마다 바뀌는 값을 분리해 회원 정보 수정일시가 로그인으로 바뀌지 않게 하고, 회원 행 수정과의 잠금 경합을 줄임","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"로그인 상태 회원 아이디","note":"member_account와 1:1"},{"name":"last_login_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 마지막 로그인일시","note":"휴면 전환 배치 기준. 가입 직후는 NULL"},{"name":"login_fail_count","type":"TINYINT","keys":[],"nn":true,"def":"0","inc":false,"ref":"","logical":"회원 연속 로그인 실패 횟수","note":"로그인 성공 시 0으로 초기화"},{"name":"locked_until","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 로그인 잠금 해제일시","note":"5회 연속 실패 시 30분 뒤 시각으로 설정. 지나면 자동 해제(배치 불필요)"},{"name":"dormant_notice_sent_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 휴면 예정 안내일시","note":"마지막 로그인 11개월 시점에 안내, 1년 미접속 시 DORMANT. 안내 중복 발송 방지(NULL인 회원만 발송)와 안내 후 30일 경과 확인에 사용. 다시 로그인하면 NULL로 초기화"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"로그인 상태 등록일시","note":"가입일시와 같음"},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"로그인 상태 수정일시","note":""}],"indexes":[{"name":"ix_member_login_last","pk":false,"unique":false,"cols":"last_login_at","note":"휴면 안내·전환 대상 배치 조회 (member_account.status와 조인)"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]},"member_social_account":{"name":"member_social_account","group":"member_basic","logical":"소셜 계정 연동","note":"한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개). 연동 해제·탈퇴 시 제공자 연동 해제 API 호출 후 행 삭제. 비밀번호 없는 소셜 전용 회원은 마지막 남은 소셜 계정을 해제할 수 없음(앱 검증, 로그인 수단이 사라지므로)","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"소셜 연동 회원 아이디","note":""},{"name":"provider","type":"VARCHAR(20)","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"소셜 제공자","note":"KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 회원당 제공자별 1개라 (회원 아이디, 제공자)를 PK로 사용"},{"name":"provider_user_id","type":"VARCHAR(100)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"소셜 제공자 회원 식별값","note":"소셜 서비스의 회원 고유 ID"},{"name":"provider_email","type":"VARCHAR(100)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"소셜 계정 이메일","note":"제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음). 소셜 로그인 시 바뀌었으면 갱신"},{"name":"refresh_token_enc","type":"VARCHAR(1000)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"소셜 연동 해제용 토큰","note":"제공자가 준 리프레시 토큰의 AES-256 암호문. 연동 해제·탈퇴 시 해제(revoke) API에 사용(애플은 탈퇴 시 해제 의무, 네이버도 토큰 필요). 카카오는 서버 키로 해제 가능해 NULL 허용. 액세스 토큰은 금방 만료되어 저장 안 함"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"소셜 계정 연동일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"소셜 계정 정보 수정일시","note":""}],"indexes":[{"name":"uk_member_social_account_provider","pk":false,"unique":true,"cols":"provider, provider_user_id","note":"같은 소셜 계정은 한 회원에게만"},{"name":"","pk":true,"unique":false,"cols":"member_id, provider","note":"회원당 제공자별 1개. member_id 선두라 FK 인덱스 겸용"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":false}],"in":[]},"member_body":{"name":"member_body","group":"member_basic","logical":"회원 체형","note":"member_account와 1:1. 사이즈 추천, \"나와 비슷한 체형\" 리뷰 필터","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"체형 정보 회원 아이디","note":"member_account와 1:1"},{"name":"height_cm","type":"SMALLINT","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 키(cm)","note":""},{"name":"weight_kg","type":"SMALLINT","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 몸무게(kg)","note":""},{"name":"top_size","type":"VARCHAR(10)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 평소 상의 사이즈","note":"XS/S/M/L/XL/XXL/FREE"},{"name":"bottom_size","type":"VARCHAR(10)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 평소 하의 사이즈","note":"허리 inch(25~36) 또는 XS~XXL"},{"name":"shoe_size_mm","type":"SMALLINT","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 평소 신발 사이즈(mm)","note":"220~300, 5 단위 (앱 검증)"},{"name":"is_review_public","type":"CHAR(1)","keys":[],"nn":true,"def":"'Y'","inc":false,"ref":"","logical":"회원 체형 리뷰 공개 기본값","note":"Y/N. 리뷰 작성 화면의 \"체형 공개\" 체크박스 기본값. 리뷰를 쓸 때 그 시점의 체형과 공개 여부를 리뷰에 복사해 저장(상품 단계 리뷰 테이블). 나중에 체형을 바꿔도 지난 리뷰의 체형은 그대로"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 체형 등록일시","note":"처음 입력한 시각 (가입 후 나중에 입력 가능)"},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 체형 수정일시","note":""}],"indexes":[],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]},"address":{"name":"address","group":"member_basic","logical":"배송지","note":"회원당 여러 개, 기본 배송지는 1개","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"배송지 소유 회원 아이디","note":""},{"name":"address_no","type":"SMALLINT","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 번호","note":"회원별 1부터. 앱이 그 회원의 MAX+1로 부여 (AUTO_INCREMENT 아님)"},{"name":"address_name","type":"VARCHAR(20)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 이름","note":"집/회사"},{"name":"recipient_name","type":"VARCHAR(50)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 받는 분 이름","note":""},{"name":"recipient_phone_enc","type":"VARCHAR(255)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 받는 분 연락처","note":"AES-256 암호문"},{"name":"zipcode","type":"CHAR(5)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 우편번호","note":"5자리 국가기초구역번호"},{"name":"address1","type":"VARCHAR(200)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"배송지 기본 주소","note":"도로명 주소"},{"name":"address2","type":"VARCHAR(200)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 상세 주소","note":""},{"name":"is_default","type":"CHAR(1)","keys":[],"nn":true,"def":"'N'","inc":false,"ref":"","logical":"기본 배송지 여부","note":"Y/N"},{"name":"delivery_request","type":"VARCHAR(100)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 배송 요청사항","note":"예: 부재 시 문 앞. 주문 시 기본값으로 복사"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"배송지 등록일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"배송지 수정일시","note":""}],"indexes":[{"name":"","pk":true,"unique":false,"cols":"member_id, address_no","note":"member_id 선두라 FK 인덱스 겸용"},{"name":"ux_address_default","pk":false,"unique":true,"cols":"CASE WHEN is_default = 'Y' THEN member_id END","note":"회원당 기본 배송지 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":false}],"in":[]},"member_refund_account":{"name":"member_refund_account","group":"member_basic","logical":"회원 환불 계좌","note":"member_account와 1:1. 무통장·가상계좌 결제 취소 시 환불받을 계좌","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"환불 계좌 회원 아이디","note":"member_account와 1:1"},{"name":"bank_code","type":"CHAR(3)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"환불 은행 코드","note":"금융결제원 3자리 은행 코드 (예: 004 국민, 088 신한)"},{"name":"account_no_enc","type":"VARCHAR(255)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"환불 계좌번호","note":"AES-256 암호문. 계좌번호는 법정 암호화 대상. 화면에는 뒤 4자리만 표시"},{"name":"account_holder","type":"VARCHAR(50)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"환불 계좌 예금주","note":""},{"name":"verified_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"환불 계좌 실명 확인일시","note":"예금주 조회 API로 확인. NULL이면 미확인(환불 전 확인)"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"환불 계좌 등록일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"환불 계좌 수정일시","note":""}],"indexes":[],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]},"member_withdrawal":{"name":"member_withdrawal","group":"member_basic","logical":"회원 탈퇴 정보","note":"member_account와 1:1. 탈퇴한 회원만 행이 생김(아이디 재사용 불가라 회원당 최대 1번). 탈퇴 상태·일시는 member_account","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"탈퇴 회원 아이디","note":"member_account와 1:1"},{"name":"withdraw_reason","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 탈퇴 사유","note":"LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC. 탈퇴 신청 시 선택, 사유별 통계"},{"name":"withdraw_comment","type":"VARCHAR(500)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 탈퇴 의견","note":"탈퇴 신청 시 자유 의견. 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL(배치)"},{"name":"ci_hash","type":"CHAR(64)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"재가입 제한 확인값(CI)","note":"탈퇴 시 member_account.ci_hash를 옮겨 둠. 약관에 명시한 탈퇴 후 30일 재가입 제한(신규 가입 혜택 반복 수령 방지) 확인용. 30일 지나면 NULL(배치)"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 탈퇴 신청일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 탈퇴 정보 수정일시","note":"탈퇴 의견 NULL 처리 배치 등"}],"indexes":[{"name":"ix_member_withdrawal_reason","pk":false,"unique":false,"cols":"withdraw_reason","note":"탈퇴 사유별 집계"},{"name":"ix_member_withdrawal_ci","pk":false,"unique":false,"cols":"ci_hash","note":"가입 시 30일 내 탈퇴 이력 확인"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":true}],"in":[]},"member_grade":{"name":"member_grade","group":"member_grading","logical":"회원 등급","note":"등급 기준표. GREEN(0점~)/BLUE(20만~)/GOLD(60만~)/BLACK(150만~). 회원등급점수 = 최근 6개월 배송완료 금액 + 활동포인트, 매월 1일 재산정. 관리자가 수정하는 기준 데이터","fields":[{"name":"grade_code","type":"VARCHAR(20)","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 코드","note":"GREEN/BLUE/GOLD/BLACK. 화면 이름이 바뀌어도(리브랜딩) 코드는 유지"},{"name":"grade_name","type":"VARCHAR(30)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 이름","note":"화면 표시 이름"},{"name":"grade_level","type":"TINYINT","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 순서","note":"1(GREEN)~4(BLACK). 클수록 높은 등급"},{"name":"min_score","type":"BIGINT","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 최소 점수","note":"이 점수 이상이면 이 등급 (0/200000/600000/1500000). 상한은 다음 등급의 최소 점수라 별도 컬럼 없음"},{"name":"point_rate","type":"DECIMAL(4,2)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 구매 적립률(%)","note":"0.50/1.00/1.50/2.00"},{"name":"slogan","type":"VARCHAR(100)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 소개 문구","note":"등급 안내 화면 표시. 예: 처음 발견한 나만의 컨셉"},{"name":"is_active","type":"CHAR(1)","keys":[],"nn":true,"def":"'Y'","inc":false,"ref":"","logical":"회원 등급 사용 여부","note":"Y/N"},{"name":"created_by","type":"VARCHAR(20)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 등록 관리자","note":"관리자 아이디 (보안·상태 묶음의 admin_user와 연결 예정)"},{"name":"updated_by","type":"VARCHAR(20)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 수정 관리자","note":""},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 등급 등록일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 수정일시","note":""}],"indexes":[{"name":"uk_member_grade_level","pk":false,"unique":true,"cols":"grade_level","note":"등급 순서 중복 방지"},{"name":"uk_member_grade_min_score","pk":false,"unique":true,"cols":"min_score","note":"같은 최소 점수의 등급 2개 방지"}],"out":[],"in":[{"table":"member_account","col":"grade_code","one":false},{"table":"member_grade_benefit","col":"grade_code","one":false},{"table":"member_grade_history","col":"grade_code","one":false},{"table":"member_grade_history","col":"prev_grade_code","one":false}]},"member_grade_benefit":{"name":"member_grade_benefit","group":"member_grading","logical":"회원 등급 혜택","note":"등급 안내 화면에 보여 주는 등급별 혜택 목록. 혜택 종류가 많고 자주 바뀌어 Y/N 컬럼 대신 행으로 관리. 실제 쿠폰 지급은 혜택 단계의 쿠폰 테이블과 연결","fields":[{"name":"grade_code","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_grade.grade_code","logical":"혜택 대상 회원 등급 코드","note":""},{"name":"benefit_no","type":"SMALLINT","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 혜택 번호","note":"등급별 1부터. 앱이 그 등급의 MAX+1로 부여"},{"name":"benefit_type","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 혜택 유형","note":"COUPON/POINT/EXCHANGE/PARTNER/CS/EVENT (쿠폰/포인트/무료 교환/제휴/전담 고객센터/이벤트)"},{"name":"title","type":"VARCHAR(100)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 혜택 제목","note":"예: 15% 쿠폰 2장, 주문 상품당 1회 무료 교환, 폴인 3개월 구독권"},{"name":"description","type":"VARCHAR(500)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 혜택 설명","note":""},{"name":"sort_order","type":"SMALLINT","keys":[],"nn":true,"def":"0","inc":false,"ref":"","logical":"회원 등급 혜택 표시 순서","note":""},{"name":"is_active","type":"CHAR(1)","keys":[],"nn":true,"def":"'Y'","inc":false,"ref":"","logical":"회원 등급 혜택 사용 여부","note":"Y/N"},{"name":"created_by","type":"VARCHAR(20)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 혜택 등록 관리자","note":""},{"name":"updated_by","type":"VARCHAR(20)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 혜택 수정 관리자","note":""},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 등급 혜택 등록일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 혜택 수정일시","note":""}],"indexes":[{"name":"","pk":true,"unique":false,"cols":"grade_code, benefit_no","note":"grade_code 선두라 FK 인덱스 겸용"}],"out":[{"col":"grade_code","table":"member_grade","pcol":"grade_code","one":false}],"in":[]},"member_grade_history":{"name":"member_grade_history","group":"member_grading","logical":"회원 등급 이력","note":"등급이 정해질 때마다 1행 (가입, 매월 1일 산정, 예외 승급, 관리자 조정). 산정 당시 점수를 남겨 \"○점 더 모으면 다음 등급\" 표시와 등급 문의 대응에 사용","fields":[{"name":"member_id","type":"VARCHAR(20)","keys":["PK","FK"],"nn":true,"def":"","inc":false,"ref":"member_account.member_id","logical":"등급 이력 회원 아이디","note":""},{"name":"history_no","type":"INT","keys":["PK"],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 이력 번호","note":"회원별 1부터. 앱이 그 회원의 MAX+1로 부여"},{"name":"prev_grade_code","type":"VARCHAR(20)","keys":["FK"],"nn":false,"def":"","inc":false,"ref":"member_grade.grade_code","logical":"이전 회원 등급 코드","note":"가입 시 NULL"},{"name":"grade_code","type":"VARCHAR(20)","keys":["FK"],"nn":true,"def":"","inc":false,"ref":"member_grade.grade_code","logical":"적용 회원 등급 코드","note":""},{"name":"reason","type":"VARCHAR(20)","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 변경 사유","note":"JOIN/MONTHLY/PROMOTION/ADMIN (가입/월 산정/예외 승급: 제휴 카드 결제 등/관리자 조정)"},{"name":"purchase_score","type":"BIGINT","keys":[],"nn":true,"def":"0","inc":false,"ref":"","logical":"회원 구매 금액 점수","note":"산정 기간의 배송완료 금액 (주문 단계에서 원천 연결)"},{"name":"activity_score","type":"BIGINT","keys":[],"nn":true,"def":"0","inc":false,"ref":"","logical":"회원 활동포인트 점수","note":"산정 기간의 활동포인트 (포인트 단계에서 원천 연결)"},{"name":"total_score","type":"BIGINT","keys":[],"nn":true,"def":"0","inc":false,"ref":"","logical":"회원 등급 점수 합계","note":"구매 금액 점수 + 활동포인트 점수"},{"name":"score_from","type":"DATE","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"등급 점수 산정 시작일","note":"월 산정이면 6개월 전 1일. 가입·관리자 조정은 NULL"},{"name":"score_to","type":"DATE","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"등급 점수 산정 종료일","note":"월 산정이면 전월 말일"},{"name":"applied_at","type":"DATETIME","keys":[],"nn":true,"def":"","inc":false,"ref":"","logical":"회원 등급 적용일시","note":"월 산정은 매월 1일 0시"},{"name":"memo","type":"VARCHAR(200)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 변경 메모","note":"예외 승급·관리자 조정 사유"},{"name":"changed_by","type":"VARCHAR(20)","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 변경 관리자","note":"ADMIN일 때 관리자 아이디, 시스템 변경이면 NULL"},{"name":"created_at","type":"DATETIME","keys":[],"nn":true,"def":"CURRENT_TIMESTAMP","inc":false,"ref":"","logical":"회원 등급 이력 등록일시","note":""},{"name":"updated_at","type":"DATETIME","keys":[],"nn":false,"def":"","inc":false,"ref":"","logical":"회원 등급 이력 수정일시","note":""}],"indexes":[{"name":"","pk":true,"unique":false,"cols":"member_id, history_no","note":"member_id 선두라 FK 인덱스 겸용"},{"name":"ix_member_grade_history_grade","pk":false,"unique":false,"cols":"grade_code","note":"FK 인덱스, 등급별 집계"},{"name":"ix_member_grade_history_prev","pk":false,"unique":false,"cols":"prev_grade_code","note":"FK 인덱스"},{"name":"ix_member_grade_history_applied","pk":false,"unique":false,"cols":"applied_at","note":"월별 등급 변동 조회"}],"out":[{"col":"member_id","table":"member_account","pcol":"member_id","one":false},{"col":"grade_code","table":"member_grade","pcol":"grade_code","one":false},{"col":"prev_grade_code","table":"member_grade","pcol":"grade_code","one":false}],"in":[]}},"counts":{"tables":10,"refs":11,"groups":2},"layout":{}};</script>
 <script>(function () {
   'use strict';
   const D = window.ERD;

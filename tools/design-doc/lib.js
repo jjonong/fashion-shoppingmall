@@ -258,6 +258,7 @@ const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + 
 // 영역(TableGroup)별 설명: 전체 설계서와 ERD 웹페이지 공용
 const groupDesc = {
   member_basic: '구매 고객 계정(본인인증 필수·프로필·가입 수단/경로·상태), 로그인 상태(마지막 로그인·로그인 잠금·휴면 안내, 1:1), 소셜 계정 연동(제공자별 1개), 체형(사이즈 추천·비슷한 체형 리뷰), 배송지(기본 배송지 1개), 환불 계좌(1:1), 탈퇴 정보(사유·의견, 1:1).',
+  member_grading: '회원 등급 기준표(GREEN/BLUE/GOLD/BLACK, 최소 점수·적립률), 등급별 혜택 목록, 등급 이력(가입·월 산정·예외 승급·관리자 조정, 산정 당시 점수). 회원등급점수 = 최근 6개월 배송완료 금액 + 활동포인트.',
 };
 
 // ---------- HTML 머리말 / Mermaid 초기화 ----------

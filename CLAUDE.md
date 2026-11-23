@@ -16,13 +16,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 순서 | 묶음 | 후보 테이블 | 상태 |
 |---|---|---|---|
 | 1 | 고객 · 회원 기본 `member_basic` | `member_account`, `member_login`, `member_social_account`, `member_body`, `address`, `member_refund_account`, `member_withdrawal` | 반영 |
+| 1-2 | 고객 · 회원 등급 `member_grading` | `member_grade`, `member_grade_benefit`, `member_grade_history` (+ `member_account.grade_code`) | 반영 (시험 반영, 사용자가 롤백할 수 있음) |
 | 2 | 고객 · 약관·알림 | `terms`, `member_terms_agreement`, `member_notification_setting` | 대기 |
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history`, `admin_user`, `privacy_access_log` | 대기 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 | `brand`, `brand_user`, `brand_status_history`, `brand_like` | 대기 |
 | 6~ | 상품 | 카테고리(품목군), 사이즈 체계·실측, 상품·컬러·SKU, 이미지, 고시, 재고·가격 이력 | 대기 |
 
-회원 등급(`member_grade`)은 구매 실적과 연결되므로 주문 단계에서 함께 설계한다.
+회원 등급은 W컨셉 등급 체계를 벤치마킹해 먼저 만들었다(2026-11-23). 점수 원천(배송완료 금액·활동포인트)과 등급 쿠폰 지급은 주문·포인트·혜택 단계에서 연결한다.
 
 ## 설계 문서와 동기화
 
@@ -89,6 +90,14 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `member_refund_account` (1:1): 환불 계좌. 은행 코드(금융결제원 3자리)·계좌번호(`account_no_enc` AES-256, 법정 암호화 대상)·예금주·실명 확인일시. 탈퇴 시 행 삭제.
 - `member_withdrawal` (1:1): 탈퇴 정보. 탈퇴한 회원만 행이 생김. 탈퇴 사유(코드 LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC, 사유별 통계 인덱스)·탈퇴 의견(개인정보가 섞일 수 있어 탈퇴 1년 후 NULL)·신청일시.
 - W컨셉 고객 정보 중 나중 묶음으로 미룬 것: 사이즈 정보 추천 동의(약관), 새 기기 로그인 인증·알림·신뢰기기(보안), 등급·쿠폰·포인트·상품권(주문·혜택), 찜·장바구니·비회원 주문조회(상품·주문).
+
+### 1-2. 고객 · 회원 등급 (`member_grading`)
+- W컨셉 등급 체계 벤치마킹(W FRIEND/BEST/VIP/SIGNATURE), 이름은 자체 **GREEN/BLUE/GOLD/BLACK** (사용자 결정). 기준: 최근 6개월 누적 회원등급점수 0 / 20만 / 60만 / 150만 점 이상, 구매 적립 0.5 / 1 / 1.5 / 2%. 회원등급점수 = 배송완료 금액 + 활동포인트, 매월 1일 재산정. 예외 승급(제휴 카드 결제 시 자동 승급 등) 있음.
+- `member_grade`: 기준표. 코드와 화면 이름 분리(리브랜딩 대비). 관리자 수정 데이터라 `created_by`/`updated_by`.
+- `member_grade_benefit`: 등급별 혜택 목록(쿠폰/포인트/무료 교환/제휴/전담 고객센터/이벤트). 혜택이 자주 바뀌어 Y/N 컬럼 대신 행으로. 실제 쿠폰 지급은 혜택 단계에서 연결.
+- `member_grade_history`: PK (member_id, history_no). 가입·월 산정·예외 승급·관리자 조정마다 1행, 산정 당시 구매 금액 점수·활동포인트·합계와 산정 기간.
+- `member_account.grade_code`: 현재 등급(신규 GREEN), 월 1회 갱신.
+- 나중: 활동 미션(출석·하트·앱 푸시·리뷰 포인트, 하루 한도·적립 시점)은 포인트 단계, 결제 프로모션은 주문·결제 단계, 마케팅 수신동의 이벤트는 약관 묶음.
 
 ## 저장소 메모
 
