@@ -78,32 +78,32 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   let dot = `digraph G {
   graph [rankdir=LR, nodesep=0.28, ranksep=0.75, splines=spline, bgcolor="transparent", fontname="${F}", pad=0.1];
   node [shape=plain, fontname="${F}", fontsize=10];
-  edge [color="#7d8a96", penwidth=1.1, arrowsize=0.75, dir=both];\n`;
+  edge [color="#8a8a8a", penwidth=1, arrowsize=0.75, dir=both];\n`;
   const xesc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   // Graphviz(viz.js)는 한글 폭을 실제보다 좁게 계산해 옆 칸과 겹치므로, 한글 글자 수만큼 공백을 덧붙여 칸 폭을 맞춘다
   const wide = (s) => '&nbsp;'.repeat(Math.ceil(((s || '').match(/[^\x00-\x7f]/g) || []).length * 1.4));
   // 구조 설계 단계라 논리명(한글)을 앞에 크게, 물리명은 뒤에 작은 회색 고정폭으로
   const row = (port, name, type, key, opts = {}) =>
-    `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="9.5" COLOR="#1f2d3a">${opts.b ? '<B>' + xesc(opts.lg || name) + '</B>' : xesc(opts.lg || name)}${wide(opts.lg)}</FONT></TD>` +
-    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#7d8a96">${name}</FONT></TD>` +
-    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#5d6d7e">${type}</FONT></TD>` +
-    `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#B8860B' : '#2f6496'}"><B>${key}</B></FONT></TD></TR>`;
+    `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="9.5" COLOR="#111111">${opts.b ? '<B>' + xesc(opts.lg || name) + '</B>' : xesc(opts.lg || name)}${wide(opts.lg)}</FONT></TD>` +
+    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#8a8a8a">${name}</FONT></TD>` +
+    `<TD ALIGN="LEFT" BGCOLOR="${opts.bg || 'white'}"><FONT FACE="Consolas" POINT-SIZE="8" COLOR="#666666">${type}</FONT></TD>` +
+    `<TD PORT="${port}_o" BGCOLOR="${opts.bg || 'white'}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#000000' : '#777777'}"><B>${key}</B></FONT></TD></TR>`;
   const nodeDot = {};
   for (const name of inner) {
     const t = tableMap[name];
     const kf = keyFields(t);
     const others = t.fields.length - kf.length;
-    let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#FBF6E9' : 'white', lg: logicalOf(f.note) })).join('');
-    if (others > 0) rows += `<TR><TD COLSPAN="4" ALIGN="LEFT" BGCOLOR="#F5F8FB"><FONT POINT-SIZE="8" COLOR="#8795A1">+ ${others} columns</FONT></TD></TR>`;
-    nodeDot[name] = `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#2f6496">
-      <TR><TD COLSPAN="4" BGCOLOR="#2f6496"><FONT COLOR="white" POINT-SIZE="11"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#c9d9ea" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${rows}</TABLE>>];\n`;
+    let rows = kf.map((f) => row(f.name, f.name, baseType(f), keyMark(t, f).replace(/, /g, ' '), { b: keyMark(t, f).includes('PK'), bg: keyMark(t, f).includes('PK') ? '#F3F3F3' : 'white', lg: logicalOf(f.note) })).join('');
+    if (others > 0) rows += `<TR><TD COLSPAN="4" ALIGN="LEFT" BGCOLOR="#FAFAFA"><FONT POINT-SIZE="8" COLOR="#999999">+ ${others} columns</FONT></TD></TR>`;
+    nodeDot[name] = `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#111111">
+      <TR><TD COLSPAN="4" BGCOLOR="#111111"><FONT COLOR="white" POINT-SIZE="11"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#9a9a9a" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${rows}</TABLE>>];\n`;
   }
   dot += Object.values(nodeDot).join('');
   for (const name of ext) {
     const t = tableMap[name];
     const pk = t.fields.filter((f) => f.pk || compositePk(t).includes(f.name));
-    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#a3afba">
-      <TR><TD COLSPAN="4" BGCOLOR="#a3afba"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#eef2f6" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#F5F7F9', lg: logicalOf(f.note) })).join('')}</TABLE>>];\n`;
+    dot += `  ${name} [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#bdbdbd">
+      <TR><TD COLSPAN="4" BGCOLOR="#bdbdbd"><FONT COLOR="white" POINT-SIZE="10.5"><B>&nbsp;${xesc(logicalOf(t.note) || name)}${wide(logicalOf(t.note))}</B></FONT><FONT FACE="Consolas" COLOR="#f2f2f2" POINT-SIZE="8.5">&nbsp;${name}&nbsp;</FONT></TD></TR>${pk.map((f) => row(f.name, f.name, baseType(f), 'PK', { bg: '#FAFAFA', lg: logicalOf(f.note) })).join('')}</TABLE>>];\n`;
   }
   for (const r of rels) {
     const f = fieldOf(r.child, r.ccol);
@@ -206,8 +206,8 @@ function areaSvg(ctx, clusters, { hideAudit = false, W = 1100, H = 680 } = {}) {
     const { x, y } = pos[i];
     const iw = p.w - PAD * 2, ih = p.h - PAD * 2 - LABEL;
     body += `<g class="cluster"><title>cluster_${p.c.name}</title>
-<rect x="${x}" y="${y}" width="${p.w}" height="${p.h}" rx="8" fill="none" stroke="#b9c7d6" stroke-width="1.2"/>
-<text x="${x + PAD}" y="${y + 17}" font-family="Malgun Gothic" font-size="13" fill="#2f6496">${p.c.label}</text></g>
+<rect x="${x}" y="${y}" width="${p.w}" height="${p.h}" fill="none" stroke="#cccccc" stroke-width="1"/>
+<text x="${x + PAD}" y="${y + 17}" font-family="Malgun Gothic" font-size="13" font-weight="700" fill="#111111">${p.c.label}</text></g>
 ${p.inner.replace('@XYWH@', `x="${x + PAD}" y="${y + PAD + LABEL}" width="${iw}" height="${ih}"`)}\n`;
   });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${tw.toFixed(1)}pt" height="${th.toFixed(1)}pt" viewBox="0 0 ${tw.toFixed(1)} ${th.toFixed(1)}">\n${body}</svg>`;
@@ -218,9 +218,9 @@ ${p.inner.replace('@XYWH@', `x="${x + PAD}" y="${y + PAD + LABEL}" width="${iw}"
 // color/fill은 ERD 웹페이지 전체 구조도 색 (화면 CSS --s1~--s8과 같은 순서)
 // 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다
 const AREAS = [
-  { prefix: 'member', name: '고객', color: '#2f8f6b', fill: '#EEF7F2', desc: '회원 · 소셜 연동 · 체형 · 배송지' },
-  { prefix: 'brand', name: '브랜드', color: '#b5562f', fill: '#FBF1EC', desc: '입점 브랜드 · 브랜드 관리자 · 브랜드 좋아요' },
-  { prefix: 'product', name: '상품', color: '#2f6496', fill: '#EDF3F9', desc: '카테고리 · 사이즈 · 컬러 · SKU · 재고' },
+  { prefix: 'member', name: '고객', color: '#111111', fill: '#F7F7F7', desc: '회원 · 소셜 연동 · 체형 · 배송지' },
+  { prefix: 'brand', name: '브랜드', color: '#555555', fill: '#F7F7F7', desc: '입점 브랜드 · 브랜드 관리자 · 브랜드 좋아요' },
+  { prefix: 'product', name: '상품', color: '#999999', fill: '#F7F7F7', desc: '카테고리 · 사이즈 · 컬러 · SKU · 재고' },
 ];
 const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
 

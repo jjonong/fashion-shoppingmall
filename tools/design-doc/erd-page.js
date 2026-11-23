@@ -73,8 +73,8 @@ function overallSvg() {
   const F = 'Malgun Gothic';
   let dot = `digraph ALL {
   graph [overlap=false, sep="+18", K=0.9, pad=0.2, bgcolor="transparent", fontname="${F}"];
-  node [shape=box, style="rounded,filled", fillcolor="white", fontname="Consolas", fontsize=15, height=0.34, margin="0.1,0.04", penwidth=1.1];
-  edge [color="#9aa7b4", penwidth=1, arrowsize=0.7, arrowhead=crow];
+  node [shape=box, style="filled", fillcolor="white", fontname="Consolas", fontsize=15, height=0.34, margin="0.1,0.04", penwidth=1.1];
+  edge [color="#9a9a9a", penwidth=1, arrowsize=0.7, arrowhead=crow];
 `;
   groups.forEach((g) => {
     const stage = areaOf(g.name);
@@ -82,7 +82,7 @@ function overallSvg() {
     const { color: line, fill } = stage;
     dot += `  subgraph cluster_${g.name} {
     label="${stage.name} · ${gTitle(g)}"; fontname="${F}"; fontsize=17; fontcolor="${line}";
-    style="rounded,filled"; fillcolor="${fill}"; color="${line}"; penwidth=1.2; margin=10;
+    style="filled"; fillcolor="${fill}"; color="${line}"; penwidth=1; margin=10;
     node [color="${line}"];
     ${g.tables.map((t) => `${t.name} [label="${logicalOf(tableMap[t.name].note) || t.name}\\n${t.name}"]`).join('; ')};
   }
@@ -173,12 +173,13 @@ async function main() {
 <title>패션 쇼핑몰 ERD</title>
 <meta name="description" content="패션 브랜드 입점형 쇼핑몰 DB 설계 ERD (MySQL 8.0, ${data.counts.tables}개 테이블). docs/erd.dbml에서 자동 생성">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%232f6496'/%3E%3Cpath d='M3 12h26M12 12v15' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>${css}</style>
 </head>
 <body>
 <header class="top">
   <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기" aria-expanded="false">☰</button>
-  <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>패션 쇼핑몰 ERD</span></a>
+  <a class="brand" href="#" aria-label="개요로 이동"><span>Fashion Mall</span><small>ERD</small></a>
   <span class="meta">MySQL 8.0 · 테이블 ${data.counts.tables} · 관계 ${data.counts.refs}</span>
   <div class="search">
     <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
