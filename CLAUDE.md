@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 로드맵 (목록만, 컬럼은 묶음마다 확정)
 | 순서 | 묶음 | 후보 테이블 | 상태 |
 |---|---|---|---|
-| 1 | 고객 · 회원 기본 `member_basic` | `member_account`, `member_social`, `member_body`, `address`, `member_refund_account` | 반영 |
+| 1 | 고객 · 회원 기본 `member_basic` | `member_account`, `member_social`, `member_body`, `address`, `member_refund_account`, `member_withdrawal` | 반영 |
 | 2 | 고객 · 약관·알림 | `terms`, `member_terms_agreement`, `member_notification_setting` | 대기 |
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history`, `admin_user`, `privacy_access_log` | 대기 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
@@ -75,11 +75,12 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 ## 확정된 설계 (묶음별)
 
 ### 1. 고객 · 회원 기본 (`member_basic`)
-- `member_account`: 구매 고객 계정만 (브랜드 관리자·운영자 계정은 별도 테이블 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. **가입 시 휴대폰 본인인증 필수**: 이름·휴대폰·생년월일·성별·CI는 인증 결과로 채움(직접 입력 아님, NOT NULL, 만 14세 미만 가입 불가). 프로필 사진·소개글은 선택. 가입 수단(`join_method` EMAIL/소셜 6종)·가입 경로(`join_channel` PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID). 탈퇴 사유(코드)·탈퇴 의견 저장, 탈퇴 시 프로필 사진·소개글도 NULL. 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN, **로그인 5회 실패 잠금은 상태가 아니라 `locked_until`**. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
+- `member_account`: 구매 고객 계정만 (브랜드 관리자·운영자 계정은 별도 테이블 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. **가입 시 휴대폰 본인인증 필수**: 이름·휴대폰·생년월일·성별·CI는 인증 결과로 채움(직접 입력 아님, NOT NULL, 만 14세 미만 가입 불가). 프로필 사진·소개글은 선택. 가입 수단(`join_method` EMAIL/소셜 6종)·가입 경로(`join_channel` PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID). 탈퇴 시 프로필 사진·소개글도 NULL. 탈퇴 상태·일시만 회원 테이블에 두고 사유·의견은 `member_withdrawal`로 분리(사용자 결정). 휴면 안내일시는 중복 발송 방지·30일 경과 확인용, 재로그인 시 NULL. 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN, **로그인 5회 실패 잠금은 상태가 아니라 `locked_until`**. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
 - `member_social`: PK (member_id, provider)로 회원당 제공자별 1개. 제공자 KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE (W컨셉 가입 수단 기준), 같은 소셜 계정은 한 회원에게만(UK provider, provider_user_id).
 - `member_body` (1:1): 키·몸무게·평소 상의/하의 사이즈·신발 사이즈(mm)·발볼. 사이즈 추천과 "나와 비슷한 체형" 리뷰 필터, 리뷰 공개 여부 `is_review_public`.
 - `address`: PK (member_id, address_no), 배송지 번호는 회원별 1부터 앱이 부여. 회원당 여러 개, 기본 배송지 1개(함수 기반 unique), 배송 요청사항은 주문 시 기본값으로 복사.
 - `member_refund_account` (1:1): 환불 계좌. 은행 코드(금융결제원 3자리)·계좌번호(`account_no_enc` AES-256, 법정 암호화 대상)·예금주·실명 확인일시. 탈퇴 시 행 삭제.
+- `member_withdrawal` (1:1): 탈퇴 정보. 탈퇴한 회원만 행이 생김. 탈퇴 사유(코드 LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC, 사유별 통계 인덱스)·탈퇴 의견(개인정보가 섞일 수 있어 탈퇴 1년 후 NULL)·신청일시.
 - W컨셉 고객 정보 중 나중 묶음으로 미룬 것: 사이즈 정보 추천 동의(약관), 새 기기 로그인 인증·알림·신뢰기기(보안), 등급·쿠폰·포인트·상품권(주문·혜택), 찜·장바구니·비회원 주문조회(상품·주문).
 
 ## 저장소 메모
