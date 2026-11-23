@@ -96,7 +96,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - W컨셉 등급 체계 벤치마킹(W FRIEND/BEST/VIP/SIGNATURE), 이름은 자체 **GREEN/BLUE/GOLD/BLACK** (사용자 결정). 기준: 최근 6개월 누적 회원등급점수 0 / 20만 / 60만 / 150만 점 이상, 구매 적립 0.5 / 1 / 1.5 / 2%. 회원등급점수 = 배송완료 금액 + 활동포인트, 매월 1일 재산정. 예외 승급(제휴 카드 결제 시 자동 승급 등) 있음.
 - `member_grade`: 기준표. 코드와 화면 이름 분리(리브랜딩 대비). 관리자 수정 데이터라 `created_by`/`updated_by`.
 - `member_grade_benefit`: 등급별 혜택 목록(쿠폰/포인트/무료 교환/제휴/전담 고객센터/이벤트). 혜택이 자주 바뀌어 Y/N 컬럼 대신 행으로. 실제 쿠폰 지급은 혜택 단계에서 연결.
-- `member_grade_history`: PK (member_id, history_no). 가입·월 산정·예외 승급·관리자 조정마다 1행, 산정 당시 구매 금액 점수·활동포인트·합계와 산정 기간.
+- `member_grade_history`: PK (member_id, history_no). 가입·월 산정·예외 승급·관리자 조정마다 1행(**변경 구분** `change_type` 코드 + **변경 사유** `reason` 자유 입력, 운영자 권한 이력의 `action` + `reason`과 같은 구조로 나란히 배치), 산정 당시 구매 금액 점수·활동포인트·합계와 산정 기간.
 - `member_account.grade_code`: 현재 등급(신규 GREEN), 월 1회 갱신.
 - 나중: 활동 미션(출석·하트·앱 푸시·리뷰 포인트, 하루 한도·적립 시점)은 포인트 단계, 결제 프로모션은 주문·결제 단계, 마케팅 수신동의 이벤트는 약관 묶음.
 
