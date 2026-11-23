@@ -1,7 +1,7 @@
 // =====================================================================
 // 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: W컨셉 (디자이너 브랜드 입점, 의류·신발·가방·잡화)
-// 진행 중: 고객 6개 = 6개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
+// 진행 중: 고객 7개 = 7개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
@@ -37,38 +37,48 @@ Table member_account [note: '[회원] 구매 고객 계정. 브랜드 관리자�
   profile_image_url varchar(500) [note: '[회원 프로필 사진 경로] 선택 입력. 리뷰·스타일 게시글에 표시. 탈퇴 시 NULL']
   profile_intro varchar(200) [note: '[회원 소개글] 선택 입력. 탈퇴 시 NULL']
   ci_hash char(64) [note: '[회원 중복 가입 확인값(CI)] 휴대폰 본인인증 시 본인확인기관이 주는 연계정보(CI, 같은 사람이면 어느 사이트든 같은 값)를 HMAC-SHA256(서버 비밀 키)으로 저장. 원래 값은 볼 일 없이 비교만 함. 같은 사람은 계정 1개만 허용(가입 혜택 반복 수령 방지). 탈퇴 시 NULL']
-  join_method varchar(20) [not null, note: '[회원 가입 수단] EMAIL/KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 처음 가입한 방법 (이후 연동한 소셜 계정은 member_social)']
+  join_method varchar(20) [not null, note: '[회원 가입 수단] EMAIL/KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 처음 가입한 방법 (이후 연동한 소셜 계정은 member_social_account)']
   join_channel varchar(20) [not null, note: '[회원 가입 경로] PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID']
   verified_at datetime [not null, note: '[회원 본인인증일시] 가입 시 휴대폰 본인인증 필수. 재인증 시 갱신']
-  status varchar(20) [not null, default: 'ACTIVE', note: '[회원 상태] ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 로그인 잠금은 상태가 아니라 locked_until로 판단']
-  login_fail_count tinyint [not null, default: 0, note: '[회원 연속 로그인 실패 횟수] 로그인 성공 시 0으로 초기화']
-  locked_until datetime [note: '[회원 로그인 잠금 해제일시] 5회 연속 실패 시 30분 뒤 시각으로 설정']
-  last_login_at datetime [note: '[회원 마지막 로그인일시] 휴면 전환 배치 기준']
-  dormant_notice_sent_at datetime [note: '[회원 휴면 예정 안내일시] 마지막 로그인 11개월 시점에 안내, 1년 미접속 시 DORMANT. 안내 중복 발송 방지(NULL인 회원만 발송)와 안내 후 30일 경과 확인에 사용. 다시 로그인하면 NULL로 초기화']
+  status varchar(20) [not null, default: 'ACTIVE', note: '[회원 상태] ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 로그인 잠금은 상태가 아니라 member_login.locked_until로 판단']
   suspended_until datetime [note: '[회원 이용 정지 종료일시] SUSPENDED 기한. 지나면 배치로 ACTIVE']
   nickname_changed_at datetime [note: '[회원 닉네임 변경일시] 변경 후 30일간 재변경 불가']
   withdrawn_at datetime [note: '[회원 탈퇴일시] 탈퇴 시 마스킹: 이름·닉네임·이메일, ci_hash·프로필 사진·소개글 NULL. 탈퇴 사유·의견은 member_withdrawal']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 가입일시]']
-  updated_at datetime [note: '[회원 정보 수정일시]']
+  updated_at datetime [note: '[회원 정보 수정일시] 회원이 정보를 바꿀 때만 갱신. 로그인할 때마다 바뀌는 값은 member_login에 두어 이 값이 로그인으로 바뀌지 않게 함']
 
   indexes {
     email [unique, name: 'uk_member_email']
     nickname [unique, name: 'uk_member_nickname']
-    ci_hash [unique, name: 'uk_member_ci', note: '같은 사람(CI)은 계정 1개. NULL(미인증·탈퇴)은 중복 허용']
+    ci_hash [unique, name: 'uk_member_ci', note: '같은 사람(CI)은 계정 1개. NULL(탈퇴)은 중복 허용']
     phone_hash [name: 'ix_member_phone_hash', note: '휴대폰 번호로 아이디 찾기·가입 확인']
-    (status, last_login_at) [name: 'ix_member_dormant_target', note: '휴면 안내·전환 대상 배치 조회']
   }
 }
 
-Table member_social [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개)'] {
+Table member_login [note: '[회원 로그인 상태] member_account와 1:1, 가입 시 함께 생성. 로그인할 때마다 바뀌는 값을 분리해 회원 정보 수정일시가 로그인으로 바뀌지 않게 하고, 회원 행 수정과의 잠금 경합을 줄임'] {
+  member_id varchar(20) [pk, note: '[로그인 상태 회원 아이디] member_account와 1:1']
+  last_login_at datetime [note: '[회원 마지막 로그인일시] 휴면 전환 배치 기준. 가입 직후는 NULL']
+  login_fail_count tinyint [not null, default: 0, note: '[회원 연속 로그인 실패 횟수] 로그인 성공 시 0으로 초기화']
+  locked_until datetime [note: '[회원 로그인 잠금 해제일시] 5회 연속 실패 시 30분 뒤 시각으로 설정. 지나면 자동 해제(배치 불필요)']
+  dormant_notice_sent_at datetime [note: '[회원 휴면 예정 안내일시] 마지막 로그인 11개월 시점에 안내, 1년 미접속 시 DORMANT. 안내 중복 발송 방지(NULL인 회원만 발송)와 안내 후 30일 경과 확인에 사용. 다시 로그인하면 NULL로 초기화']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[로그인 상태 등록일시] 가입일시와 같음']
+  updated_at datetime [note: '[로그인 상태 수정일시]']
+
+  indexes {
+    last_login_at [name: 'ix_member_login_last', note: '휴면 안내·전환 대상 배치 조회 (member_account.status와 조인)']
+  }
+}
+
+Table member_social_account [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개)'] {
   member_id varchar(20) [not null, note: '[소셜 연동 회원 아이디]']
   provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 회원당 제공자별 1개라 (회원 아이디, 제공자)를 PK로 사용']
   provider_user_id varchar(100) [not null, note: '[소셜 제공자 회원 식별값] 소셜 서비스의 회원 고유 ID']
-  provider_email varchar(100) [note: '[소셜 계정 이메일] 제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음)']
+  provider_email varchar(100) [note: '[소셜 계정 이메일] 제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음). 소셜 로그인 시 바뀌었으면 갱신']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[소셜 계정 연동일시]']
+  updated_at datetime [note: '[소셜 계정 정보 수정일시]']
 
   indexes {
-    (provider, provider_user_id) [unique, name: 'uk_member_social_provider', note: '같은 소셜 계정은 한 회원에게만']
+    (provider, provider_user_id) [unique, name: 'uk_member_social_account_provider', note: '같은 소셜 계정은 한 회원에게만']
     (member_id, provider) [pk, note: '회원당 제공자별 1개. member_id 선두라 FK 인덱스 겸용']
   }
 }
@@ -82,6 +92,7 @@ Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추�
   shoe_size_mm smallint [note: '[회원 평소 신발 사이즈(mm)] 220~300, 5 단위 (앱 검증)']
   foot_width varchar(10) [note: '[회원 발볼 너비] NARROW/NORMAL/WIDE']
   is_review_public char(1) [not null, default: 'Y', note: '[회원 체형 리뷰 공개 여부] Y/N. Y면 리뷰에 키·몸무게·평소 사이즈 표시']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 체형 등록일시] 처음 입력한 시각 (가입 후 나중에 입력 가능)']
   updated_at datetime [note: '[회원 체형 수정일시]']
 }
 
@@ -120,6 +131,7 @@ Table member_withdrawal [note: '[회원 탈퇴 정보] member_account와 1:1. �
   withdraw_reason varchar(20) [not null, note: '[회원 탈퇴 사유] LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC. 탈퇴 신청 시 선택, 사유별 통계']
   withdraw_comment varchar(500) [note: '[회원 탈퇴 의견] 탈퇴 신청 시 자유 의견. 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL(배치)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 탈퇴 신청일시]']
+  updated_at datetime [note: '[회원 탈퇴 정보 수정일시] 탈퇴 의견 NULL 처리 배치 등']
 
   indexes {
     withdraw_reason [name: 'ix_member_withdrawal_reason', note: '탈퇴 사유별 집계']
@@ -130,7 +142,8 @@ Table member_withdrawal [note: '[회원 탈퇴 정보] member_account와 1:1. �
 // 관계
 // =====================================================================
 
-Ref: member_social.member_id > member_account.member_id [delete: cascade]
+Ref: member_login.member_id - member_account.member_id [delete: cascade]
+Ref: member_social_account.member_id > member_account.member_id [delete: cascade]
 Ref: member_body.member_id - member_account.member_id [delete: cascade]
 Ref: address.member_id > member_account.member_id [delete: cascade]
 Ref: member_refund_account.member_id - member_account.member_id [delete: cascade]
@@ -142,7 +155,8 @@ Ref: member_withdrawal.member_id - member_account.member_id
 
 TableGroup member_basic [note: '고객 - 회원 기본'] {
   member_account
-  member_social
+  member_login
+  member_social_account
   member_body
   address
   member_refund_account
