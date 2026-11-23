@@ -59,7 +59,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 ## 설계 규칙 (DBML 전반에 일관되게 적용)
 
 - **이름**: 테이블·컬럼·인덱스 모두 **소문자 snake_case**. 인덱스 이름 접두사 `uk_`(unique), `ux_`(함수 기반 unique), `ix_`(일반). PK 제약 이름은 MySQL에서 항상 `PRIMARY`.
-- **논리명(한글 이름)**: 모든 테이블·컬럼의 note 맨 앞에 `[논리명]`을 둔다 (예: `note: '[회원 상태] ACTIVE/DORMANT/...'`). 생성 도구가 `lib.logicalOf`로 읽어 표시한다. 컬럼 논리명은 **그 자체로 뜻이 통하게 구체적으로**(`이름`이 아니라 `회원 이름`). **물리명이 같은 컬럼은 모든 테이블에서 논리명도 같게** 한다(사용자 확정: `member_id`는 어디서나 `회원 아이디`, `grade_code`는 `회원 등급 코드`). 테이블마다 다른 역할(예: 배송지 소유 회원)은 설명(note) 앞부분에 적는다. 이름만 같고 뜻이 다르면 물리명을 다르게 짓는다(예: 환불 계좌의 `holder_verified_at`). 표시는 논리명 우선, 물리명은 뒤에 작게.
+- **논리명(한글 이름)**: 모든 테이블·컬럼의 note 맨 앞에 `[논리명]`을 둔다 (예: `note: '[회원 상태] ACTIVE/DORMANT/...'`). 생성 도구가 `lib.logicalOf`로 읽어 표시한다. 컬럼 논리명은 **같은 테이블 안에서 다른 컬럼과 헷갈리지 않게** 짓는다. 테이블이 주어(회원·운영자)를 알려 주므로 공통 속성은 `이름`·`이메일`·`상태`처럼 짧게 두고, 주어는 설명(note) 앞에 적는다(사용자 확정, 2026-11-23: 운영자 테이블 추가 때 `회원 이름` 식 규칙과 충돌해서 변경). **물리명이 같은 컬럼은 모든 테이블에서 논리명도 같게** 한다(사용자 확정: `member_id`는 어디서나 `회원 아이디`, `grade_code`는 `회원 등급 코드`). 테이블마다 다른 역할(예: 배송지 소유 회원)은 설명(note) 앞부분에 적는다. 이름만 같고 뜻이 다르면 물리명을 다르게 짓는다(예: 환불 계좌의 `holder_verified_at`). 표시는 논리명 우선, 물리명은 뒤에 작게.
 - **예약어 회피**: `member`는 MySQL 8.0.17+ 예약어라 회원 테이블은 **`member_account`** (PK `member_id`). `order`도 예약어(주문은 나중에 `orders`). 새 이름을 만들 때 MySQL 예약어인지 확인한다.
 - **PK: AUTO_INCREMENT(DBML `increment`)를 쓰지 않는다** (사용자 확정, 예외 없음). 바뀌지 않는 UNIQUE 값이 있으면 그것이 PK다. 회원은 **아이디 `member_id varchar(20)`**가 PK이고, 다른 테이블의 FK `member_id`도 `varchar(20)`. 자식 테이블은 **부모 키 + 번호(앱이 부모별 MAX+1로 부여) 또는 코드**의 복합 PK(예: `member_address` = (member_id, address_no), `member_social_account` = (member_id, provider)). 1:1 확장 테이블(`member_body` 등)은 부모 PK를 그대로 PK로, 매핑 테이블은 복합 PK. 새 테이블을 설계할 때도 이 규칙을 따른다.
 - **타입**: 금액 `bigint`, 카운트 `int`, 작은 수 `smallint`/`tinyint`, 비율·평점 `decimal(p,s)`, 문자열 `varchar(n)`(글자 수), 본문 `text`(상세페이지·약관은 `mediumtext`), 시각 `datetime`(TIMESTAMP 2038년 제한·시간대 변환 회피).
@@ -108,6 +108,9 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `admin_role_history`: 권한 부여·변경·말소(GRANT/CHANGE/REVOKE) 이력, **3년 보관**, 수정·삭제 금지.
 - `admin_access_log`: 로그인·로그아웃·실패와 개인정보 처리(조회·마스킹 해제·다운로드·수정·삭제) 기록, 대상 회원·항목·다운로드 사유·IP. **2년 보관**, 월 1회 이상 점검, 수정·삭제 금지. 운영자 로그인 기록도 여기에 남김.
 - 다른 테이블의 `created_by`/`updated_by`/`changed_by`는 `admin_user.admin_id` FK(등급 기준표·혜택·등급 이력 연결 완료).
+
+### 나중에 재검토
+- **Involved Party 패턴** (사람·회사를 상위 `party`로 묶고 고객·운영자·브랜드 관리자를 역할로): 사용자가 나중에 다시 검토하기로 함. 고객·운영자 계정은 보안상 분리 유지가 기본안이고, 적용한다면 브랜드(사업자·정산 주체) 쪽이 유력. 도입 시 자연키가 없어 ULID 같은 앱 생성 키가 필요(AUTO_INCREMENT 금지 규칙과 함께 검토).
 
 ## 저장소 메모
 
