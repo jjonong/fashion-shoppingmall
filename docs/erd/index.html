@@ -13,6 +13,8 @@
   --bg: #ffffff;
   --panel: #ffffff;
   --panel-2: #f6f6f6;
+  --content: #f5f5f5;   /* 콘텐츠 영역 미색 (눈부심 완화) */
+  --content-2: #ebebeb; /* 콘텐츠 영역 안의 옅은 강조 (PK 행·칩·hover) */
   --line: #e6e6e6;
   --line-strong: #111111;
   --text: #111111;
@@ -43,7 +45,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
+    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
     --text: #f2f2f2; --muted: #9a9a9a; --sub: #bdbdbd; --accent: #f2f2f2; --accent-soft: #1f1f1f; --on-accent: #111111;
     --pk: #111111; --pk-soft: #f2f2f2; --fk: #f2f2f2; --fk-soft: #0f0f0f; --uk: #bbbbbb; --uk-soft: #262626;
     --s1: #f2f2f2; --s2: #bbbbbb; --s3: #777777; --s4: #f2f2f2; --s5: #bbbbbb; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
@@ -52,7 +54,7 @@
   }
 }
 :root[data-theme="dark"] {
-    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
+    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
     --text: #f2f2f2; --muted: #9a9a9a; --sub: #bdbdbd; --accent: #f2f2f2; --accent-soft: #1f1f1f; --on-accent: #111111;
     --pk: #111111; --pk-soft: #f2f2f2; --fk: #f2f2f2; --fk-soft: #0f0f0f; --uk: #bbbbbb; --uk-soft: #262626;
     --s1: #f2f2f2; --s2: #bbbbbb; --s3: #777777; --s4: #f2f2f2; --s5: #bbbbbb; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
@@ -657,6 +659,13 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 .theme-btn { flex: none; height: 38px; min-width: 64px; padding: 0 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; border-color: var(--line-strong); }
 .theme-btn:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 @media (max-width: 760px) { .theme-btn { height: 32px; min-width: 0; padding: 0 8px; } }
+
+/* 콘텐츠 영역 미색: 헤더·사이드바는 흰색, 본문은 #f5f5f5. ERD 캔버스는 흰 종이처럼 유지 */
+.main { background: var(--content); }
+.toolbar { background: transparent; }
+.g-card { background: var(--panel); }
+.chips span, .cols tr.is-pk td, .cols tbody tr:hover td { background: var(--content-2); }
+.main .icon-btn { background: var(--panel); }
 </style>
 </head>
 <body>
