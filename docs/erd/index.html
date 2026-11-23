@@ -156,7 +156,6 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .icon-btn:hover { background: var(--panel-2); }
-.menu-btn { display: none; }
 
 /* ---------- 레이아웃 ---------- */
 .layout { display: flex; height: calc(100% - 56px); }
@@ -167,7 +166,10 @@ button { font: inherit; color: inherit; }
   background: var(--panel);
   border-right: 1px solid var(--line);
   padding: 12px 10px 24px;
+  transition: width .2s, padding .2s;
 }
+/* 넓은 화면: ☰로 사이드바 접기 (상태는 localStorage erd-side-collapsed) */
+body.side-collapsed .side { width: 0; padding: 0; border-right: 0; overflow: hidden; }
 .main { flex: 1; min-width: 0; overflow: auto; position: relative; }
 .scrim { display: none; }
 
@@ -467,7 +469,6 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
   .stage-cols { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
-  .menu-btn { display: inline-block; }
   .meta { display: none; }
   .top { gap: 10px; }
   .brand span:last-child { display: none; }
@@ -481,6 +482,8 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
     transition: transform .2s;
     box-shadow: var(--shadow);
   }
+  /* 좁은 화면은 접기 대신 기존 오버레이(side-open) 방식 */
+  body.side-collapsed .side { width: 264px; padding: 12px 10px 24px; border-right: 1px solid var(--line); overflow: auto; }
   body.side-open .side { transform: none; }
   body.side-open .scrim {
     display: block;
@@ -534,7 +537,7 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
 </head>
 <body>
 <header class="top">
-  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기">☰</button>
+  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 접기/펴기" aria-expanded="true" title="영역 목록 접기/펴기">☰</button>
   <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>패션 마켓 ERD</span></a>
   <span class="meta">MySQL 8.0 · 테이블 4 · 관계 3</span>
   <div class="search">
@@ -922,6 +925,7 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
     renderSide();
     selectTable(next.t);
     document.body.classList.remove('side-open');
+    syncMenu();
   }
 
   // ---------- 사이드바 ----------
@@ -1471,7 +1475,26 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
   });
-  $('#menuBtn').onclick = () => document.body.classList.toggle('side-open');
+  // 사이드바: 넓은 화면은 접기/펴기(상태 저장), 좁은 화면은 오버레이 열기/닫기
+  const SKEY = 'erd-side-collapsed';
+  const narrow = window.matchMedia('(max-width: 760px)');
+  const menuBtn = $('#menuBtn');
+  const syncMenu = () => {
+    const b = document.body.classList;
+    menuBtn.setAttribute('aria-expanded', String(narrow.matches ? b.contains('side-open') : !b.contains('side-collapsed')));
+  };
+  try { if (localStorage.getItem(SKEY) === '1') document.body.classList.add('side-collapsed'); } catch (e) { /* 저장 불가면 펼친 상태 */ }
+  menuBtn.onclick = () => {
+    if (narrow.matches) document.body.classList.toggle('side-open');
+    else {
+      const c = document.body.classList.toggle('side-collapsed');
+      try { localStorage.setItem(SKEY, c ? '1' : '0'); } catch (e) { /* 이번 화면에서만 유지 */ }
+    }
+    syncMenu();
+  };
+  side.addEventListener('transitionend', (e) => { if (e.target === side && e.propertyName === 'width') refit(); });
+  narrow.addEventListener('change', syncMenu);
+  syncMenu();
   $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { refit(); }, 150); });

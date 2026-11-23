@@ -148,7 +148,6 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .icon-btn:hover { background: var(--panel-2); }
-.menu-btn { display: none; }
 
 /* ---------- 레이아웃 ---------- */
 .layout { display: flex; height: calc(100% - 56px); }
@@ -159,7 +158,10 @@ button { font: inherit; color: inherit; }
   background: var(--panel);
   border-right: 1px solid var(--line);
   padding: 12px 10px 24px;
+  transition: width .2s, padding .2s;
 }
+/* 넓은 화면: ☰로 사이드바 접기 (상태는 localStorage erd-side-collapsed) */
+body.side-collapsed .side { width: 0; padding: 0; border-right: 0; overflow: hidden; }
 .main { flex: 1; min-width: 0; overflow: auto; position: relative; }
 .scrim { display: none; }
 
@@ -459,7 +461,6 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
   .stage-cols { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
-  .menu-btn { display: inline-block; }
   .meta { display: none; }
   .top { gap: 10px; }
   .brand span:last-child { display: none; }
@@ -473,6 +474,8 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
     transition: transform .2s;
     box-shadow: var(--shadow);
   }
+  /* 좁은 화면은 접기 대신 기존 오버레이(side-open) 방식 */
+  body.side-collapsed .side { width: 264px; padding: 12px 10px 24px; border-right: 1px solid var(--line); overflow: auto; }
   body.side-open .side { transform: none; }
   body.side-open .scrim {
     display: block;

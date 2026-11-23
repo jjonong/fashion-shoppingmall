@@ -39,6 +39,7 @@
     renderSide();
     selectTable(next.t);
     document.body.classList.remove('side-open');
+    syncMenu();
   }
 
   // ---------- 사이드바 ----------
@@ -588,7 +589,26 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
   });
-  $('#menuBtn').onclick = () => document.body.classList.toggle('side-open');
+  // 사이드바: 넓은 화면은 접기/펴기(상태 저장), 좁은 화면은 오버레이 열기/닫기
+  const SKEY = 'erd-side-collapsed';
+  const narrow = window.matchMedia('(max-width: 760px)');
+  const menuBtn = $('#menuBtn');
+  const syncMenu = () => {
+    const b = document.body.classList;
+    menuBtn.setAttribute('aria-expanded', String(narrow.matches ? b.contains('side-open') : !b.contains('side-collapsed')));
+  };
+  try { if (localStorage.getItem(SKEY) === '1') document.body.classList.add('side-collapsed'); } catch (e) { /* 저장 불가면 펼친 상태 */ }
+  menuBtn.onclick = () => {
+    if (narrow.matches) document.body.classList.toggle('side-open');
+    else {
+      const c = document.body.classList.toggle('side-collapsed');
+      try { localStorage.setItem(SKEY, c ? '1' : '0'); } catch (e) { /* 이번 화면에서만 유지 */ }
+    }
+    syncMenu();
+  };
+  side.addEventListener('transitionend', (e) => { if (e.target === side && e.propertyName === 'width') refit(); });
+  narrow.addEventListener('change', syncMenu);
+  syncMenu();
   $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { refit(); }, 150); });
