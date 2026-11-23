@@ -30,20 +30,20 @@ Table member_account [note: '[회원] 구매 고객 계정. 브랜드 관리자�
   name varchar(50) [not null, note: '[회원 이름] 실명. 가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 탈퇴 시 탈퇴회원']
   nickname varchar(20) [not null, note: '[회원 닉네임] 리뷰·문의에 표시. 2~12자 한글/영문/숫자/_ (앱 검증). 탈퇴 시 deleted_{아이디}']
   email varchar(100) [not null, note: '[회원 이메일] 평문 저장(법적 암호화 대상 아님, 암호화하면 UNIQUE·대소문자 무시 비교·아이디 찾기가 안 됨). 관리자 화면은 마스킹, 조회는 접근 기록. 대소문자 무시 콜레이션(utf8mb4_0900_ai_ci)이라 UNIQUE만으로 대소문자 중복 방지. 탈퇴 시 withdrawn_{아이디}@deleted.local로 마스킹']
-  phone_enc varchar(255) [not null, note: '[회원 휴대폰 번호] 가입 시 휴대폰 본인인증 결과로 채움. AES-256 암호문. 문자 발송·화면 표시처럼 실제 번호가 필요할 때 복호화. 같은 번호도 매번 다른 암호문(IV)이라 검색에는 phone_hash 사용. 법적 의무는 아니지만 유출 시 피해(스팸·피싱)가 커서 추가 보호']
-  phone_hash char(64) [not null, note: '[회원 휴대폰 번호 검색값] HMAC-SHA256(서버 비밀 키). 같은 번호면 항상 같은 값이라 아이디 찾기·같은 번호 가입 확인에 검색용으로 사용. 번호는 경우의 수가 약 1억 개라 단순 SHA-256은 전부 대입해 풀리므로 키를 섞음']
+  phone_enc varchar(255) [note: '[회원 휴대폰 번호] 가입 시 휴대폰 본인인증 결과로 채움(활동 회원은 항상 값 있음, 앱 검증). 탈퇴 시 NULL. AES-256 암호문. 문자 발송·화면 표시처럼 실제 번호가 필요할 때 복호화. 같은 번호도 매번 다른 암호문(IV)이라 검색에는 phone_hash 사용. 법적 의무는 아니지만 유출 시 피해(스팸·피싱)가 커서 추가 보호']
+  phone_hash char(64) [note: '[회원 휴대폰 번호 검색값] HMAC-SHA256(서버 비밀 키). 탈퇴 시 NULL. 같은 번호면 항상 같은 값이라 아이디 찾기·같은 번호 가입 확인에 검색용으로 사용. 번호는 경우의 수가 약 1억 개라 단순 SHA-256은 전부 대입해 풀리므로 키를 섞음']
   birth_date date [not null, note: '[회원 생년월일] 가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 만 14세 미만 가입 불가(앱 검증). 생일 쿠폰, 연령대 맞춤 추천 기본값']
   gender char(1) [not null, note: '[회원 성별] F/M. 가입 시 휴대폰 본인인증 결과로 채움(직접 입력 아님). 맞춤 추천 피드 기본값']
   profile_image_url varchar(500) [note: '[회원 프로필 사진 경로] 선택 입력. 리뷰·스타일 게시글에 표시. 탈퇴 시 NULL']
   profile_intro varchar(200) [note: '[회원 소개글] 선택 입력. 탈퇴 시 NULL']
-  ci_hash char(64) [note: '[회원 중복 가입 확인값(CI)] 휴대폰 본인인증 시 본인확인기관이 주는 연계정보(CI, 같은 사람이면 어느 사이트든 같은 값)를 HMAC-SHA256(서버 비밀 키)으로 저장. 원래 값은 볼 일 없이 비교만 함. 같은 사람은 계정 1개만 허용(가입 혜택 반복 수령 방지). 탈퇴 시 NULL']
+  ci_hash char(64) [note: '[회원 중복 가입 확인값(CI)] 휴대폰 본인인증 시 본인확인기관이 주는 연계정보(CI, 같은 사람이면 어느 사이트든 같은 값)를 HMAC-SHA256(서버 비밀 키)으로 저장. 원래 값은 볼 일 없이 비교만 함. 같은 사람은 계정 1개만 허용(가입 혜택 반복 수령 방지). 탈퇴 시 member_withdrawal.ci_hash로 옮기고(30일 재가입 제한용) 여기는 NULL']
   join_method varchar(20) [not null, note: '[회원 가입 수단] EMAIL/KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 처음 가입한 방법 (이후 연동한 소셜 계정은 member_social_account)']
   join_channel varchar(20) [not null, note: '[회원 가입 경로] PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID']
   verified_at datetime [not null, note: '[회원 본인인증일시] 가입 시 휴대폰 본인인증 필수. 재인증 시 갱신']
   status varchar(20) [not null, default: 'ACTIVE', note: '[회원 상태] ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 로그인 잠금은 상태가 아니라 member_login.locked_until로 판단']
   suspended_until datetime [note: '[회원 이용 정지 종료일시] SUSPENDED 기한. 지나면 배치로 ACTIVE']
   nickname_changed_at datetime [note: '[회원 닉네임 변경일시] 변경 후 30일간 재변경 불가']
-  withdrawn_at datetime [note: '[회원 탈퇴일시] 탈퇴 시 마스킹: 이름·닉네임·이메일, ci_hash·프로필 사진·소개글 NULL. 탈퇴 사유·의견은 member_withdrawal']
+  withdrawn_at datetime [note: '[회원 탈퇴일시] 탈퇴 시 행은 남기고(아이디 재사용 방지, 거래 기록 참조) 마스킹: 이름·닉네임·이메일 변경, 휴대폰·ci_hash·프로필 사진·소개글 NULL. 로그인 상태·소셜 계정·체형·배송지·환불 계좌 행은 삭제. 탈퇴 사유·의견은 member_withdrawal']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 가입일시]']
   updated_at datetime [note: '[회원 정보 수정일시] 회원이 정보를 바꿀 때만 갱신. 로그인할 때마다 바뀌는 값은 member_login에 두어 이 값이 로그인으로 바뀌지 않게 함']
 
@@ -55,7 +55,7 @@ Table member_account [note: '[회원] 구매 고객 계정. 브랜드 관리자�
   }
 }
 
-Table member_login [note: '[회원 로그인 상태] member_account와 1:1, 가입 시 함께 생성. 로그인할 때마다 바뀌는 값을 분리해 회원 정보 수정일시가 로그인으로 바뀌지 않게 하고, 회원 행 수정과의 잠금 경합을 줄임'] {
+Table member_login [note: '[회원 로그인 상태] member_account와 1:1, 가입 시 함께 생성, 탈퇴 시 삭제. 로그인할 때마다 바뀌는 값을 분리해 회원 정보 수정일시가 로그인으로 바뀌지 않게 하고, 회원 행 수정과의 잠금 경합을 줄임'] {
   member_id varchar(20) [pk, note: '[로그인 상태 회원 아이디] member_account와 1:1']
   last_login_at datetime [note: '[회원 마지막 로그인일시] 휴면 전환 배치 기준. 가입 직후는 NULL']
   login_fail_count tinyint [not null, default: 0, note: '[회원 연속 로그인 실패 횟수] 로그인 성공 시 0으로 초기화']
@@ -69,11 +69,12 @@ Table member_login [note: '[회원 로그인 상태] member_account와 1:1, 가�
   }
 }
 
-Table member_social_account [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개)'] {
+Table member_social_account [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개). 연동 해제·탈퇴 시 제공자 연동 해제 API 호출 후 행 삭제. 비밀번호 없는 소셜 전용 회원은 마지막 남은 소셜 계정을 해제할 수 없음(앱 검증, 로그인 수단이 사라지므로)'] {
   member_id varchar(20) [not null, note: '[소셜 연동 회원 아이디]']
   provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 회원당 제공자별 1개라 (회원 아이디, 제공자)를 PK로 사용']
   provider_user_id varchar(100) [not null, note: '[소셜 제공자 회원 식별값] 소셜 서비스의 회원 고유 ID']
   provider_email varchar(100) [note: '[소셜 계정 이메일] 제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음). 소셜 로그인 시 바뀌었으면 갱신']
+  refresh_token_enc varchar(1000) [note: '[소셜 연동 해제용 토큰] 제공자가 준 리프레시 토큰의 AES-256 암호문. 연동 해제·탈퇴 시 해제(revoke) API에 사용(애플은 탈퇴 시 해제 의무, 네이버도 토큰 필요). 카카오는 서버 키로 해제 가능해 NULL 허용. 액세스 토큰은 금방 만료되어 저장 안 함']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[소셜 계정 연동일시]']
   updated_at datetime [note: '[소셜 계정 정보 수정일시]']
 
@@ -130,11 +131,13 @@ Table member_withdrawal [note: '[회원 탈퇴 정보] member_account와 1:1. �
   member_id varchar(20) [pk, note: '[탈퇴 회원 아이디] member_account와 1:1']
   withdraw_reason varchar(20) [not null, note: '[회원 탈퇴 사유] LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC. 탈퇴 신청 시 선택, 사유별 통계']
   withdraw_comment varchar(500) [note: '[회원 탈퇴 의견] 탈퇴 신청 시 자유 의견. 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL(배치)']
+  ci_hash char(64) [note: '[재가입 제한 확인값(CI)] 탈퇴 시 member_account.ci_hash를 옮겨 둠. 약관에 명시한 탈퇴 후 30일 재가입 제한(신규 가입 혜택 반복 수령 방지) 확인용. 30일 지나면 NULL(배치)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 탈퇴 신청일시]']
   updated_at datetime [note: '[회원 탈퇴 정보 수정일시] 탈퇴 의견 NULL 처리 배치 등']
 
   indexes {
     withdraw_reason [name: 'ix_member_withdrawal_reason', note: '탈퇴 사유별 집계']
+    ci_hash [name: 'ix_member_withdrawal_ci', note: '가입 시 30일 내 탈퇴 이력 확인']
   }
 }
 
