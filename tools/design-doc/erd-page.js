@@ -177,7 +177,7 @@ async function main() {
 </head>
 <body>
 <header class="top">
-  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 접기/펴기" aria-expanded="true" title="영역 목록 접기/펴기">☰</button>
+  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기" aria-expanded="false">☰</button>
   <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>패션 마켓 ERD</span></a>
   <span class="meta">MySQL 8.0 · 테이블 ${data.counts.tables} · 관계 ${data.counts.refs}</span>
   <div class="search">
@@ -187,6 +187,7 @@ async function main() {
 </header>
 <div class="layout">
   <nav class="side" id="side" aria-label="영역 목록"></nav>
+  <button class="side-toggle" id="sideToggle" aria-controls="side" aria-expanded="true" aria-label="영역 목록 접기" title="영역 목록 접기">‹</button>
   <main class="main" id="main"></main>
 </div>
 <div class="scrim" id="scrim" hidden></div>

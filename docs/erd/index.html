@@ -156,9 +156,33 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .icon-btn:hover { background: var(--panel-2); }
+.menu-btn { display: none; }
 
 /* ---------- 레이아웃 ---------- */
-.layout { display: flex; height: calc(100% - 56px); }
+.layout { display: flex; height: calc(100% - 56px); position: relative; }
+/* PC: 사이드바 오른쪽 끝 세로 가운데의 ‹ / › 버튼으로 접기/펴기 */
+.side-toggle {
+  position: absolute;
+  top: 50%;
+  left: 264px;
+  z-index: 15;
+  width: 18px;
+  height: 48px;
+  margin-top: -24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 2px 0 6px rgba(20, 30, 45, .06);
+  transition: left .2s;
+}
+.side-toggle:hover { color: var(--accent); background: var(--panel-2); }
+body.side-collapsed .side-toggle { left: 0; }
 .side {
   width: 264px;
   flex: none;
@@ -469,6 +493,8 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
   .stage-cols { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
+  .menu-btn { display: inline-block; }
+  .side-toggle { display: none; }
   .meta { display: none; }
   .top { gap: 10px; }
   .brand span:last-child { display: none; }
@@ -537,7 +563,7 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
 </head>
 <body>
 <header class="top">
-  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 접기/펴기" aria-expanded="true" title="영역 목록 접기/펴기">☰</button>
+  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기" aria-expanded="false">☰</button>
   <a class="brand" href="#" aria-label="개요로 이동"><span class="logo"></span><span>패션 마켓 ERD</span></a>
   <span class="meta">MySQL 8.0 · 테이블 4 · 관계 3</span>
   <div class="search">
@@ -547,6 +573,7 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
 </header>
 <div class="layout">
   <nav class="side" id="side" aria-label="영역 목록"></nav>
+  <button class="side-toggle" id="sideToggle" aria-controls="side" aria-expanded="true" aria-label="영역 목록 접기" title="영역 목록 접기">‹</button>
   <main class="main" id="main"></main>
 </div>
 <div class="scrim" id="scrim" hidden></div>
@@ -1475,25 +1502,27 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
   });
-  // 사이드바: 넓은 화면은 접기/펴기(상태 저장), 좁은 화면은 오버레이 열기/닫기
+  // 사이드바: PC는 오른쪽 끝 ‹ / › 버튼으로 접기/펴기(상태 저장), 좁은 화면은 ☰로 오버레이 열기/닫기
   const SKEY = 'erd-side-collapsed';
-  const narrow = window.matchMedia('(max-width: 760px)');
-  const menuBtn = $('#menuBtn');
-  const syncMenu = () => {
+  const menuBtn = $('#menuBtn'), sideToggle = $('#sideToggle');
+  function syncMenu() {
     const b = document.body.classList;
-    menuBtn.setAttribute('aria-expanded', String(narrow.matches ? b.contains('side-open') : !b.contains('side-collapsed')));
-  };
+    menuBtn.setAttribute('aria-expanded', String(b.contains('side-open')));
+    const collapsed = b.contains('side-collapsed');
+    const label = collapsed ? '영역 목록 펴기' : '영역 목록 접기';
+    sideToggle.textContent = collapsed ? '›' : '‹';
+    sideToggle.setAttribute('aria-expanded', String(!collapsed));
+    sideToggle.setAttribute('aria-label', label);
+    sideToggle.title = label;
+  }
   try { if (localStorage.getItem(SKEY) === '1') document.body.classList.add('side-collapsed'); } catch (e) { /* 저장 불가면 펼친 상태 */ }
-  menuBtn.onclick = () => {
-    if (narrow.matches) document.body.classList.toggle('side-open');
-    else {
-      const c = document.body.classList.toggle('side-collapsed');
-      try { localStorage.setItem(SKEY, c ? '1' : '0'); } catch (e) { /* 이번 화면에서만 유지 */ }
-    }
+  menuBtn.onclick = () => { document.body.classList.toggle('side-open'); syncMenu(); };
+  sideToggle.onclick = () => {
+    const c = document.body.classList.toggle('side-collapsed');
+    try { localStorage.setItem(SKEY, c ? '1' : '0'); } catch (e) { /* 이번 화면에서만 유지 */ }
     syncMenu();
   };
   side.addEventListener('transitionend', (e) => { if (e.target === side && e.propertyName === 'width') refit(); });
-  narrow.addEventListener('change', syncMenu);
   syncMenu();
   $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;

@@ -589,25 +589,27 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
   });
-  // 사이드바: 넓은 화면은 접기/펴기(상태 저장), 좁은 화면은 오버레이 열기/닫기
+  // 사이드바: PC는 오른쪽 끝 ‹ / › 버튼으로 접기/펴기(상태 저장), 좁은 화면은 ☰로 오버레이 열기/닫기
   const SKEY = 'erd-side-collapsed';
-  const narrow = window.matchMedia('(max-width: 760px)');
-  const menuBtn = $('#menuBtn');
-  const syncMenu = () => {
+  const menuBtn = $('#menuBtn'), sideToggle = $('#sideToggle');
+  function syncMenu() {
     const b = document.body.classList;
-    menuBtn.setAttribute('aria-expanded', String(narrow.matches ? b.contains('side-open') : !b.contains('side-collapsed')));
-  };
+    menuBtn.setAttribute('aria-expanded', String(b.contains('side-open')));
+    const collapsed = b.contains('side-collapsed');
+    const label = collapsed ? '영역 목록 펴기' : '영역 목록 접기';
+    sideToggle.textContent = collapsed ? '›' : '‹';
+    sideToggle.setAttribute('aria-expanded', String(!collapsed));
+    sideToggle.setAttribute('aria-label', label);
+    sideToggle.title = label;
+  }
   try { if (localStorage.getItem(SKEY) === '1') document.body.classList.add('side-collapsed'); } catch (e) { /* 저장 불가면 펼친 상태 */ }
-  menuBtn.onclick = () => {
-    if (narrow.matches) document.body.classList.toggle('side-open');
-    else {
-      const c = document.body.classList.toggle('side-collapsed');
-      try { localStorage.setItem(SKEY, c ? '1' : '0'); } catch (e) { /* 이번 화면에서만 유지 */ }
-    }
+  menuBtn.onclick = () => { document.body.classList.toggle('side-open'); syncMenu(); };
+  sideToggle.onclick = () => {
+    const c = document.body.classList.toggle('side-collapsed');
+    try { localStorage.setItem(SKEY, c ? '1' : '0'); } catch (e) { /* 이번 화면에서만 유지 */ }
     syncMenu();
   };
   side.addEventListener('transitionend', (e) => { if (e.target === side && e.propertyName === 'width') refit(); });
-  narrow.addEventListener('change', syncMenu);
   syncMenu();
   $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;

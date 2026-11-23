@@ -148,9 +148,33 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
 }
 .icon-btn:hover { background: var(--panel-2); }
+.menu-btn { display: none; }
 
 /* ---------- 레이아웃 ---------- */
-.layout { display: flex; height: calc(100% - 56px); }
+.layout { display: flex; height: calc(100% - 56px); position: relative; }
+/* PC: 사이드바 오른쪽 끝 세로 가운데의 ‹ / › 버튼으로 접기/펴기 */
+.side-toggle {
+  position: absolute;
+  top: 50%;
+  left: 264px;
+  z-index: 15;
+  width: 18px;
+  height: 48px;
+  margin-top: -24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 2px 0 6px rgba(20, 30, 45, .06);
+  transition: left .2s;
+}
+.side-toggle:hover { color: var(--accent); background: var(--panel-2); }
+body.side-collapsed .side-toggle { left: 0; }
 .side {
   width: 264px;
   flex: none;
@@ -461,6 +485,8 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
   .stage-cols { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
+  .menu-btn { display: inline-block; }
+  .side-toggle { display: none; }
   .meta { display: none; }
   .top { gap: 10px; }
   .brand span:last-child { display: none; }
