@@ -623,6 +623,26 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
   });
+  // 다크/라이트 전환: 저장값(erd-theme)이 없으면 시스템 설정을 따름. 첫 화면 깜빡임 방지용 적용은 <head>의 인라인 스크립트
+  const themeBtn = $('#themeBtn');
+  const darkMq = window.matchMedia('(prefers-color-scheme: dark)');
+  const isDark = () => (document.documentElement.dataset.theme || (darkMq.matches ? 'dark' : 'light')) === 'dark';
+  function syncTheme() {
+    const d = isDark();
+    themeBtn.textContent = d ? 'LIGHT' : 'DARK';
+    themeBtn.setAttribute('aria-label', d ? '라이트 모드로 전환' : '다크 모드로 전환');
+    themeBtn.title = themeBtn.getAttribute('aria-label');
+    themeBtn.setAttribute('aria-pressed', String(d));
+  }
+  themeBtn.onclick = () => {
+    const next = isDark() ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('erd-theme', next); } catch (e) { /* 이번 화면에서만 유지 */ }
+    syncTheme();
+  };
+  darkMq.addEventListener('change', syncTheme);
+  syncTheme();
+
   // 사이드바: PC는 오른쪽 끝 ‹ / › 버튼으로 접기/펴기(상태 저장), 좁은 화면은 ☰로 오버레이 열기/닫기
   const SKEY = 'erd-side-collapsed';
   const menuBtn = $('#menuBtn'), sideToggle = $('#sideToggle');

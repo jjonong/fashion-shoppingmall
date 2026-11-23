@@ -173,6 +173,7 @@ async function main() {
 <title>패션 쇼핑몰 ERD</title>
 <meta name="description" content="패션 브랜드 입점형 쇼핑몰 DB 설계 ERD (MySQL 8.0, ${data.counts.tables}개 테이블). docs/erd.dbml에서 자동 생성">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%232f6496'/%3E%3Cpath d='M3 12h26M12 12v15' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<script>try { var t = localStorage.getItem('erd-theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>${css}</style>
 </head>
@@ -185,6 +186,7 @@ async function main() {
     <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
     <div id="results" class="results" hidden></div>
   </div>
+  <button class="icon-btn theme-btn" id="themeBtn" type="button">DARK</button>
 </header>
 <div class="layout">
   <nav class="side" id="side" aria-label="영역 목록"></nav>
