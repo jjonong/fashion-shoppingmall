@@ -69,18 +69,27 @@ const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 
 // ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
 // tables: 그릴 테이블 이름 배열. 이 테이블들이 참조하는 다른 테이블은 회색(PK만)으로 함께 그린다.
 // leftOf: { hub, tables } — hub 테이블을 참조하는 자식 중 tables에 든 것은 hub 왼쪽에 배치 (허브형 배치)
-// 테이블 제목줄 색 (렌더 후 pill()이 이 색의 사각형을 알약 모양으로 바꾼다)
+// 테이블 제목줄 색 (렌더 후 pill()이 이 색의 사각형과 행 상자 테두리(#ddd)를 같은 둥글기의 rect로 바꾼다)
 const PILL = '#2B2B2B', PILL_EXT = '#BDBDBD';
+const RADIUS = 5; // 제목줄·행 상자 공통 모서리 둥글기 (사용자 요청: 살짝, 둘이 같게)
 function pill(svg) {
-  return svg.replace(/<polygon fill="(#2b2b2b|#bdbdbd)" stroke="[^"]*" points="([^"]+)"\s*\/>/gi, (m, c, pts) => {
+  const box = (pts) => {
     const p = pts.trim().split(/\s+/).map((q) => q.split(',').map(Number));
     const xs = p.map((q) => q[0]), ys = p.map((q) => q[1]);
-    const x = Math.min(...xs), y = Math.min(...ys), w = Math.max(...xs) - x, h = Math.max(...ys) - y;
-    return `<rect class="hd" fill="${c}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" ry="${h / 2}"/>`;
-  })
+    const x = Math.min(...xs), y = Math.min(...ys);
+    return `x="${x}" y="${y}" width="${Math.max(...xs) - x}" height="${Math.max(...ys) - y}" rx="${RADIUS}" ry="${RADIUS}"`;
+  };
+  return svg
+    .replace(/<polygon fill="(#2b2b2b|#bdbdbd)" stroke="[^"]*" points="([^"]+)"\s*\/>/gi, (m, c, pts) => `<rect class="hd" fill="${c}" ${box(pts)}/>`)
     // 한글 제목이 Graphviz 계산상 위로 치우쳐 보여서, 제목줄 안 글자를 아래로 조금 내린다
     .replace(/(<rect class="hd"[^>]*height="([\d.]+)"[^>]*\/>)([\s\S]*?)(?=<polygon|<rect|<\/g>)/g, (m, r, h, rest) =>
-      r + rest.replace(/<text([^>]*) y="([\d.-]+)"/g, (t, at, y) => `<text${at} y="${(+y + h * 0.08).toFixed(2)}"`));
+      r + rest.replace(/<text([^>]*) y="([\d.-]+)"/g, (t, at, y) => `<text${at} y="${(+y + h * 0.08).toFixed(2)}"`))
+    // 행 상자 테두리: 줄무늬 행 위에 그려지도록 맨 뒤(</g> 앞)로 옮긴다
+    .replace(/<g id="([^"]*node[^"]*)" class="node">([\s\S]*?)<\/g>/g, (m, id, body) => {
+      let border = '';
+      body = body.replace(/<polygon fill="none" stroke="#dddddd" points="([^"]+)"\s*\/>/i, (mm, pts) => ((border = `<rect class="box" fill="none" stroke="#dddddd" ${box(pts)}/>`), ''));
+      return `<g id="${id}" class="node">${body}${border}</g>`;
+    });
 }
 function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   const { tableMap, refs, fieldOf, compositePk, baseType, keyFields, keyMark } = ctx;
