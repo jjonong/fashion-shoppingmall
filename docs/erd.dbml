@@ -1,7 +1,7 @@
 // =====================================================================
 // 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: W컨셉 (디자이너 브랜드 입점, 의류·신발·가방·잡화)
-// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) = 10개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
+// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 운영 5개(운영자 기본) = 15개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
@@ -154,7 +154,7 @@ Table member_grade [note: '[회원 등급] 등급 기준표. GREEN(0점~)/BLUE(2
   point_rate decimal(4,2) [not null, note: '[회원 등급 구매 적립률(%)] 0.50/1.00/1.50/2.00']
   slogan varchar(100) [note: '[회원 등급 소개 문구] 등급 안내 화면 표시. 예: 처음 발견한 나만의 컨셉']
   is_active char(1) [not null, default: 'Y', note: '[사용 여부] 회원 등급 사용 여부. Y/N']
-  created_by varchar(20) [note: '[등록 관리자] 회원 등급 등록 관리자. 관리자 아이디 (보안·상태 묶음의 admin_user와 연결 예정)']
+  created_by varchar(20) [note: '[등록 관리자] 회원 등급 등록 관리자 (admin_user)']
   updated_by varchar(20) [note: '[수정 관리자] 회원 등급 수정 관리자']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 회원 등급 등록일시']
   updated_at datetime [note: '[수정일시] 회원 등급 수정일시']
@@ -209,6 +209,95 @@ Table member_grade_history [note: '[회원 등급 이력] 등급이 정해질 �
 }
 
 // =====================================================================
+// 운영 - 운영자 기본 (개인정보취급자: 개인정보의 안전성 확보조치 기준 적용)
+// =====================================================================
+
+Table admin_role [note: '[운영자 역할] 역할 기준표. SUPER/OPERATOR/CS/MD/MARKETING. 개인정보 열람·다운로드는 역할별로 최소 권한만. 메뉴·기능 단위 세부 권한표는 관리자 화면 설계 때 추가'] {
+  role_code varchar(20) [pk, note: '[운영자 역할 코드] SUPER/OPERATOR/CS/MD/MARKETING (최고관리자/운영/고객상담/상품 MD/마케팅)']
+  role_name varchar(50) [not null, note: '[운영자 역할 이름] 화면 표시 이름']
+  description varchar(200) [note: '[운영자 역할 설명] 담당 업무 범위']
+  can_unmask_personal char(1) [not null, default: 'N', note: '[개인정보 마스킹 해제 가능 여부] Y/N. Y여도 해제할 때마다 admin_access_log에 기록']
+  can_download_personal char(1) [not null, default: 'N', note: '[개인정보 다운로드 가능 여부] Y/N. 다운로드 시 사유 입력 필수(admin_access_log)']
+  is_active char(1) [not null, default: 'Y', note: '[사용 여부] 운영자 역할 사용 여부. Y/N']
+  created_by varchar(20) [note: '[등록 관리자]']
+  updated_by varchar(20) [note: '[수정 관리자]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  updated_at datetime [note: '[수정일시]']
+}
+
+Table admin_user [note: '[운영자] 플랫폼 운영자 계정(개인정보취급자). 사람마다 따로 발급하고 공유 금지. 브랜드 관리자 계정은 브랜드 영역(brand_user)에서 별도로'] {
+  admin_id varchar(20) [pk, note: '[운영자 아이디] 발급 시 정함, 변경·재사용 불가 (퇴사 후에도 행이 남아 기록과 연결)']
+  password_hash varchar(255) [not null, note: '[운영자 비밀번호] bcrypt 단방향 해시. 작성 규칙(영문·숫자·특수문자 조합 8자 이상 등)은 앱 검증']
+  name varchar(50) [not null, note: '[운영자 이름]']
+  email varchar(100) [not null, note: '[운영자 이메일] 회사 메일. 비밀번호 재설정·보안 알림용']
+  department varchar(50) [note: '[운영자 부서]']
+  role_code varchar(20) [not null, note: '[운영자 역할 코드] 바뀌면 admin_role_history에 기록']
+  status varchar(20) [not null, default: 'ACTIVE', note: '[운영자 상태] ACTIVE/SUSPENDED/RETIRED (사용/일시 정지/퇴사). 퇴사·인사이동 시 지체 없이 RETIRED(권한 말소)']
+  otp_secret_enc varchar(255) [note: '[운영자 2차 인증 비밀키] OTP 비밀키 AES-256 암호문. 외부 접속 시 2차 인증 필수(안전성 확보조치 기준). NULL이면 미등록, 첫 로그인 때 등록']
+  password_changed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[운영자 비밀번호 변경일시] 변경 주기 안내(예: 90일)']
+  retired_at datetime [note: '[운영자 퇴사일시] RETIRED 처리 시각']
+  created_by varchar(20) [note: '[등록 관리자] 계정을 발급한 운영자']
+  updated_by varchar(20) [note: '[수정 관리자]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 계정 발급일시']
+  updated_at datetime [note: '[수정일시] 로그인할 때마다 바뀌는 값은 admin_login에 두어 이 값이 로그인으로 바뀌지 않게 함']
+
+  indexes {
+    email [unique, name: 'uk_admin_user_email']
+    role_code [name: 'ix_admin_user_role', note: 'FK 인덱스']
+  }
+}
+
+Table admin_login [note: '[운영자 로그인 상태] admin_user와 1:1, 계정 발급 시 함께 생성. 일정 횟수 인증 실패 시 접근 제한은 운영자에게는 법적 의무'] {
+  admin_id varchar(20) [pk, note: '[운영자 아이디] admin_user와 1:1']
+  last_login_at datetime [note: '[운영자 마지막 로그인일시] 장기 미접속 계정 점검 기준']
+  login_fail_count tinyint [not null, default: 0, note: '[운영자 연속 로그인 실패 횟수] 성공 시 0으로 초기화']
+  locked_until datetime [note: '[운영자 로그인 잠금 해제일시] 5회 연속 실패 시 잠금. 운영자는 시간 경과로 풀지 않고 최고관리자가 해제(해제 시 NULL)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  updated_at datetime [note: '[수정일시]']
+}
+
+Table admin_role_history [note: '[운영자 권한 이력] 권한 부여·변경·말소 기록. 법정 3년 보관(안전성 확보조치 기준), 수정·삭제 금지'] {
+  admin_id varchar(20) [not null, note: '[운영자 아이디] 권한이 바뀐 운영자']
+  history_no int [not null, note: '[운영자 권한 이력 번호] 운영자별 1부터. 앱이 그 운영자의 MAX+1로 부여']
+  action varchar(20) [not null, note: '[운영자 권한 처리 구분] GRANT/CHANGE/REVOKE (부여/변경/말소)']
+  prev_role_code varchar(20) [note: '[이전 운영자 역할 코드] GRANT면 NULL']
+  role_code varchar(20) [note: '[운영자 역할 코드] 처리 후 역할. REVOKE면 NULL']
+  reason varchar(200) [not null, note: '[운영자 권한 변경 사유] 예: 신규 입사, 부서 이동, 퇴사']
+  changed_by varchar(20) [not null, note: '[권한 처리 관리자] 처리한 운영자(보통 SUPER)']
+  changed_at datetime [not null, note: '[운영자 권한 처리일시]']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  updated_at datetime [note: '[수정일시] 이력은 수정하지 않으므로 보통 NULL']
+
+  indexes {
+    (admin_id, history_no) [pk, note: 'admin_id 선두라 FK 인덱스 겸용']
+    prev_role_code [name: 'ix_admin_role_history_prev', note: 'FK 인덱스']
+    role_code [name: 'ix_admin_role_history_role', note: 'FK 인덱스']
+    changed_by [name: 'ix_admin_role_history_changed_by', note: 'FK 인덱스']
+    changed_at [name: 'ix_admin_role_history_changed_at', note: '기간별 권한 변경 점검']
+  }
+}
+
+Table admin_access_log [note: '[운영자 접속 기록] 로그인·로그아웃과 개인정보 처리(조회·마스킹 해제·다운로드·수정·삭제) 기록. 법정 2년 보관(안전성 확보조치 기준: 정보주체 5만 명 이상 등), 월 1회 이상 점검, 수정·삭제 금지'] {
+  admin_id varchar(20) [not null, note: '[운영자 아이디] 처리한 운영자']
+  log_no bigint [not null, note: '[운영자 접속 기록 번호] 운영자별 1부터. 앱이 그 운영자의 MAX+1로 부여']
+  accessed_at datetime [not null, note: '[운영자 접속일시] 처리한 시각']
+  action varchar(20) [not null, note: '[운영자 처리 구분] LOGIN/LOGOUT/LOGIN_FAIL/VIEW/UNMASK/DOWNLOAD/UPDATE/DELETE']
+  menu_path varchar(200) [note: '[운영자 접근 화면] 예: /admin/members/hyewon01']
+  target_member_id varchar(20) [note: '[처리 대상 회원 아이디] 개인정보를 처리한 회원(정보주체). 로그인 등은 NULL']
+  target_fields varchar(200) [note: '[처리한 개인정보 항목] 예: phone, address. 마스킹 해제·다운로드 때 필수']
+  download_reason varchar(200) [note: '[개인정보 다운로드 사유] DOWNLOAD일 때 필수 입력']
+  client_ip varchar(45) [not null, note: '[운영자 접속 IP] IPv6까지 45자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  updated_at datetime [note: '[수정일시] 기록은 수정하지 않으므로 보통 NULL']
+
+  indexes {
+    (admin_id, log_no) [pk, note: 'admin_id 선두라 FK 인덱스 겸용']
+    accessed_at [name: 'ix_admin_access_log_accessed', note: '월 1회 점검·2년 경과 파기 배치']
+    target_member_id [name: 'ix_admin_access_log_target', note: 'FK 인덱스, 특정 회원 정보를 누가 봤는지 (열람 요청 대응)']
+  }
+}
+
+// =====================================================================
 // 관계
 // =====================================================================
 
@@ -223,6 +312,24 @@ Ref: member_grade_benefit.grade_code > member_grade.grade_code [delete: cascade]
 Ref: member_grade_history.member_id > member_account.member_id [delete: cascade]
 Ref: member_grade_history.grade_code > member_grade.grade_code
 Ref: member_grade_history.prev_grade_code > member_grade.grade_code
+
+Ref: admin_user.role_code > admin_role.role_code
+Ref: admin_user.created_by > admin_user.admin_id
+Ref: admin_user.updated_by > admin_user.admin_id
+Ref: admin_role.created_by > admin_user.admin_id
+Ref: admin_role.updated_by > admin_user.admin_id
+Ref: admin_login.admin_id - admin_user.admin_id [delete: cascade]
+Ref: admin_role_history.admin_id > admin_user.admin_id
+Ref: admin_role_history.prev_role_code > admin_role.role_code
+Ref: admin_role_history.role_code > admin_role.role_code
+Ref: admin_role_history.changed_by > admin_user.admin_id
+Ref: admin_access_log.admin_id > admin_user.admin_id
+Ref: admin_access_log.target_member_id > member_account.member_id
+Ref: member_grade.created_by > admin_user.admin_id
+Ref: member_grade.updated_by > admin_user.admin_id
+Ref: member_grade_benefit.created_by > admin_user.admin_id
+Ref: member_grade_benefit.updated_by > admin_user.admin_id
+Ref: member_grade_history.changed_by > admin_user.admin_id
 
 // =====================================================================
 // 묶음
@@ -242,4 +349,12 @@ TableGroup member_grading [note: '고객 - 회원 등급'] {
   member_grade
   member_grade_benefit
   member_grade_history
+}
+
+TableGroup admin_basic [note: '운영 - 운영자 기본'] {
+  admin_user
+  admin_login
+  admin_role
+  admin_role_history
+  admin_access_log
 }

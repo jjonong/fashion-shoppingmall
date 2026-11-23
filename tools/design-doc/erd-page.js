@@ -5,7 +5,7 @@
 //       node erd-page.js <in.dbml> <out.html>
 const fs = require('fs');
 const path = require('path');
-const { ROOT, esc, noteOf, logicalOf, areaSvg, load, initViz, erSvg, dotSvg, AUDIT, groupDesc, AREAS, areaOf } = require('./lib');
+const { ROOT, esc, noteOf, logicalOf, areaSvg, load, initViz, erSvg, dotSvg, AUDIT, isAdminAudit, groupDesc, AREAS, areaOf } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const out = process.argv[3] || path.join(ROOT, 'docs', 'erd', 'index.html');
@@ -91,6 +91,7 @@ function overallSvg() {
   const seen = new Set();
   refs.forEach((r) => {
     if (AUDIT.has(r.ccol) && r.parent === 'member_account') return;
+    if (isAdminAudit(r) && !groupOf[r.child].startsWith('admin')) return;
     // member_account는 거의 모든 테이블이 참조해서 선이 엉키므로, 고객 영역 밖에서 오는 선은 생략 (설계서 전체 구조와 같은 기준)
     if (r.parent === 'member_account' && !groupOf[r.child].startsWith('member')) return;
     if (r.parent === r.child) return;

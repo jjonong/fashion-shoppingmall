@@ -134,7 +134,7 @@
         <li>각 영역 ERD에는 키 컬럼(PK·FK·UK)만 보이고, 나머지는 <b>+ N columns</b>로 줄여 표시합니다. 테이블을 누르면 전체 컬럼이 나옵니다.</li>
         <li>선 끝 모양: 까마귀발 = 여러 개(N), 세로줄 = 반드시 1개, 동그라미 = 없을 수 있음(0).</li>
         <li>회색 테이블은 다른 영역에 있는 참조 대상입니다 (PK만 표시).</li>
-        <li>고객 외 영역 ERD에서는 관리자 감사 컬럼(created_by 등) → member_account 선을 생략했습니다. 상세 패널에는 FK로 표시됩니다.</li>
+        <li>관리자 감사 컬럼(등록·수정 관리자 created_by/updated_by, 운영 영역 밖의 처리 관리자) → 운영자(admin_user) 선은 생략했습니다. 테이블 명세에는 FK로 표시됩니다.</li>
         <li>테이블을 끌어 옮긴 배치는 이 브라우저에 저장됩니다. <b>배치 내보내기</b>로 받은 <code>erd-layout.json</code>을 <code>docs/</code>에 넣으면 모든 사람에게 같은 배치로 보입니다. 설계가 바뀌어 배치가 어긋나면 <b>배치 초기화</b>를 누르세요.</li>
         <li>원본: <code>docs/erd.dbml</code> (dbdiagram.io 형식). 이 페이지는 <code>tools/design-doc</code>의 <code>npm run erd</code>로 생성됩니다.</li>
       </ul></div>
@@ -193,7 +193,7 @@
         <div class="crumb">${esc(s.name)}</div>
         <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span></h1>
         <p>${esc(G.desc)}</p>
-        ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → member_account 선 생략' : ''}</p>` : ''}
+        ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → 운영자 선 생략' : ''}</p>` : ''}
         <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" title="${t}">${esc(tLg(t))}</a>`).join('')}</nav>
       </div>
       ${toolbarHtml('테이블을 끌어 옮기기 · 빈 곳을 끌어 화면 이동 · 누르면 아래 명세로 · Ctrl + 휠로 확대')}

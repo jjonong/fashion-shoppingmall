@@ -6,7 +6,7 @@
 // 사용: npm run drawio   또는   node drawio.js <in.dbml> <out.drawio>
 const fs = require('fs');
 const path = require('path');
-const { ROOT, noteOf, logicalOf, load, initViz, AREAS, areaOf, AUDIT, gridPlace } = require('./lib');
+const { ROOT, noteOf, logicalOf, load, initViz, AREAS, areaOf, AUDIT, isAdminAudit, gridPlace } = require('./lib');
 
 const src = process.argv[2] || path.join(ROOT, 'docs', 'erd.dbml');
 const out = process.argv[3] || path.join(ROOT, 'docs', 'erd.drawio');
@@ -83,7 +83,7 @@ function tableXml(spec, px, py, parent, color, gray) {
 }
 
 // 관리자 감사 컬럼(created_by 등) → member_account 선은 고객 영역 밖에서 생략 (웹 ERD와 같은 기준)
-const showRef = (r) => !(r.parent === 'member_account' && AUDIT.has(r.ccol) && areaOf(groupOfTable(r.child)).prefix !== 'member');
+const showRef = (r) => !(r.parent === 'member_account' && AUDIT.has(r.ccol) && areaOf(groupOfTable(r.child)).prefix !== 'member') && !(isAdminAudit(r) && areaOf(groupOfTable(r.child)).prefix !== 'admin');
 const groupOfTable = (t) => groups.find((g) => g.tables.some((x) => x.name === t)).name;
 
 // 페이지 하나: boxDefs = [{ id, label, names, keysOnly, color }] (상자 = 세부 영역), rels = 그릴 관계

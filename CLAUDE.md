@@ -18,7 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 1 | 고객 · 회원 기본 `member_basic` | `member_account`, `member_login`, `member_social_account`, `member_body`, `member_address`, `member_refund_account`, `member_withdrawal` | 반영 |
 | 1-2 | 고객 · 회원 등급 `member_grading` | `member_grade`, `member_grade_benefit`, `member_grade_history` (+ `member_account.grade_code`) | 반영 (시험 반영, 사용자가 롤백할 수 있음) |
 | 2 | 고객 · 약관·알림 | `terms`, `member_terms_agreement`, `member_notification_setting` | 대기 |
-| 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history`, `admin_user`, `privacy_access_log` | 대기 |
+| 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history` (운영자 계정·접속 기록은 운영 영역으로 이동) | 대기 |
+| A1 | 운영 · 운영자 기본 `admin_basic` | `admin_user`, `admin_login`, `admin_role`, `admin_role_history`, `admin_access_log` | 반영 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 | `brand`, `brand_user`, `brand_status_history`, `brand_like` | 대기 |
 | 6~ | 상품 | 카테고리(품목군), 사이즈 체계·실측, 상품·컬러·SKU, 이미지, 고시, 재고·가격 이력 | 대기 |
@@ -52,7 +53,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 ```
 
 - 파일 구성: `lib.js`(DBML 로드, Graphviz ERD, 공통), `erd-page.js`(ERD 웹페이지, 화면은 `web/erd.css`·`web/erd.js` 인라인), `drawio.js`, 그리고 아직 인테리어 내용인 `build.js`·`summary.js`·`slides.js`·`diagrams.js`. Chrome 경로가 다르면 `CHROME_PATH`.
-- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `brand_` 브랜드, `product_` 상품. 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
+- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `brand_` 브랜드, `product_` 상품, `admin_` 운영. 감사 컬럼(`created_by` 등) → `admin_user` 선은 운영 영역 밖 ERD에서 그리지 않는다(`lib.isAdminAudit`). 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
 - Windows 환경에서 `python`은 스토어 스텁이라 실행되지 않는다. 스크립트는 `node`로.
 
 ## 설계 규칙 (DBML 전반에 일관되게 적용)
@@ -75,14 +76,14 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
   - 법정 보관: 주문·결제·배송(계약·청약철회·대금결제·재화 공급) 5년, 소비자 불만·분쟁 3년, 표시·광고 6개월(전자상거래법), 로그인 기록 3개월(통신비밀보호법). 그래서 주문 테이블에는 주문 당시 이름·연락처·주소를 스냅샷으로 복사해 두고 5년 후 파기한다.
   - 탈퇴 시점 처리: `member_account` 행 유지 + 마스킹 / `member_login`·`member_body`·`member_address`·`member_refund_account` 행 삭제 / `member_social_account`는 제공자 연동 해제 API 호출(리프레시 토큰 사용, 애플은 의무) 후 삭제 / `member_withdrawal` 행 생성(사유 통계 유지, 의견 1년 후 NULL, `ci_hash`는 약관상 30일 재가입 제한 확인용으로 옮겨 두고 30일 후 NULL).
   - 리뷰·게시글(나중): 작성자를 탈퇴회원으로 표시하고 내용은 유지(약관에 명시).
-  - 관리자가 마스킹을 풀어 개인정보를 보면 조회 기록을 남긴다(`privacy_access_log`, 3번 묶음).
+  - 관리자가 마스킹을 풀어 개인정보를 보면 조회 기록을 남긴다(`admin_access_log`).
 - **캐시 컬럼**: 찜·리뷰 수, 평점 등은 note에 `캐시`로 표시하고 원본과 같은 트랜잭션에서 갱신.
 - **이력 테이블 패턴**: 상태·가격·재고 변경은 이력 테이블에 남기고, 시스템 변경이면 `changed_by`는 NULL.
 
 ## 확정된 설계 (묶음별)
 
 ### 1. 고객 · 회원 기본 (`member_basic`)
-- `member_account`: 구매 고객 계정만 (브랜드 관리자·운영자 계정은 별도 테이블 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. **가입 시 휴대폰 본인인증 필수**: 이름·휴대폰·생년월일·성별·CI는 인증 결과로 채움(직접 입력 아님, NOT NULL, 만 14세 미만 가입 불가). 프로필 사진·소개글은 선택. 가입 수단(`join_method` EMAIL/소셜 6종)·가입 경로(`join_channel` PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID). 탈퇴 시 프로필 사진·소개글도 NULL. 탈퇴 상태·일시만 회원 테이블에 두고 사유·의견은 `member_withdrawal`로 분리(사용자 결정). 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
+- `member_account`: 구매 고객 계정만 (운영자 계정은 `admin_user`, 브랜드 관리자 계정은 브랜드 영역 `brand_user` 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. **가입 시 휴대폰 본인인증 필수**: 이름·휴대폰·생년월일·성별·CI는 인증 결과로 채움(직접 입력 아님, NOT NULL, 만 14세 미만 가입 불가). 프로필 사진·소개글은 선택. 가입 수단(`join_method` EMAIL/소셜 6종)·가입 경로(`join_channel` PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID). 탈퇴 시 프로필 사진·소개글도 NULL. 탈퇴 상태·일시만 회원 테이블에 두고 사유·의견은 `member_withdrawal`로 분리(사용자 결정). 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
 - `member_login` (1:1, 가입 시 함께 생성): 로그인할 때마다 바뀌는 값을 분리(사용자 결정). 마지막 로그인일시, 연속 실패 횟수, 잠금 해제일시(**5회 실패 잠금은 상태가 아니라 `locked_until`**, 시간이 지나면 자동 해제), 휴면 예정 안내일시(중복 발송 방지·30일 경과 확인, 재로그인 시 NULL). 휴면 배치는 `member_login.last_login_at` 인덱스 + `member_account.status` 조인. 비밀번호·상태·정지 기한은 `member_account`에 남김.
 - `member_social_account` (이름 변경: member_social → 무엇인지 드러나게): PK (member_id, provider)로 회원당 제공자별 1개. 연동 해제용 리프레시 토큰(`refresh_token_enc`, 암호화) 보관, 소셜 전용 회원은 마지막 소셜 계정 해제 불가(앱 검증). 제공자 KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE (W컨셉 가입 수단 기준), 같은 소셜 계정은 한 회원에게만(UK provider, provider_user_id).
 - `member_body` (1:1): 키·몸무게·평소 상의/하의 사이즈·신발 사이즈(mm) (W컨셉 사이즈 정보 기준, 발볼은 회원 정보로 받지 않고 신발 리뷰의 착용감 항목으로 상품 단계에서). 사이즈 추천과 "나와 비슷한 체형" 리뷰 필터. `is_review_public`은 리뷰 작성 시 체형 공개 체크박스 **기본값**이고, 리뷰 테이블(상품 단계)에 작성 당시 체형과 공개 여부를 복사해 저장한다.
@@ -98,6 +99,15 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `member_grade_history`: PK (member_id, history_no). 가입·월 산정·예외 승급·관리자 조정마다 1행, 산정 당시 구매 금액 점수·활동포인트·합계와 산정 기간.
 - `member_account.grade_code`: 현재 등급(신규 GREEN), 월 1회 갱신.
 - 나중: 활동 미션(출석·하트·앱 푸시·리뷰 포인트, 하루 한도·적립 시점)은 포인트 단계, 결제 프로모션은 주문·결제 단계, 마케팅 수신동의 이벤트는 약관 묶음.
+
+### A1. 운영 · 운영자 기본 (`admin_basic`)
+운영자는 개인정보취급자라 개인정보의 안전성 확보조치 기준이 의무로 적용된다 (고객보다 요구가 많음).
+- `admin_user`: 사람마다 따로 발급, 공유 금지. 아이디 PK(변경·재사용 불가, 퇴사 후에도 행 유지). 상태 ACTIVE/SUSPENDED/RETIRED(퇴사·인사이동 시 지체 없이 권한 말소). 2차 인증 OTP 비밀키(`otp_secret_enc`, 외부 접속 시 필수). 비밀번호 변경일시.
+- `admin_login` (1:1): 로그인할 때마다 바뀌는 값 분리(고객과 같은 규칙). 5회 실패 잠금은 운영자에게 **의무**이고, 시간 경과로 풀지 않고 최고관리자가 해제.
+- `admin_role`: SUPER/OPERATOR/CS/MD/MARKETING. 역할별 개인정보 마스킹 해제·다운로드 가능 여부(최소 권한). 메뉴·기능 단위 세부 권한표는 관리자 화면 설계 때 추가.
+- `admin_role_history`: 권한 부여·변경·말소(GRANT/CHANGE/REVOKE) 이력, **3년 보관**, 수정·삭제 금지.
+- `admin_access_log`: 로그인·로그아웃·실패와 개인정보 처리(조회·마스킹 해제·다운로드·수정·삭제) 기록, 대상 회원·항목·다운로드 사유·IP. **2년 보관**, 월 1회 이상 점검, 수정·삭제 금지. 운영자 로그인 기록도 여기에 남김.
+- 다른 테이블의 `created_by`/`updated_by`/`changed_by`는 `admin_user.admin_id` FK(등급 기준표·혜택·등급 이력 연결 완료).
 
 ## 저장소 메모
 

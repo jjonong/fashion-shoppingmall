@@ -65,6 +65,9 @@ function load(src) {
 
 // 관리자·처리자 감사 컬럼 → member_account 관계선은 상품/커뮤니티 ERD에서 생략 (명세 표에는 FK로 표시)
 const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 'handled_by', 'reviewer_id', 'requested_by']);
+// 감사 컬럼 → 운영자 계정 선은 그리지 않는다 (거의 모든 테이블이 참조해 선이 엉킴. 상세 명세에는 FK로 표시).
+// 등록·수정 관리자(created_by/updated_by)는 어디서나 생략, 그 밖의 처리 관리자(changed_by 등)는 운영 영역 ERD에서만 그린다
+const isAdminAudit = (r, inner) => r.parent === 'admin_user' && AUDIT.has(r.ccol) && (r.ccol === 'created_by' || r.ccol === 'updated_by' || !(inner && inner.has('admin_user')));
 
 // ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------
 // tables: 그릴 테이블 이름 배열. 이 테이블들이 참조하는 다른 테이블은 회색(PK만)으로 함께 그린다.
@@ -94,7 +97,7 @@ function pill(svg) {
 function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   const { tableMap, refs, fieldOf, compositePk, baseType, keyFields, keyMark } = ctx;
   const inner = new Set(tables);
-  const rels = refs.filter((r) => inner.has(r.child) && !(hideAudit && r.parent === 'member_account' && AUDIT.has(r.ccol)));
+  const rels = refs.filter((r) => inner.has(r.child) && !(hideAudit && r.parent === 'member_account' && AUDIT.has(r.ccol)) && !isAdminAudit(r, inner));
   const ext = [...new Set(rels.filter((r) => !inner.has(r.parent)).map((r) => r.parent))];
   const F = 'Malgun Gothic';
   let dot = `digraph G {
@@ -249,15 +252,17 @@ ${p.inner.replace('@XYWH@', `x="${x + PAD}" y="${y + PAD + LABEL}" width="${iw}"
 // color/fill은 ERD 웹페이지 전체 구조도 색 (화면 CSS --s1~--s8과 같은 순서)
 // 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다
 const AREAS = [
-  { prefix: 'member', name: '고객', color: '#111111', fill: '#F7F7F7', desc: '회원 · 소셜 연동 · 체형 · 배송지' },
+  { prefix: 'member', name: '고객', color: '#111111', fill: '#F7F7F7', desc: '회원 · 소셜 연동 · 체형 · 배송지 · 등급' },
   { prefix: 'brand', name: '브랜드', color: '#555555', fill: '#F7F7F7', desc: '입점 브랜드 · 브랜드 관리자 · 브랜드 좋아요' },
   { prefix: 'product', name: '상품', color: '#999999', fill: '#F7F7F7', desc: '카테고리 · 사이즈 · 컬러 · SKU · 재고' },
+  { prefix: 'admin', name: '운영', color: '#333333', fill: '#F7F7F7', desc: '운영자 계정 · 역할 · 권한 이력 · 접속 기록' },
 ];
 const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
 
 // 영역(TableGroup)별 설명: 전체 설계서와 ERD 웹페이지 공용
 const groupDesc = {
   member_basic: '구매 고객 계정(본인인증 필수·프로필·가입 수단/경로·상태), 로그인 상태(마지막 로그인·로그인 잠금·휴면 안내, 1:1), 소셜 계정 연동(제공자별 1개), 체형(사이즈 추천·비슷한 체형 리뷰), 배송지(기본 배송지 1개), 환불 계좌(1:1), 탈퇴 정보(사유·의견, 1:1).',
+  admin_basic: '운영자 계정(개인별 발급·2차 인증), 로그인 상태(실패 잠금 의무, 1:1), 역할 기준표(개인정보 열람·다운로드 권한), 권한 부여·변경·말소 이력(3년 보관), 접속·개인정보 처리 기록(2년 보관).',
   member_grading: '회원 등급 기준표(GREEN/BLUE/GOLD/BLACK, 최소 점수·적립률), 등급별 혜택 목록, 등급 이력(가입·월 산정·예외 승급·관리자 조정, 산정 당시 점수). 회원등급점수 = 최근 6개월 배송완료 금액 + 활동포인트.',
 };
 
@@ -320,4 +325,4 @@ async function renderPdf({ html, name, outPdf, footer, previewDir }) {
   console.log('PDF', outPdf);
 }
 
-module.exports = { ROOT, esc, noteOf, logicalOf, areaSvg, gridPlace, mm, fig, load, AUDIT, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };
+module.exports = { ROOT, esc, noteOf, logicalOf, areaSvg, gridPlace, mm, fig, load, AUDIT, isAdminAudit, initViz, erSvg, dotSvg, head, mermaidInit, renderPdf, groupDesc, AREAS, areaOf };
