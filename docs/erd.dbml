@@ -98,7 +98,7 @@ Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추�
   updated_at datetime [note: '[수정일시] 회원 체형 수정일시']
 }
 
-Table member_address [note: '[배송지] 회원당 여러 개, 기본 배송지는 1개'] {
+Table member_address [note: '[배송지] 회원당 여러 개(최대 20개, 앱 검증: 추가 전 그 회원의 배송지 수 확인), 기본 배송지는 1개'] {
   member_id varchar(20) [not null, note: '[회원 아이디] 배송지 소유 회원 아이디']
   address_no smallint [not null, note: '[배송지 번호] 회원별 1부터. 앱이 그 회원의 MAX+1로 부여 (AUTO_INCREMENT 아님)']
   address_name varchar(20) [note: '[배송지 이름] 집/회사']

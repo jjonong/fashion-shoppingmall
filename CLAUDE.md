@@ -86,7 +86,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `member_login` (1:1, 가입 시 함께 생성): 로그인할 때마다 바뀌는 값을 분리(사용자 결정). 마지막 로그인일시, 연속 실패 횟수, 잠금 해제일시(**5회 실패 잠금은 상태가 아니라 `locked_until`**, 시간이 지나면 자동 해제), 휴면 예정 안내일시(중복 발송 방지·30일 경과 확인, 재로그인 시 NULL). 휴면 배치는 `member_login.last_login_at` 인덱스 + `member_account.status` 조인. 비밀번호·상태·정지 기한은 `member_account`에 남김.
 - `member_social_account` (이름 변경: member_social → 무엇인지 드러나게): PK (member_id, provider)로 회원당 제공자별 1개. 연동 해제용 리프레시 토큰(`refresh_token_enc`, 암호화) 보관, 소셜 전용 회원은 마지막 소셜 계정 해제 불가(앱 검증). 제공자 KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE (W컨셉 가입 수단 기준), 같은 소셜 계정은 한 회원에게만(UK provider, provider_user_id).
 - `member_body` (1:1): 키·몸무게·평소 상의/하의 사이즈·신발 사이즈(mm) (W컨셉 사이즈 정보 기준, 발볼은 회원 정보로 받지 않고 신발 리뷰의 착용감 항목으로 상품 단계에서). 사이즈 추천과 "나와 비슷한 체형" 리뷰 필터. `is_review_public`은 리뷰 작성 시 체형 공개 체크박스 **기본값**이고, 리뷰 테이블(상품 단계)에 작성 당시 체형과 공개 여부를 복사해 저장한다.
-- `member_address`: PK (member_id, address_no), 배송지 번호는 회원별 1부터 앱이 부여. 회원당 여러 개, 기본 배송지 1개(함수 기반 unique), 배송 요청사항은 주문 시 기본값으로 복사.
+- `member_address`: PK (member_id, address_no), 배송지 번호는 회원별 1부터 앱이 부여. 회원당 여러 개(**최대 20개**, 앱 검증), 기본 배송지 1개(함수 기반 unique), 배송 요청사항은 주문 시 기본값으로 복사.
 - `member_refund_account` (1:1): 환불 계좌. 은행 코드(금융결제원 3자리)·계좌번호(`account_no_enc` AES-256, 법정 암호화 대상)·예금주·예금주 확인일시(`holder_verified_at`). 탈퇴 시 행 삭제.
 - `member_withdrawal` (1:1): 탈퇴 정보. 탈퇴한 회원만 행이 생김. 탈퇴 사유 선택 항목(`withdraw_reason_code`, 보기 중 선택·필수, LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC, 사유별 통계 인덱스)·탈퇴 시 직접 쓴 의견(`withdraw_free_text`, 자유 입력·선택, 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL)·신청일시.
 - W컨셉 고객 정보 중 나중 묶음으로 미룬 것: 사이즈 정보 추천 동의(약관), 새 기기 로그인 인증·알림·신뢰기기(보안), 등급·쿠폰·포인트·상품권(주문·혜택), 찜·장바구니·비회원 주문조회(상품·주문).
