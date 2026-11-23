@@ -99,8 +99,7 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
   const wide = (s) => '&nbsp;'.repeat(Math.ceil(((s || '').match(/[^\x00-\x7f]/g) || []).length * 1.4));
   // 구조 설계 단계라 논리명(한글)을 앞에 크게, 물리명은 뒤에 작은 회색 고정폭으로
   // 테이블 모양 (사용자 참고 이미지 docs/화면 캡처_erd.png): 검정 알약 모양 제목줄(논리명 굵게 + 물리명 작게),
-  // 회색/흰색 줄무늬 행을 연회색(#ddd) 테두리 상자로 감싸고, 상자는 제목줄보다 양옆으로 조금 안쪽. 알약 모양은 렌더 후 pill()이 rect rx로 바꾼다
-  const SIDE = '<TD WIDTH="9" CELLPADDING="0"></TD>';
+  // 회색/흰색 줄무늬 행을 연회색(#ddd) 테두리 상자로 감싸고, 상자는 제목줄과 같은 가로 길이 (사용자 요청). 알약 모양은 렌더 후 pill()이 rect rx로 바꾼다
   const zebra = (i) => (i % 2 === 0 ? '#FFFFFF' : '#F5F5F5'); // 첫 행은 흰색 (사용자 요청)
   const row = (port, name, type, key, opts = {}) =>
     `<TR><TD PORT="${port}_i" ALIGN="LEFT" BGCOLOR="${opts.bg}"><FONT POINT-SIZE="9.5" COLOR="#111111">${opts.b ? '<B>' + xesc(opts.lg || name) + '</B>' : xesc(opts.lg || name)}${wide(opts.lg)}</FONT></TD>` +
@@ -108,11 +107,11 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
     `<TD ALIGN="LEFT" BGCOLOR="${opts.bg}"><FONT FACE="Consolas" POINT-SIZE="7.5" COLOR="#777777">${type}</FONT></TD>` +
     `<TD PORT="${port}_o" ALIGN="RIGHT" BGCOLOR="${opts.bg}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#000000' : '#777777'}"><B>${key}</B></FONT></TD></TR>`;
   const title = (t, name, bg, sub) =>
-    `<TR><TD COLSPAN="3" ALIGN="LEFT" BGCOLOR="${bg}" CELLPADDING="4"><FONT COLOR="white" POINT-SIZE="11">&nbsp;&nbsp;&nbsp;<B>${xesc(logicalOf(t.note) || name)}${gap(logicalOf(t.note))}</B></FONT><FONT COLOR="${sub}" POINT-SIZE="8.5">&nbsp;&nbsp;${name}${wide(logicalOf(t.note))}&nbsp;&nbsp;&nbsp;</FONT></TD></TR>` +
-    '<TR><TD COLSPAN="3" HEIGHT="5" CELLPADDING="0"></TD></TR>';
+    `<TR><TD ALIGN="LEFT" BGCOLOR="${bg}" CELLPADDING="4"><FONT COLOR="white" POINT-SIZE="11">&nbsp;&nbsp;&nbsp;<B>${xesc(logicalOf(t.note) || name)}${gap(logicalOf(t.note))}</B></FONT><FONT COLOR="${sub}" POINT-SIZE="8.5">&nbsp;&nbsp;${name}${wide(logicalOf(t.note))}&nbsp;&nbsp;&nbsp;</FONT></TD></TR>` +
+    '<TR><TD HEIGHT="5" CELLPADDING="0"></TD></TR>';
   const table = (head, rows) =>
     `<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">${head}` +
-    `<TR>${SIDE}<TD><TABLE BORDER="1" COLOR="#DDDDDD" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">${rows}</TABLE></TD>${SIDE}</TR></TABLE>`;
+    `<TR><TD><TABLE BORDER="1" COLOR="#DDDDDD" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">${rows}</TABLE></TD></TR></TABLE>`;
   const nodeDot = {};
   for (const name of inner) {
     const t = tableMap[name];
