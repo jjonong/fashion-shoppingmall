@@ -42,7 +42,7 @@ Table member_account [note: '[회원] 구매 고객 계정. 브랜드 관리자�
   verified_at datetime [not null, note: '[회원 본인인증일시] 가입 시 휴대폰 본인인증 필수. 재인증 시 갱신']
   grade_code varchar(20) [not null, default: 'GREEN', note: '[회원 등급 코드] 회원 현재 등급 코드. 매월 1일 배치로 갱신(member_grade_history에 이력). 신규 가입은 GREEN']
   status varchar(20) [not null, default: 'ACTIVE', note: '[상태] 회원 상태. ACTIVE/DORMANT/SUSPENDED/WITHDRAWN. 로그인 잠금은 상태가 아니라 member_login.locked_until로 판단']
-  suspended_until datetime [note: '[회원 이용 정지 종료일시] SUSPENDED 기한. 지나면 배치로 ACTIVE']
+  suspended_until datetime [note: '[정지 종료일시] 회원 이용 정지 기한(status = SUSPENDED). 지나면 배치로 ACTIVE']
   nickname_changed_at datetime [note: '[회원 닉네임 변경일시] 변경 후 30일간 재변경 불가']
   withdrawn_at datetime [note: '[회원 탈퇴일시] 탈퇴 시 행은 남기고(아이디 재사용 방지, 거래 기록 참조) 마스킹: 이름·닉네임·이메일 변경, 휴대폰·ci_hash·프로필 사진·소개글 NULL. 로그인 상태·소셜 계정·체형·배송지·환불 계좌 행은 삭제. 탈퇴 사유·의견은 member_withdrawal']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 회원 가입일시']
@@ -93,7 +93,7 @@ Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추�
   top_size varchar(10) [note: '[회원 평소 상의 사이즈] XS/S/M/L/XL/XXL/FREE']
   bottom_size varchar(10) [note: '[회원 평소 하의 사이즈] 허리 inch(25~36) 또는 XS~XXL']
   shoe_size_mm smallint [note: '[회원 평소 신발 사이즈(mm)] 220~300, 5 단위 (앱 검증)']
-  is_review_public char(1) [not null, default: 'Y', note: '[회원 체형 리뷰 공개 기본값] Y/N. 리뷰 작성 화면의 "체형 공개" 체크박스 기본값. 리뷰를 쓸 때 그 시점의 체형과 공개 여부를 리뷰에 복사해 저장(상품 단계 리뷰 테이블). 나중에 체형을 바꿔도 지난 리뷰의 체형은 그대로']
+  is_review_public char(1) [not null, default: 'Y', note: '[체형 리뷰 공개 기본 여부] Y/N. 리뷰 작성 화면의 "체형 공개" 체크박스 기본값. 리뷰를 쓸 때 그 시점의 체형과 공개 여부를 리뷰에 복사해 저장(상품 단계 리뷰 테이블). 나중에 체형을 바꿔도 지난 리뷰의 체형은 그대로']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 회원 체형 등록일시. 처음 입력한 시각 (가입 후 나중에 입력 가능)']
   updated_at datetime [note: '[수정일시] 회원 체형 수정일시']
 }
@@ -120,7 +120,7 @@ Table member_address [note: '[배송지] 회원당 여러 개(최대 20개, 앱 
 
 Table member_refund_account [note: '[회원 환불 계좌] member_account와 1:1. 무통장·가상계좌 결제 취소 시 환불받을 계좌'] {
   member_id varchar(20) [pk, note: '[회원 아이디] 환불 계좌 회원 아이디. member_account와 1:1']
-  bank_code char(3) [not null, note: '[환불 은행 코드] 금융결제원 3자리 은행 코드 (예: 004 국민, 088 신한)']
+  bank_code char(3) [not null, note: '[은행 코드] 환불 은행. 금융결제원 3자리 은행 코드 (예: 004 국민, 088 신한)']
   account_no_enc varchar(255) [not null, note: '[환불 계좌번호] AES-256 암호문. 계좌번호는 법정 암호화 대상. 화면에는 뒤 4자리만 표시']
   account_holder varchar(50) [not null, note: '[환불 계좌 예금주]']
   holder_verified_at datetime [note: '[환불 계좌 예금주 확인일시] 예금주 조회 API로 확인. NULL이면 미확인(환불 전 확인)']
@@ -130,14 +130,14 @@ Table member_refund_account [note: '[회원 환불 계좌] member_account와 1:1
 
 Table member_withdrawal [note: '[회원 탈퇴 정보] member_account와 1:1. 탈퇴한 회원만 행이 생김(아이디 재사용 불가라 회원당 최대 1번). 탈퇴 상태·일시는 member_account'] {
   member_id varchar(20) [pk, note: '[회원 아이디] 탈퇴 회원 아이디. member_account와 1:1']
-  withdraw_reason_code varchar(20) [not null, note: '[탈퇴 사유 선택 항목] 탈퇴 화면의 보기 중 하나를 고른 값(필수). LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC (이용 빈도 낮음/원하는 상품 없음/가격/배송/서비스 불만/개인정보 우려/재가입/기타). 사유별 통계']
+  withdraw_reason_type varchar(20) [not null, note: '[탈퇴 사유 유형] 탈퇴 화면의 보기 중 하나를 고른 값(필수). LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC (이용 빈도 낮음/원하는 상품 없음/가격/배송/서비스 불만/개인정보 우려/재가입/기타). 사유별 통계']
   withdraw_free_text varchar(500) [note: '[탈퇴 시 직접 쓴 의견] 탈퇴 화면의 입력칸에 회원이 자유롭게 쓴 글(선택). 사유 선택 항목을 보충하는 서비스 개선용. 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL(배치)']
   ci_hash char(64) [note: '[회원 중복 가입 확인값(CI)] 재가입 제한 확인값. 탈퇴 시 member_account.ci_hash를 옮겨 둠. 약관에 명시한 탈퇴 후 30일 재가입 제한(신규 가입 혜택 반복 수령 방지) 확인용. 30일 지나면 NULL(배치)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 회원 탈퇴 신청일시']
   updated_at datetime [note: '[수정일시] 회원 탈퇴 정보 수정일시. 직접 쓴 의견 NULL 처리 배치 등']
 
   indexes {
-    withdraw_reason_code [name: 'ix_member_withdrawal_reason', note: '탈퇴 사유별 집계']
+    withdraw_reason_type [name: 'ix_member_withdrawal_reason', note: '탈퇴 사유별 집계']
     ci_hash [name: 'ix_member_withdrawal_ci', note: '가입 시 30일 내 탈퇴 이력 확인']
   }
 }
@@ -168,7 +168,7 @@ Table member_grade [note: '[회원 등급] 등급 기준표. GREEN(0점~)/BLUE(2
 Table member_grade_benefit [note: '[회원 등급 혜택] 등급 안내 화면에 보여 주는 등급별 혜택 목록. 혜택 종류가 많고 자주 바뀌어 Y/N 컬럼 대신 행으로 관리. 실제 쿠폰 지급은 혜택 단계의 쿠폰 테이블과 연결'] {
   grade_code varchar(20) [not null, note: '[회원 등급 코드] 혜택 대상 회원 등급 코드']
   benefit_no smallint [not null, note: '[회원 등급 혜택 번호] 등급별 1부터. 앱이 그 등급의 MAX+1로 부여']
-  benefit_type varchar(20) [not null, note: '[회원 등급 혜택 유형] COUPON/POINT/EXCHANGE/PARTNER/CS/EVENT (쿠폰/포인트/무료 교환/제휴/전담 고객센터/이벤트)']
+  benefit_type varchar(20) [not null, note: '[혜택 유형] 회원 등급 혜택 유형. COUPON/POINT/EXCHANGE/PARTNER/CS/EVENT (쿠폰/포인트/무료 교환/제휴/전담 고객센터/이벤트)']
   title varchar(100) [not null, note: '[회원 등급 혜택 제목] 예: 15% 쿠폰 2장, 주문 상품당 1회 무료 교환, 폴인 3개월 구독권']
   description varchar(500) [note: '[설명] 회원 등급 혜택 설명']
   sort_order smallint [not null, default: 0, note: '[회원 등급 혜택 표시 순서]']
@@ -188,8 +188,8 @@ Table member_grade_history [note: '[회원 등급 이력] 등급이 정해질 �
   history_no int [not null, note: '[이력 번호] 회원 등급 이력 번호. 회원별 1부터. 앱이 그 회원의 MAX+1로 부여']
   prev_grade_code varchar(20) [note: '[이전 회원 등급 코드] 가입 시 NULL']
   grade_code varchar(20) [not null, note: '[회원 등급 코드] 적용 회원 등급 코드']
-  change_type varchar(20) [not null, note: '[변경 구분] 회원 등급 변경 구분. JOIN/MONTHLY/PROMOTION/ADMIN (가입/월 산정/예외 승급: 제휴 카드 결제 등/관리자 조정). 종류별 집계용 코드']
-  reason varchar(200) [note: '[변경 사유] 회원 등급 변경 사유. 변경 구분을 보충하는 자유 입력 문장. PROMOTION·ADMIN이면 필수(앱 검증). 예: VOC 보상으로 GOLD 유지']
+  change_type varchar(20) [not null, note: '[변경 유형] 회원 등급 변경 유형. JOIN/MONTHLY/PROMOTION/ADMIN (가입/월 산정/예외 승급: 제휴 카드 결제 등/관리자 조정). 종류별 집계용 코드']
+  reason varchar(200) [note: '[변경 사유] 회원 등급 변경 사유. 변경 유형을 보충하는 자유 입력 문장. PROMOTION·ADMIN이면 필수(앱 검증). 예: VOC 보상으로 GOLD 유지']
   purchase_score bigint [not null, default: 0, note: '[회원 구매 금액 점수] 산정 기간의 배송완료 금액 (주문 단계에서 원천 연결)']
   activity_score bigint [not null, default: 0, note: '[회원 활동포인트 점수] 산정 기간의 활동포인트 (포인트 단계에서 원천 연결)']
   total_score bigint [not null, default: 0, note: '[회원 등급 점수 합계] 구매 금액 점수 + 활동포인트 점수']
@@ -233,6 +233,7 @@ Table admin_user [note: '[운영자] 플랫폼 운영자 계정(개인정보취�
   department varchar(50) [note: '[운영자 부서]']
   role_code varchar(20) [not null, note: '[운영자 역할 코드] 바뀌면 admin_role_history에 기록']
   status varchar(20) [not null, default: 'ACTIVE', note: '[상태] 운영자 상태. ACTIVE/SUSPENDED/RETIRED (사용/일시 정지/퇴사). 퇴사·인사이동 시 지체 없이 RETIRED(권한 말소)']
+  suspended_until datetime [note: '[정지 종료일시] 운영자 일시 정지 기한(status = SUSPENDED, 휴직 등). 지나면 배치로 ACTIVE, NULL이면 해제할 때까지']
   otp_secret_enc varchar(255) [note: '[운영자 2차 인증 비밀키] OTP 비밀키 AES-256 암호문. 외부 접속 시 2차 인증 필수(안전성 확보조치 기준). NULL이면 미등록, 첫 로그인 때 등록']
   password_changed_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[운영자 비밀번호 변경일시] 변경 주기 안내(예: 90일)']
   retired_at datetime [note: '[운영자 퇴사일시] RETIRED 처리 시각']
@@ -261,8 +262,8 @@ Table admin_role_history [note: '[운영자 권한 이력] 권한 부여·변경
   history_no int [not null, note: '[이력 번호] 운영자 권한 이력 번호. 운영자별 1부터. 앱이 그 운영자의 MAX+1로 부여']
   prev_role_code varchar(20) [note: '[이전 운영자 역할 코드] GRANT면 NULL']
   role_code varchar(20) [note: '[운영자 역할 코드] 처리 후 역할. REVOKE면 NULL']
-  action varchar(20) [not null, note: '[처리 구분] 운영자 권한 처리 구분. GRANT/CHANGE/REVOKE (부여/변경/말소)']
-  reason varchar(200) [not null, note: '[변경 사유] 운영자 권한 변경 사유. 처리 구분을 보충하는 자유 입력 문장. 예: 신규 입사, 부서 이동, 퇴사']
+  action_type varchar(20) [not null, note: '[처리 유형] 운영자 권한 처리 유형. GRANT/CHANGE/REVOKE (부여/변경/말소)']
+  reason varchar(200) [not null, note: '[변경 사유] 운영자 권한 변경 사유. 처리 유형을 보충하는 자유 입력 문장. 예: 신규 입사, 부서 이동, 퇴사']
   created_by varchar(20) [not null, note: '[등록 관리자] 권한을 처리하고 이력을 남긴 운영자(보통 SUPER). 이력은 수정하지 않아 updated_by 없음']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 권한 처리일시']
   updated_at datetime [note: '[수정일시] 이력은 수정하지 않으므로 보통 NULL']
@@ -280,7 +281,7 @@ Table admin_access_log [note: '[운영자 접속 기록] 로그인·로그아웃
   admin_id varchar(20) [not null, note: '[운영자 아이디] 처리한 운영자']
   log_no bigint [not null, note: '[운영자 접속 기록 번호] 운영자별 1부터. 앱이 그 운영자의 MAX+1로 부여']
   accessed_at datetime [not null, note: '[운영자 접속일시] 처리한 시각']
-  action varchar(20) [not null, note: '[처리 구분] 운영자 처리 구분. LOGIN/LOGOUT/LOGIN_FAIL/VIEW/UNMASK/DOWNLOAD/UPDATE/DELETE']
+  action_type varchar(20) [not null, note: '[처리 유형] 운영자 접속·개인정보 처리 유형. LOGIN/LOGOUT/LOGIN_FAIL/VIEW/UNMASK/DOWNLOAD/UPDATE/DELETE']
   menu_path varchar(200) [note: '[운영자 접근 화면] 예: /admin/members/hyewon01']
   target_member_id varchar(20) [note: '[처리 대상 회원 아이디] 개인정보를 처리한 회원(정보주체). 로그인 등은 NULL']
   target_fields varchar(200) [note: '[처리한 개인정보 항목] 예: phone, address. 마스킹 해제·다운로드 때 필수']

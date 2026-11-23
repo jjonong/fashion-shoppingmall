@@ -64,6 +64,15 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - **PK: AUTO_INCREMENT(DBML `increment`)를 쓰지 않는다** (사용자 확정, 예외 없음). 바뀌지 않는 UNIQUE 값이 있으면 그것이 PK다. 회원은 **아이디 `member_id varchar(20)`**가 PK이고, 다른 테이블의 FK `member_id`도 `varchar(20)`. 자식 테이블은 **부모 키 + 번호(앱이 부모별 MAX+1로 부여) 또는 코드**의 복합 PK(예: `member_address` = (member_id, address_no), `member_social_account` = (member_id, provider)). 1:1 확장 테이블(`member_body` 등)은 부모 PK를 그대로 PK로, 매핑 테이블은 복합 PK. 새 테이블을 설계할 때도 이 규칙을 따른다.
 - **타입**: 금액 `bigint`, 카운트 `int`, 작은 수 `smallint`/`tinyint`, 비율·평점 `decimal(p,s)`, 문자열 `varchar(n)`(글자 수), 본문 `text`(상세페이지·약관은 `mediumtext`), 시각 `datetime`(TIMESTAMP 2038년 제한·시간대 변환 회피).
 - **상태값**: `varchar` + CHECK (허용 값은 컬럼 `note`에 `A/B/C` 형식, 대문자). **Y/N**은 `char(1)` + CHECK.
+- **코드성 컬럼 이름 규칙** (사용자 확정, 비슷한 성격은 같은 표기):
+  | 성격 | 물리명 | 논리명 | 값 |
+  |---|---|---|---|
+  | 생애주기 상태 | `status` | 상태 | 대문자 코드, 시작은 `ACTIVE`. 상태마다 시각 컬럼 짝(`SUSPENDED`↔`suspended_until`, `WITHDRAWN`↔`withdrawn_at`, `RETIRED`↔`retired_at`) |
+  | 분류(정해진 보기 중 하나, 기준표 없음) | `○○_type` | ○○ 유형 | 대문자 코드 + CHECK (예: `withdraw_reason_type`, `benefit_type`, `change_type`, `action_type`) |
+  | 기준표·표준 코드 참조 | `○○_code` | ○○ 코드 | FK 또는 외부 표준 코드 (예: `grade_code`, `role_code`, `bank_code`) |
+  | 여부 | `is_○○` / `can_○○` | ○○ 여부 | Y/N |
+  | 사용 여부(기준 데이터 켜고 끄기) | `is_active` | 사용 여부 | Y/N |
+  성별·소셜 제공자·가입 수단·가입 경로처럼 값 자체가 속성인 컬럼은 자연스러운 이름(`gender`, `provider`, `join_method`, `join_channel`)을 쓴다.
 - **시간 (시스템 컬럼)**: **모든 테이블에 `created_at`·`updated_at` 둘 다** 맨 끝에 둔다(사용자 확정, 예외 없음). `created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP`, `updated_at`은 DDL에서 `ON UPDATE CURRENT_TIMESTAMP` (DBML로는 표현 불가). 논리명은 모든 테이블에서 `등록일시`/`수정일시`(관리자 컬럼은 `등록 관리자`/`수정 관리자`, `is_active`는 `사용 여부`)로 같게 하고, 테이블별 의미(예: 회원 가입일시, 탈퇴 신청일시)는 설명에 적는다. `created_by`/`updated_by`는 관리자가 수정하는 테이블에만.
 - **변경 빈도 분리**: 로그인할 때마다 바뀌는 값처럼 자주 바뀌는 값은 1:1 테이블로 분리해서, 본 테이블의 `updated_at`이 의미 없이 바뀌지 않게 한다(예: `member_login`).
 - **FK 컬럼에는 인덱스**를 둔다 (복합 UK의 선두 컬럼이면 겸용).
@@ -90,14 +99,14 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `member_body` (1:1): 키·몸무게·평소 상의/하의 사이즈·신발 사이즈(mm) (W컨셉 사이즈 정보 기준, 발볼은 회원 정보로 받지 않고 신발 리뷰의 착용감 항목으로 상품 단계에서). 사이즈 추천과 "나와 비슷한 체형" 리뷰 필터. `is_review_public`은 리뷰 작성 시 체형 공개 체크박스 **기본값**이고, 리뷰 테이블(상품 단계)에 작성 당시 체형과 공개 여부를 복사해 저장한다.
 - `member_address`: PK (member_id, address_no), 배송지 번호는 회원별 1부터 앱이 부여. 회원당 여러 개(**최대 20개**, 앱 검증), 기본 배송지 1개(함수 기반 unique), 배송 요청사항은 주문 시 기본값으로 복사.
 - `member_refund_account` (1:1): 환불 계좌. 은행 코드(금융결제원 3자리)·계좌번호(`account_no_enc` AES-256, 법정 암호화 대상)·예금주·예금주 확인일시(`holder_verified_at`). 탈퇴 시 행 삭제.
-- `member_withdrawal` (1:1): 탈퇴 정보. 탈퇴한 회원만 행이 생김. 탈퇴 사유 선택 항목(`withdraw_reason_code`, 보기 중 선택·필수, LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC, 사유별 통계 인덱스)·탈퇴 시 직접 쓴 의견(`withdraw_free_text`, 자유 입력·선택, 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL)·신청일시.
+- `member_withdrawal` (1:1): 탈퇴 정보. 탈퇴한 회원만 행이 생김. 탈퇴 사유 유형(`withdraw_reason_type`, 보기 중 선택·필수, LOW_USAGE/NO_PRODUCT/PRICE/DELIVERY/SERVICE/PRIVACY/REJOIN/ETC, 사유별 통계 인덱스)·탈퇴 시 직접 쓴 의견(`withdraw_free_text`, 자유 입력·선택, 개인정보가 섞일 수 있어 탈퇴 1년 후 NULL)·신청일시.
 - W컨셉 고객 정보 중 나중 묶음으로 미룬 것: 사이즈 정보 추천 동의(약관), 새 기기 로그인 인증·알림·신뢰기기(보안), 등급·쿠폰·포인트·상품권(주문·혜택), 찜·장바구니·비회원 주문조회(상품·주문).
 
 ### 1-2. 고객 · 회원 등급 (`member_grading`)
 - W컨셉 등급 체계 벤치마킹(W FRIEND/BEST/VIP/SIGNATURE), 이름은 자체 **GREEN/BLUE/GOLD/BLACK** (사용자 결정). 기준: 최근 6개월 누적 회원등급점수 0 / 20만 / 60만 / 150만 점 이상, 구매 적립 0.5 / 1 / 1.5 / 2%. 회원등급점수 = 배송완료 금액 + 활동포인트, 매월 1일 재산정. 예외 승급(제휴 카드 결제 시 자동 승급 등) 있음.
 - `member_grade`: 기준표. 코드와 화면 이름 분리(리브랜딩 대비). 관리자 수정 데이터라 `created_by`/`updated_by`.
 - `member_grade_benefit`: 등급별 혜택 목록(쿠폰/포인트/무료 교환/제휴/전담 고객센터/이벤트). 혜택이 자주 바뀌어 Y/N 컬럼 대신 행으로. 실제 쿠폰 지급은 혜택 단계에서 연결.
-- `member_grade_history`: PK (member_id, history_no). 가입·월 산정·예외 승급·관리자 조정마다 1행(**변경 구분** `change_type` 코드 + **변경 사유** `reason` 자유 입력, 운영자 권한 이력의 `action` + `reason`과 같은 구조로 나란히 배치), 산정 당시 구매 금액 점수·활동포인트·합계와 산정 기간.
+- `member_grade_history`: PK (member_id, history_no). 가입·월 산정·예외 승급·관리자 조정마다 1행(**변경 유형** `change_type` 코드 + **변경 사유** `reason` 자유 입력, 운영자 권한 이력의 `action_type` + `reason`과 같은 구조로 나란히 배치), 산정 당시 구매 금액 점수·활동포인트·합계와 산정 기간.
 - `member_account.grade_code`: 현재 등급(신규 GREEN), 월 1회 갱신.
 - 나중: 활동 미션(출석·하트·앱 푸시·리뷰 포인트, 하루 한도·적립 시점)은 포인트 단계, 결제 프로모션은 주문·결제 단계, 마케팅 수신동의 이벤트는 약관 묶음.
 
