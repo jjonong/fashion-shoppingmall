@@ -66,7 +66,7 @@ function load(src) {
 // 관리자·처리자 감사 컬럼 → member_account 관계선은 상품/커뮤니티 ERD에서 생략 (명세 표에는 FK로 표시)
 const AUDIT = new Set(['created_by', 'updated_by', 'changed_by', 'answered_by', 'handled_by', 'reviewer_id', 'requested_by']);
 // 감사 컬럼 → 운영자 계정 선은 그리지 않는다 (거의 모든 테이블이 참조해 선이 엉킴. 상세 명세에는 FK로 표시).
-// 등록·수정 관리자(created_by/updated_by)는 어디서나 생략, 그 밖의 처리 관리자(changed_by 등)는 운영 영역 ERD에서만 그린다
+// 등록·수정 관리자(created_by/updated_by)는 어디서나 생략, 그 밖의 처리 관리자 컬럼이 생기면 운영 영역 ERD에서만 그린다
 const isAdminAudit = (r, inner) => r.parent === 'admin_user' && AUDIT.has(r.ccol) && (r.ccol === 'created_by' || r.ccol === 'updated_by' || !(inner && inner.has('admin_user')));
 
 // ---------- Graphviz ERD (컬럼 단위 연결, 까마귀발 표기) ----------

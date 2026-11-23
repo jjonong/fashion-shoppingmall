@@ -78,7 +78,8 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
   - 리뷰·게시글(나중): 작성자를 탈퇴회원으로 표시하고 내용은 유지(약관에 명시).
   - 관리자가 마스킹을 풀어 개인정보를 보면 조회 기록을 남긴다(`admin_access_log`).
 - **캐시 컬럼**: 찜·리뷰 수, 평점 등은 note에 `캐시`로 표시하고 원본과 같은 트랜잭션에서 갱신.
-- **이력 테이블 패턴**: 상태·가격·재고 변경은 이력 테이블에 남기고, 시스템 변경이면 `changed_by`는 NULL.
+- **이력 테이블 패턴**: 상태·가격·재고 변경은 이력 테이블에 남기고, 처리한 관리자는 `created_by`(시스템 변경이면 NULL). 이력은 수정하지 않으므로 `updated_by`는 두지 않는다. 처리일시는 `created_at`(별도 `changed_at` 없음, 효력 시점이 다르면 `applied_at`처럼 따로).
+- **감사 컬럼은 `created_by`/`updated_by`만** 쓴다(사용자 확정: `changed_by` 같은 별도 이름 금지).
 
 ## 확정된 설계 (묶음별)
 
@@ -107,7 +108,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `admin_role`: SUPER/OPERATOR/CS/MD/MARKETING. 역할별 개인정보 마스킹 해제·다운로드 가능 여부(최소 권한). 메뉴·기능 단위 세부 권한표는 관리자 화면 설계 때 추가.
 - `admin_role_history`: 권한 부여·변경·말소(GRANT/CHANGE/REVOKE) 이력, **3년 보관**, 수정·삭제 금지.
 - `admin_access_log`: 로그인·로그아웃·실패와 개인정보 처리(조회·마스킹 해제·다운로드·수정·삭제) 기록, 대상 회원·항목·다운로드 사유·IP. **2년 보관**, 월 1회 이상 점검, 수정·삭제 금지. 운영자 로그인 기록도 여기에 남김.
-- 다른 테이블의 `created_by`/`updated_by`/`changed_by`는 `admin_user.admin_id` FK(등급 기준표·혜택·등급 이력 연결 완료).
+- 다른 테이블의 `created_by`/`updated_by`는 `admin_user.admin_id` FK(등급 기준표·혜택·등급 이력 연결 완료).
 
 ### 나중에 재검토
 - **Involved Party 패턴** (사람·회사를 상위 `party`로 묶고 고객·운영자·브랜드 관리자를 역할로): 사용자가 나중에 다시 검토하기로 함. 고객·운영자 계정은 보안상 분리 유지가 기본안이고, 적용한다면 브랜드(사업자·정산 주체) 쪽이 유력. 도입 시 자연키가 없어 ULID 같은 앱 생성 키가 필요(AUTO_INCREMENT 금지 규칙과 함께 검토).

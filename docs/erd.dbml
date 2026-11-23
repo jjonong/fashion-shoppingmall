@@ -196,7 +196,7 @@ Table member_grade_history [note: '[회원 등급 이력] 등급이 정해질 �
   score_from date [note: '[등급 점수 산정 시작일] 월 산정이면 6개월 전 1일. 가입·관리자 조정은 NULL']
   score_to date [note: '[등급 점수 산정 종료일] 월 산정이면 전월 말일']
   applied_at datetime [not null, note: '[회원 등급 적용일시] 월 산정은 매월 1일 0시']
-  changed_by varchar(20) [note: '[변경 관리자] 회원 등급 변경 관리자. ADMIN일 때 관리자 아이디, 시스템 변경이면 NULL']
+  created_by varchar(20) [note: '[등록 관리자] 이력을 남긴 관리자(ADMIN 조정 등). 월 산정·가입 같은 시스템 변경이면 NULL. 이력은 수정하지 않아 updated_by 없음']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 회원 등급 이력 등록일시']
   updated_at datetime [note: '[수정일시] 회원 등급 이력 수정일시']
 
@@ -263,17 +263,16 @@ Table admin_role_history [note: '[운영자 권한 이력] 권한 부여·변경
   role_code varchar(20) [note: '[운영자 역할 코드] 처리 후 역할. REVOKE면 NULL']
   action varchar(20) [not null, note: '[처리 구분] 운영자 권한 처리 구분. GRANT/CHANGE/REVOKE (부여/변경/말소)']
   reason varchar(200) [not null, note: '[변경 사유] 운영자 권한 변경 사유. 처리 구분을 보충하는 자유 입력 문장. 예: 신규 입사, 부서 이동, 퇴사']
-  changed_by varchar(20) [not null, note: '[변경 관리자] 권한 처리 관리자. 처리한 운영자(보통 SUPER)']
-  changed_at datetime [not null, note: '[운영자 권한 처리일시]']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시]']
+  created_by varchar(20) [not null, note: '[등록 관리자] 권한을 처리하고 이력을 남긴 운영자(보통 SUPER). 이력은 수정하지 않아 updated_by 없음']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 권한 처리일시']
   updated_at datetime [note: '[수정일시] 이력은 수정하지 않으므로 보통 NULL']
 
   indexes {
     (admin_id, history_no) [pk, note: 'admin_id 선두라 FK 인덱스 겸용']
     prev_role_code [name: 'ix_admin_role_history_prev', note: 'FK 인덱스']
     role_code [name: 'ix_admin_role_history_role', note: 'FK 인덱스']
-    changed_by [name: 'ix_admin_role_history_changed_by', note: 'FK 인덱스']
-    changed_at [name: 'ix_admin_role_history_changed_at', note: '기간별 권한 변경 점검']
+    created_by [name: 'ix_admin_role_history_created_by', note: 'FK 인덱스']
+    created_at [name: 'ix_admin_role_history_created_at', note: '기간별 권한 변경 점검']
   }
 }
 
@@ -322,14 +321,14 @@ Ref: admin_login.admin_id - admin_user.admin_id [delete: cascade]
 Ref: admin_role_history.admin_id > admin_user.admin_id
 Ref: admin_role_history.prev_role_code > admin_role.role_code
 Ref: admin_role_history.role_code > admin_role.role_code
-Ref: admin_role_history.changed_by > admin_user.admin_id
+Ref: admin_role_history.created_by > admin_user.admin_id
 Ref: admin_access_log.admin_id > admin_user.admin_id
 Ref: admin_access_log.target_member_id > member_account.member_id
 Ref: member_grade.created_by > admin_user.admin_id
 Ref: member_grade.updated_by > admin_user.admin_id
 Ref: member_grade_benefit.created_by > admin_user.admin_id
 Ref: member_grade_benefit.updated_by > admin_user.admin_id
-Ref: member_grade_history.changed_by > admin_user.admin_id
+Ref: member_grade_history.created_by > admin_user.admin_id
 
 // =====================================================================
 // 묶음
