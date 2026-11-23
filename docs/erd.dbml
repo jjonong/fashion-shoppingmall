@@ -91,8 +91,7 @@ Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추�
   top_size varchar(10) [note: '[회원 평소 상의 사이즈] XS/S/M/L/XL/XXL/FREE']
   bottom_size varchar(10) [note: '[회원 평소 하의 사이즈] 허리 inch(25~36) 또는 XS~XXL']
   shoe_size_mm smallint [note: '[회원 평소 신발 사이즈(mm)] 220~300, 5 단위 (앱 검증)']
-  foot_width varchar(10) [note: '[회원 발볼 너비] NARROW/NORMAL/WIDE']
-  is_review_public char(1) [not null, default: 'Y', note: '[회원 체형 리뷰 공개 여부] Y/N. Y면 리뷰에 키·몸무게·평소 사이즈 표시']
+  is_review_public char(1) [not null, default: 'Y', note: '[회원 체형 리뷰 공개 기본값] Y/N. 리뷰 작성 화면의 "체형 공개" 체크박스 기본값. 리뷰를 쓸 때 그 시점의 체형과 공개 여부를 리뷰에 복사해 저장(상품 단계 리뷰 테이블). 나중에 체형을 바꿔도 지난 리뷰의 체형은 그대로']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[회원 체형 등록일시] 처음 입력한 시각 (가입 후 나중에 입력 가능)']
   updated_at datetime [note: '[회원 체형 수정일시]']
 }
