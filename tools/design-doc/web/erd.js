@@ -79,8 +79,8 @@
       cols += '</section>';
     });
     main.innerHTML = `<div class="overview">
-      <h1>패션 마켓 입점형 쇼핑몰 ERD</h1>
-      <p class="lead">소호 쇼핑몰(마켓)이 입점해 의류·신발·가방·잡화를 판매하는 쇼핑몰의 DB 설계입니다. 고객 → 마켓 → 상품 순서로 묶음 단위로 설계 중입니다.
+      <h1>패션 브랜드 입점형 쇼핑몰 ERD</h1>
+      <p class="lead">여러 패션 브랜드가 입점해 의류·신발·가방·잡화를 판매하는 쇼핑몰(무신사 벤치마킹)의 DB 설계입니다. 고객 → 브랜드 → 상품 순서로 묶음 단위로 설계 중입니다.
         영역을 고르면 ERD가 열리고, 테이블을 누르면 전체 컬럼과 관계를 볼 수 있습니다.</p>
       <div class="stats">
         <div class="stat"><b>${D.counts.tables}</b><span>테이블</span></div>

@@ -1,17 +1,17 @@
 // =====================================================================
-// 패션 마켓 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
-// 벤치마킹: 에이블리 (소호 쇼핑몰 "마켓" 입점, 의류·신발·가방·잡화)
+// 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
+// 벤치마킹: 무신사 (여러 패션 브랜드 입점, 의류·신발·가방·잡화)
 // 진행 중: 고객 4개 = 4개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
 // =====================================================================
 
-Project fashion_market {
+Project fashion_mall {
   database_type: 'MySQL'
   Note: '''
-  패션 마켓 입점형 쇼핑몰 포트폴리오 DB (MySQL 8.0, InnoDB, utf8mb4 / utf8mb4_0900_ai_ci)
-  - 소호 쇼핑몰(마켓)이 입점해 의류·신발·가방·잡화를 판매
+  패션 브랜드 입점형 쇼핑몰 포트폴리오 DB (MySQL 8.0, InnoDB, utf8mb4 / utf8mb4_0900_ai_ci)
+  - 여러 패션 브랜드가 입점해 의류·신발·가방·잡화를 판매 (무신사 벤치마킹)
   - 이름은 소문자 snake_case
   - AUTO_INCREMENT 쓰지 않음: 회원은 아이디(varchar)가 PK, 하위 테이블은 부모 키 + 번호/코드 복합키
   - 상태값은 VARCHAR + CHECK, Y/N은 CHAR(1) + CHECK
@@ -24,7 +24,7 @@ Project fashion_market {
 // 고객 - 회원 기본
 // =====================================================================
 
-Table member_account [note: '[회원] 구매 고객 계정. 마켓 관리자·운영자 계정은 별도 테이블'] {
+Table member_account [note: '[회원] 구매 고객 계정. 브랜드 관리자·운영자 계정은 별도 테이블'] {
   member_id varchar(20) [pk, note: '[회원 아이디] 가입 시 직접 입력(소셜 가입도 한 번 정함). 영문 소문자로 시작, 영문 소문자·숫자 4~20자 (앱 검증). 변경 불가, 탈퇴 후에도 행이 남아 재사용 불가']
   password_hash varchar(255) [note: '[회원 비밀번호 해시] bcrypt 단방향 해시(일방향 암호화, 개인정보 안전성 확보조치 기준). 솔트는 해시 문자열에 포함되어 별도 컬럼 없음. 원래 값으로 복원 불가라 비밀번호 찾기는 재설정만. 소셜 전용 가입은 NULL']
   name varchar(50) [not null, note: '[회원 이름] 실명. 탈퇴 시 탈퇴회원']

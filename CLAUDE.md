@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 상태
 
-**패션 마켓 입점형 쇼핑몰** 포트폴리오 프로젝트 (에이블리 벤치마킹: 소호 쇼핑몰 "마켓"이 입점해 판매). 2026-11-20에 인테리어몰 설계를 접고 **처음부터 다시 설계** 중(사용자 결정). 현재는 **DB 설계 단계**로, 애플리케이션 코드·빌드·테스트 명령은 아직 없다. 모든 산출물은 `docs/`에 있다.
+**패션 브랜드 입점형 쇼핑몰** 포트폴리오 프로젝트 (**무신사 벤치마킹**: 여러 패션 브랜드가 입점해 판매, PC 웹 화면 레퍼런스). 처음엔 에이블리(소호 마켓 입점형)였으나 앱 중심이라 PC 웹 레퍼런스가 없어 2026-11-23 무신사로 전환(사용자 결정). 2026-11-20에 인테리어몰 설계를 접고 **처음부터 다시 설계** 중(사용자 결정). 현재는 **DB 설계 단계**로, 애플리케이션 코드·빌드·테스트 명령은 아직 없다. 모든 산출물은 `docs/`에 있다.
 
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`.
-- 판매 방식: **마켓 입점형 (에이블리식)** (사용자 확정). 상품은 마켓에 속한다. 지금 단계의 판매자 범위는 **마켓 기본만**(마켓 정보·마켓 관리자 계정·입점 상태·마켓 찜). 수수료·정산은 주문/결제 단계에서 다룬다.
+- 판매 방식: **브랜드 입점형 (무신사식)** (사용자 확정). 상품은 브랜드에 속한다. 지금 단계의 판매자 범위는 **브랜드 기본만**(브랜드 정보·브랜드 관리자 계정·입점 상태·브랜드 좋아요). 자체 브랜드(무신사 스탠다드 같은 PB) 등 브랜드 유형은 브랜드 묶음에서 정한다. 수수료·정산은 주문/결제 단계에서 다룬다.
 - 품목: **의류 + 신발 + 가방·잡화** (사용자 확정). 품목군마다 사이즈 체계·실측 항목·상품정보제공고시 유형이 다르다.
-- **진행 방식** (사용자 요청: "너무 광범위하지 않게, 상세하게"): 고객 → 마켓 기본 → 상품 순서로, **묶음(TableGroup) 단위로 컬럼까지 확정**하며 하나씩 추가한다. 사용자가 확인하기 전에 다음 묶음 테이블을 미리 넣지 않는다. 주문·결제·배송·혜택·커뮤니티는 아직 범위 밖.
+- **진행 방식** (사용자 요청: "너무 광범위하지 않게, 상세하게"): 고객 → 브랜드 기본 → 상품 순서로, **묶음(TableGroup) 단위로 컬럼까지 확정**하며 하나씩 추가한다. 사용자가 확인하기 전에 다음 묶음 테이블을 미리 넣지 않는다. 주문·결제·배송·혜택·커뮤니티는 아직 범위 밖.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
 ### 로드맵 (목록만, 컬럼은 묶음마다 확정)
@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 2 | 고객 · 약관·알림 | `terms`, `member_terms_agreement`, `member_notification_setting` | 대기 |
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history`, `admin_user`, `privacy_access_log` | 대기 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
-| 5 | 마켓 기본 | `market`, `market_user`, `market_status_history`, `market_like` | 대기 |
+| 5 | 브랜드 기본 | `brand`, `brand_user`, `brand_status_history`, `brand_like` | 대기 |
 | 6~ | 상품 | 카테고리(품목군), 사이즈 체계·실측, 상품·컬러·SKU, 이미지, 고시, 재고·가격 이력 | 대기 |
 
 회원 등급(`member_grade`)은 구매 실적과 연결되므로 주문 단계에서 함께 설계한다.
@@ -51,7 +51,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 ```
 
 - 파일 구성: `lib.js`(DBML 로드, Graphviz ERD, 공통), `erd-page.js`(ERD 웹페이지, 화면은 `web/erd.css`·`web/erd.js` 인라인), `drawio.js`, 그리고 아직 인테리어 내용인 `build.js`·`summary.js`·`slides.js`·`diagrams.js`. Chrome 경로가 다르면 `CHROME_PATH`.
-- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `market_` 마켓, `product_` 상품. 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
+- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `brand_` 브랜드, `product_` 상품. 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
 - Windows 환경에서 `python`은 스토어 스텁이라 실행되지 않는다. 스크립트는 `node`로.
 
 ## 설계 규칙 (DBML 전반에 일관되게 적용)
@@ -75,7 +75,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 ## 확정된 설계 (묶음별)
 
 ### 1. 고객 · 회원 기본 (`member_basic`)
-- `member_account`: 구매 고객 계정만 (마켓 관리자·운영자 계정은 별도 테이블 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. 성별·생년월일은 선택 입력(맞춤 추천 피드 기본값). 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN, **로그인 5회 실패 잠금은 상태가 아니라 `locked_until`**. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
+- `member_account`: 구매 고객 계정만 (브랜드 관리자·운영자 계정은 별도 테이블 예정). PK는 **회원 아이디**(가입 시 입력, 소셜 가입도 한 번 정함, 영문 소문자 시작·영문 소문자/숫자 4~20자, 변경·재사용 불가), 이메일은 별도 UNIQUE. 성별·생년월일은 선택 입력(맞춤 추천 피드 기본값). 상태 ACTIVE/DORMANT/SUSPENDED/WITHDRAWN, **로그인 5회 실패 잠금은 상태가 아니라 `locked_until`**. 휴면은 `last_login_at` 11개월에 안내 → 1년 미접속 DORMANT(분리보관 없음). 닉네임 변경 후 30일 재변경 불가.
 - `member_social`: PK (member_id, provider)로 회원당 제공자별 1개. 제공자 KAKAO/NAVER/APPLE/GOOGLE, 같은 소셜 계정은 한 회원에게만(UK provider, provider_user_id).
 - `member_body` (1:1): 키·몸무게·평소 상의/하의 사이즈·신발 사이즈(mm)·발볼. 사이즈 추천과 "나와 비슷한 체형" 리뷰 필터, 리뷰 공개 여부 `is_review_public`.
 - `address`: PK (member_id, address_no), 배송지 번호는 회원별 1부터 앱이 부여. 회원당 여러 개, 기본 배송지 1개(함수 기반 unique), 배송 요청사항은 주문 시 기본값으로 복사.

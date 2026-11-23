@@ -219,7 +219,7 @@ ${p.inner.replace('@XYWH@', `x="${x + PAD}" y="${y + PAD + LABEL}" width="${iw}"
 // 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다
 const AREAS = [
   { prefix: 'member', name: '고객', color: '#2f8f6b', fill: '#EEF7F2', desc: '회원 · 소셜 연동 · 체형 · 배송지' },
-  { prefix: 'market', name: '마켓', color: '#b5562f', fill: '#FBF1EC', desc: '입점 마켓 · 마켓 관리자 · 마켓 찜' },
+  { prefix: 'brand', name: '브랜드', color: '#b5562f', fill: '#FBF1EC', desc: '입점 브랜드 · 브랜드 관리자 · 브랜드 좋아요' },
   { prefix: 'product', name: '상품', color: '#2f6496', fill: '#EDF3F9', desc: '카테고리 · 사이즈 · 컬러 · SKU · 재고' },
 ];
 const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
