@@ -68,7 +68,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 ## 설계 규칙 (DBML 전반에 일관되게 적용)
 
 - **이름**: 테이블·컬럼·인덱스 모두 **소문자 snake_case**. 인덱스 이름 접두사 `uk_`(unique), `ux_`(함수 기반 unique), `ix_`(일반). PK 제약 이름은 MySQL에서 항상 `PRIMARY`.
-- **논리명(한글 이름)**: 모든 테이블·컬럼의 note 맨 앞에 `[논리명]`을 둔다 (예: `note: '[회원 상태] ACTIVE/DORMANT/...'`). 생성 도구가 `lib.logicalOf`로 읽어 표시한다. 컬럼 논리명은 **같은 테이블 안에서 다른 컬럼과 헷갈리지 않게** 짓는다. 테이블이 주어(회원·운영자)를 알려 주므로 공통 속성은 `이름`·`이메일`·`상태`처럼 짧게 두고, 주어는 설명(note) 앞에 적는다(사용자 확정, 2026-11-23: 운영자 테이블 추가 때 `회원 이름` 식 규칙과 충돌해서 변경). **물리명이 같은 컬럼은 모든 테이블에서 논리명도 같게** 한다(사용자 확정: `member_id`는 어디서나 `회원 아이디`, `grade_code`는 `회원 등급 코드`). 테이블마다 다른 역할(예: 배송지 소유 회원)은 설명(note) 앞부분에 적는다. 이름만 같고 뜻이 다르면 물리명을 다르게 짓는다(예: 환불 계좌의 `holder_verified_at`). 표시는 논리명 우선, 물리명은 뒤에 작게.
+- **논리명(한글 이름)**: 모든 테이블·컬럼의 note 맨 앞에 `[논리명]`을 둔다 (예: `note: '[회원 상태] ACTIVE/DORMANT/...'`). 생성 도구가 `lib.logicalOf`로 읽어 표시한다. 컬럼 논리명은 **같은 테이블 안에서 다른 컬럼과 헷갈리지 않게** 짓는다. 테이블이 주어(회원·운영자)를 알려 주므로 공통 속성은 `이름`·`이메일`·`상태`처럼 짧게 두고, 주어는 설명(note) 앞에 적는다(사용자 확정, 2026-11-23: 운영자 테이블 추가 때 `회원 이름` 식 규칙과 충돌해서 변경). **단, 이름 컬럼은 예외**로 모든 테이블에서 물리명 `{대상}_name`, 논리명 `{대상} 이름`으로 주어를 붙인다(사용자 확정, 2026-11-24: 카테고리·표준 색상·표준 소재가 모두 `[이름]`이라 구분이 안 됨. 예: `member_name` 회원 이름, `category_name` 카테고리 이름, `brand_name_ko` 브랜드 한글명). 상태·이메일·설명 같은 다른 공통 속성은 짧게 유지. **물리명이 같은 컬럼은 모든 테이블에서 논리명도 같게** 한다(사용자 확정: `member_id`는 어디서나 `회원 아이디`, `grade_code`는 `회원 등급 코드`). 테이블마다 다른 역할(예: 배송지 소유 회원)은 설명(note) 앞부분에 적는다. 이름만 같고 뜻이 다르면 물리명을 다르게 짓는다(예: 환불 계좌의 `holder_verified_at`). 표시는 논리명 우선, 물리명은 뒤에 작게.
 - **예약어 회피**: `member`는 MySQL 8.0.17+ 예약어라 회원 테이블은 **`member_account`** (PK `member_id`). `order`도 예약어(주문은 나중에 `orders`). 새 이름을 만들 때 MySQL 예약어인지 확인한다.
 - **PK: AUTO_INCREMENT(DBML `increment`)를 쓰지 않는다** (사용자 확정, 예외 없음). 바뀌지 않는 UNIQUE 값이 있으면 그것이 PK다. 회원은 **아이디 `member_id varchar(20)`**가 PK이고, 다른 테이블의 FK `member_id`도 `varchar(20)`. 자식 테이블은 **부모 키 + 번호(앱이 부모별 MAX+1로 부여) 또는 코드**의 복합 PK(예: `member_address` = (member_id, address_no), `member_social_account` = (member_id, provider)). 1:1 확장 테이블(`member_body` 등)은 부모 PK를 그대로 PK로, 매핑 테이블은 복합 PK. 새 테이블을 설계할 때도 이 규칙을 따른다.
 - **타입**: 금액 `bigint`, 카운트 `int`, 작은 수 `smallint`/`tinyint`, 비율·평점 `decimal(p,s)`, 문자열 `varchar(n)`(글자 수), 본문 `text`(상세페이지·약관은 `mediumtext`), 시각 `datetime`(TIMESTAMP 2038년 제한·시간대 변환 회피).
@@ -89,7 +89,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - **CHECK + FK 주의 (DDL 작성 시)**: MySQL은 참조 동작(`ON DELETE CASCADE`/`SET NULL`)이 있는 FK 컬럼을 CHECK에서 쓸 수 없다. CHECK에 들어가는 FK는 참조 동작 없이 만든다.
 - **다형 참조**: `target_type + target_id` 대신 대상별 nullable FK 컬럼 + CHECK.
 - **컬럼 순서** (사용자 요청): 식별(PK) → 로그인(비밀번호 등) → 인적사항 → 연락처 → 선택 정보 → 인증·상태 → 시각(`created_at`, `updated_at`).
-- **개인정보**: 비밀번호는 bcrypt 단방향 해시(`password_hash`, 솔트 포함, 복원 불가 → 재설정만). 이메일은 **평문**(법적 암호화 대상 아님, UNIQUE·대소문자 무시·아이디 찾기 때문, 관리자 화면 마스킹). 휴대폰 번호는 법적 의무는 아니지만 추가 보호로 `_enc`(AES-256, 실제 번호가 필요할 때 복호화) + 검색용 `_hash`. 검색·비교용 `_hash`는 **HMAC-SHA256(서버 비밀 키)**(번호처럼 경우의 수가 적은 값은 단순 SHA-256이면 전부 대입해 풀림). CI·토큰은 해시만. 물리명은 `_enc`/`_hash`로 저장 방식을 드러내고, **논리명은 용도 중심**으로 쓴다(사용자 요청: `회원 휴대폰 번호 검색값`, `회원 중복 가입 확인값(CI)`). 탈퇴는 soft delete + 마스킹(`withdrawn_{아이디}@deleted.local`, 이름 `탈퇴회원`, 닉네임 `deleted_{아이디}`, 휴대폰·`ci_hash`·프로필 NULL). 아이디(PK)는 남겨서 재사용을 막는다.
+- **개인정보**: 비밀번호는 bcrypt 단방향 해시(`password_hash`, 솔트 포함, 복원 불가 → 재설정만). 이메일은 **평문**(법적 암호화 대상 아님, UNIQUE·대소문자 무시·아이디 찾기 때문, 관리자 화면 마스킹). 휴대폰 번호는 법적 의무는 아니지만 추가 보호로 `_enc`(AES-256, 실제 번호가 필요할 때 복호화) + 검색용 `_hash`. 검색·비교용 `_hash`는 **HMAC-SHA256(서버 비밀 키)**(번호처럼 경우의 수가 적은 값은 단순 SHA-256이면 전부 대입해 풀림). CI·토큰은 해시만. 물리명은 `_enc`/`_hash`로 저장 방식을 드러내고, **논리명은 용도 중심**으로 쓴다(사용자 요청: `회원 휴대폰 번호 검색값`, `회원 중복 가입 확인값(CI)`). 탈퇴는 soft delete + 마스킹(`withdrawn_{아이디}@deleted.local`, 이름(`member_name`) `탈퇴회원`, 닉네임 `deleted_{아이디}`, 휴대폰·`ci_hash`·프로필 NULL). 아이디(PK)는 남겨서 재사용을 막는다.
 - **탈퇴 회원 정보 관리** (사용자 확정): 탈퇴하면 개인정보는 바로 파기하고, 법이 보관을 요구하는 기록만 기간 동안 남긴다.
   - 법정 보관: 주문·결제·배송(계약·청약철회·대금결제·재화 공급) 5년, 소비자 불만·분쟁 3년, 표시·광고 6개월(전자상거래법), 로그인 기록 3개월(통신비밀보호법). 그래서 주문 테이블에는 주문 당시 이름·연락처·주소를 스냅샷으로 복사해 두고 5년 후 파기한다.
   - 탈퇴 시점 처리: `member_account` 행 유지 + 마스킹 / `member_login`·`member_body`·`member_address`·`member_refund_account` 행 삭제 / `member_social_account`는 제공자 연동 해제 API 호출(리프레시 토큰 사용, 애플은 의무) 후 삭제 / `member_withdrawal` 행 생성(사유 통계 유지, 의견 1년 후 NULL, `ci_hash`는 약관상 30일 재가입 제한 확인용으로 옮겨 두고 30일 후 NULL).
@@ -121,12 +121,12 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 
 ### 5. 브랜드 · 브랜드 기본 (`brand_basic`, 일부)
 - 구조: W컨셉(플랫폼) → 입점 브랜드 → 브랜드별 상품. 상품은 한 브랜드에 속한다.
-- `brand`: PK **브랜드 아이디** `brand_id varchar(30)`(영문 소문자·숫자·하이픈, 변경·재사용 불가, 브랜드관 URL). 한글명·영문명(UK, 대표 표기)·브랜드 유형(DESIGNER/OWN/IMPORT)·로고·소개·상태(ACTIVE/PAUSED/CLOSED ↔ `closed_at`)·좋아요 수 캐시. `created_by`/`updated_by`는 FK 없이(운영자 테이블 생기면 연결).
+- `brand`: PK **브랜드 아이디** `brand_id varchar(30)`(영문 소문자·숫자·하이픈, 변경·재사용 불가, 브랜드관 URL). 브랜드 한글명 `brand_name_ko`·브랜드 영문명 `brand_name_en`(UK, 대표 표기)·브랜드 유형(DESIGNER/OWN/IMPORT)·로고·소개·상태(ACTIVE/PAUSED/CLOSED ↔ `closed_at`)·좋아요 수 캐시. `created_by`/`updated_by`는 FK 없이(운영자 테이블 생기면 연결).
 
 ### 6-1. 상품 · 기준 데이터 (`product_master`)
 - **여성/남성 구분은 A안** (사용자 결정, 2026-11-24): 카테고리 트리는 하나, 성별은 상품 컬럼(`product.gender`, 6-2에서 추가). 남녀공용 상품이 양쪽 메뉴에 나옴.
 - `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3(상위에서 계산되는 값을 조회용으로 저장, 카테고리 이동 시 하위까지 갱신), 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **고시 유형 기본값** `default_notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠. 고시 유형은 카테고리에 기본값만 두고(상품 등록 시 고시 폼 자동 선택) 실제 유형은 상품 고시(6-4)에 저장(사용자 결정 A안, 2026-11-24: 액세서리 중 귀금속처럼 카테고리로 안 갈리는 상품 대응). UK (parent_code, name).
-- `product_std_color`: 필터용 표준 색상(코드·이름·`hex_code`). 브랜드 색 이름은 6-2 `product_color`가 이 표를 참조.
+- `product_std_color`: 필터용 표준 색상(코드·이름·`hex_code`). 브랜드 색 이름은 6-2 `product_color`가 이 표를 참조(브랜드가 붙인 컬러명은 표준 `color_name`과 다른 물리명, 예: `brand_color_name` 브랜드 색상 이름).
 - `product_std_material`: 표준 소재(코드·이름 UK·정렬·사용 여부). **소재 B안** (사용자 결정, 2026-11-24): 소재를 데이터로 구조화해 필터·혼용률 표에 쓰고, 상품별 부위·비율은 6-2 `product_material`. 법정 고시 소재 문구는 6-4에 브랜드 문구 그대로 저장(`product_material`로 초안 생성).
 
 ### 나중에 재검토
