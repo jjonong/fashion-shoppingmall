@@ -662,11 +662,12 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 /* ---------- 로컬 편집 모드 (edit-server.js 화면에서만 보임) ---------- */
 .ed-mode { font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 3px 8px; background: var(--accent); color: var(--on-accent); }
 .ed-btn { font-size: 12px; height: 26px; }
-.spec-h .ed-btn:first-of-type { margin-left: auto; }
-.spec-h .ed-btn + .to-erd { margin-left: 0; }
+.spec-h .ed-bar { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+.spec-h .ed-bar + .to-erd { margin-left: 0; }
 h1 .ed-btn { vertical-align: middle; margin-left: 8px; }
 .ed-x { margin-left: 6px; border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 1px 5px; border-radius: 0; visibility: hidden; }
-tr:hover .ed-x, .ed-x:focus-visible { visibility: visible; }
+tr:hover .ed-x, .ed-x:focus-visible, .ed-x.on { visibility: visible; }
+.ed-row { white-space: nowrap; }
 .ed-x:hover { color: var(--text); border-color: var(--line-strong); }
 .ed-panel { position: fixed; z-index: 80; top: 56px; right: 0; bottom: 0; width: min(420px, 100vw); background: var(--panel); border-left: 1px solid var(--line-strong); overflow-y: auto; }
 .ed-form { display: flex; flex-direction: column; min-height: 100%; }
@@ -689,3 +690,12 @@ tr:hover .ed-x, .ed-x:focus-visible { visibility: visible; }
 .ed-ok:hover { background: var(--accent); opacity: .85; }
 .ed-ok.danger { background: #c62828; border-color: #c62828; color: #fff; }
 .ed-ok:disabled { opacity: .5; cursor: wait; }
+.ed-pick { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; border: 1px solid var(--line); padding: 10px; }
+.ed-pick .phys { font-size: 11px; }
+.ed-order { margin: 0; font-size: 13px; }
+.ed-order b { font-family: var(--mono); font-weight: 600; }
+.ed-hint { color: var(--muted); font-size: 12px; }
+.ed-pkrow { border: 1px solid var(--line); padding: 10px 12px 12px; margin: 0 0 8px; display: flex; flex-direction: column; gap: 8px; }
+.ed-pkrow legend { font-size: 12px; font-weight: 700; padding: 0 4px; }
+.ed-more { align-self: flex-start; font-size: 12px; height: 28px; }
+.ed-f select { font-size: 13px; }

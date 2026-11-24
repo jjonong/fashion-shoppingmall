@@ -158,22 +158,22 @@
     const T = D.tables[t];
     const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
         <td class="c-lg">${esc(f.logical || f.name)}</td>
-        <td class="c-name">${esc(f.name)}${EDIT ? `<button class="ed-x" data-ed="col-del" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 삭제" aria-label="${esc(f.name)} 컬럼 삭제">×</button>` : ''}</td>
+        <td class="c-name">${esc(f.name)}${EDIT ? `<span class="ed-row"><button class="ed-x" data-ed="col-edit" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 수정" aria-label="${esc(f.name)} 컬럼 수정">✎</button><button class="ed-x" data-ed="col-del" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 삭제" aria-label="${esc(f.name)} 컬럼 삭제">×</button></span>` : ''}</td>
         <td class="c-type">${esc(f.type)}</td>
         <td class="c-key">${keyBadges(f)}</td>
         <td class="c-nn">${f.nn ? 'Y' : ''}</td>
         <td class="c-def">${esc(f.def)}</td>
         <td class="c-desc">${f.ref ? `<div class="c-ref">→ ${link(f.ref.split('.')[0], f.ref.split('.')[1])}</div>` : ''}${esc(f.note)}</td></tr>`).join('');
     const idx = T.indexes.map((i) => `<li><code>${esc(i.pk ? 'PRIMARY' : i.name)}</code> ${i.pk ? '<span class="badge PK">PK</span>' : i.unique ? '<span class="badge UK">UNIQUE</span>' : ''}
-        <code class="cols-of">(${esc(i.cols)})</code>${i.note ? ` <span class="i-note">${esc(i.note)}</span>` : ''}</li>`).join('');
-    const outs = T.out.map((r) => `<li><code>${esc(r.col)}</code> → ${link(r.table, r.pcol)}${r.one ? ' <span class="i-note">1:1</span>' : ''}</li>`).join('');
+        <code class="cols-of">(${esc(i.cols)})</code>${i.note ? ` <span class="i-note">${esc(i.note)}</span>` : ''}${EDIT && !i.pk && i.name ? `<button class="ed-x on" data-ed="idx-del" data-t="${t}" data-i="${esc(i.name)}" title="이 인덱스 삭제" aria-label="${esc(i.name)} 인덱스 삭제">×</button>` : ''}</li>`).join('');
+    const outs = T.out.map((r) => `<li><code>${esc(r.col)}</code> → ${link(r.table, r.pcol)}${r.one ? ' <span class="i-note">1:1</span>' : ''}${EDIT ? `<button class="ed-x on" data-ed="fk-del" data-t="${t}" data-c="${esc(r.col)}" title="이 관계 삭제" aria-label="${esc(r.col)} 관계 삭제">×</button>` : ''}</li>`).join('');
     const ins = T.in.map((r) => `<li>${link(r.table, r.col)}${r.one ? ' <span class="i-note">1:1</span>' : ''}</li>`).join('');
     return `<section class="spec" id="spec-${t}">
       <header class="spec-h">
         <span class="no">${no}</span>
         <h3>${esc(tLg(t))} ${phys(t)}</h3>
         <span class="cnt">컬럼 ${T.fields.length}</span>
-        ${EDIT ? `<button class="icon-btn ed-btn" data-ed="col-add" data-t="${t}">+ 컬럼</button><button class="icon-btn ed-btn" data-ed="tbl-del" data-t="${t}">테이블 삭제</button>` : ''}
+        ${EDIT ? `<span class="ed-bar"><button class="icon-btn ed-btn" data-ed="col-add" data-t="${t}">+ 컬럼</button><button class="icon-btn ed-btn" data-ed="pk-set" data-t="${t}">PK 변경</button><button class="icon-btn ed-btn" data-ed="fk-add" data-t="${t}">+ FK</button><button class="icon-btn ed-btn" data-ed="idx-add" data-t="${t}">+ 인덱스</button><button class="icon-btn ed-btn" data-ed="tbl-del" data-t="${t}">테이블 삭제</button></span>` : ''}
         <button class="icon-btn to-erd" data-erd="${t}">ERD에서 보기 ↑</button>
       </header>
       <p class="tnote">${esc(T.note)}</p>
@@ -181,8 +181,8 @@
         <thead><tr><th>논리명</th><th>물리명</th><th>타입</th><th>키</th><th>NN</th><th>기본값</th><th>설명</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <div class="spec-foot">
-        ${idx ? `<div><h4>인덱스</h4><ul>${idx}</ul></div>` : ''}
-        ${outs ? `<div><h4>참조하는 테이블</h4><ul>${outs}</ul></div>` : ''}
+        ${idx || EDIT ? `<div><h4>인덱스</h4><ul>${idx || '<li class="i-note">없음</li>'}</ul></div>` : ''}
+        ${outs || EDIT ? `<div><h4>참조하는 테이블</h4><ul>${outs || '<li class="i-note">없음</li>'}</ul></div>` : ''}
         ${ins ? `<div><h4>참조받는 테이블</h4><ul>${ins}</ul></div>` : ''}
       </div>
     </section>`;
@@ -194,7 +194,7 @@
     main.innerHTML = `<div class="g-view" style="--c:${stageColor(g)}">
       <div class="g-head">
         <div class="crumb">${esc(s.name)}</div>
-        <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span>${EDIT && !G.area ? ` <button class="icon-btn ed-btn" data-ed="tbl-add" data-g="${g}">+ 테이블</button>` : ''}</h1>
+        <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span>${EDIT ? `${G.area ? '' : ` <button class="icon-btn ed-btn" data-ed="tbl-add" data-g="${g}">+ 테이블</button>`} <button class="icon-btn ed-btn" data-ed="grp-add" data-a="${s.prefix}">+ 묶음</button>` : ''}</h1>
         <p>${esc(G.desc)}</p>
         ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → 운영자 선 생략' : ''}</p>` : ''}
         <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" title="${t}">${esc(tLg(t))}</a>`).join('')}</nav>
@@ -675,7 +675,8 @@
   // ---------- 로컬 편집 모드 (edit-server.js가 띄운 화면에서만) ----------
   // 브라우저 alert/confirm 대신 오른쪽 패널에서 입력·확인. 저장하면 서버가 erd.dbml을 고치고 페이지를 다시 만든다
   if (EDIT) {
-    const TYPES = ['varchar(20)', 'varchar(50)', 'varchar(100)', 'varchar(200)', 'varchar(500)', 'char(1)', 'tinyint', 'smallint', 'int', 'bigint', 'decimal(10,2)', 'decimal(4,2)', 'datetime', 'date', 'text', 'mediumtext'];
+    const TYPES = ['varchar(20)', 'varchar(30)', 'varchar(50)', 'varchar(100)', 'varchar(200)', 'varchar(500)', 'char(1)', 'char(64)', 'tinyint', 'smallint', 'int', 'bigint', 'decimal(10,2)', 'decimal(4,2)', 'datetime', 'date', 'text', 'mediumtext'];
+    const AUDIT = ['created_by', 'updated_by', 'created_at', 'updated_at'];
     const panel = document.createElement('aside');
     panel.className = 'ed-panel';
     panel.hidden = true;
@@ -683,8 +684,14 @@
     document.body.appendChild(panel);
     const close = () => { panel.hidden = true; panel.innerHTML = ''; };
     const field = (label, name, attrs = '', help = '') => `<label class="ed-f"><span>${label}</span><input name="${name}" ${attrs}>${help ? `<small>${help}</small>` : ''}</label>`;
+    const val = (v) => `value="${esc(v ?? '')}"`;
     const typeList = `<datalist id="edTypes">${TYPES.map((t) => `<option value="${t}">`).join('')}</datalist>`;
-    function open(title, body, submitLabel, onSubmit, danger) {
+    const typeOf = (f) => f.type.toLowerCase();
+    const colLabel = (f) => `${esc(f.logical || f.name)} <code class="phys">${esc(f.name)}</code>`;
+    const pkOf = (T) => T.fields.filter((f) => f.keys.includes('PK')).map((f) => f.name);
+    const pkOrder = (T) => { const i = T.indexes.find((x) => x.pk); return i ? i.cols.split(',').map((s) => s.trim()) : pkOf(T); };
+
+    function open(title, body, submitLabel, onSubmit, danger, onMount) {
       panel.innerHTML = `<form class="ed-form" novalidate>
         <div class="ed-h"><h3>${title}</h3><button type="button" class="icon-btn" data-ed-close aria-label="닫기">×</button></div>
         <div class="ed-body">${body}</div>
@@ -692,18 +699,20 @@
         <div class="ed-act"><button type="submit" class="icon-btn ed-ok${danger ? ' danger' : ''}">${submitLabel}</button><button type="button" class="icon-btn" data-ed-close>취소</button></div>
       </form>`;
       panel.hidden = false;
+      panel.scrollTop = 0;
       const form = panel.querySelector('form');
-      const first = form.querySelector('input');
+      if (onMount) onMount(form);
+      const first = form.querySelector('input:not([type=checkbox]), select');
       if (first) first.focus();
       form.onsubmit = async (e) => {
         e.preventDefault();
         const msg = form.querySelector('.ed-msg'), ok = form.querySelector('.ed-ok');
         const data = Object.fromEntries(new FormData(form).entries());
-        form.querySelectorAll('input[type=checkbox]').forEach((c) => (data[c.name] = c.checked));
+        form.querySelectorAll('input[type=checkbox][name]:not([data-multi])').forEach((c) => (data[c.name] = c.checked));
         ok.disabled = true;
         msg.hidden = false; msg.className = 'ed-msg'; msg.textContent = '저장하고 ERD를 다시 만드는 중…';
         try {
-          const r = await onSubmit(data);
+          const r = await onSubmit(data, form);
           const j = await r.json();
           if (!j.ok) throw new Error(j.msg);
           msg.textContent = j.msg + ' · 화면을 새로 고칩니다';
@@ -716,54 +725,184 @@
     }
     const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const keepHash = (g, t) => { history.replaceState(null, '', `#g=${g}${t ? `&t=${t}` : ''}`); };
+    // 체크한 순서를 기억하는 컬럼 목록 (복합 PK·인덱스는 순서가 중요)
+    function pickList(T, preset) {
+      return `<div class="ed-pick" data-order="${esc(preset.join(','))}">${T.fields.map((f) => `<label class="ed-c"><input type="checkbox" data-multi value="${esc(f.name)}"${preset.includes(f.name) ? ' checked' : ''}> ${colLabel(f)}</label>`).join('')}</div>
+        <p class="ed-order">순서: <b data-order-view>${esc(preset.join(', ')) || '(없음)'}</b></p><small class="ed-hint">체크한 순서대로 들어갑니다. 순서를 바꾸려면 해제했다가 다시 체크하세요.</small>`;
+    }
+    function bindPick(form, onChange) {
+      const box = form.querySelector('.ed-pick'), view = form.querySelector('[data-order-view]');
+      let order = box.dataset.order ? box.dataset.order.split(',') : [];
+      box.addEventListener('change', (e) => {
+        const v = e.target.value;
+        order = order.filter((x) => x !== v);
+        if (e.target.checked) order.push(v);
+        view.textContent = order.join(', ') || '(없음)';
+        if (onChange) onChange(order);
+      });
+      return () => order;
+    }
+    // PK 컬럼 입력 줄 (테이블·묶음 추가)
+    const pkRow = (i) => `<fieldset class="ed-pkrow" data-pk="${i}"><legend>PK 컬럼 ${i + 1}${i ? ' <button type="button" class="ed-x on" data-pk-del aria-label="이 PK 컬럼 빼기">×</button>' : ''}</legend>
+      ${field('물리명', `pk_name_${i}`, 'placeholder="예: member_id / address_no" autocomplete="off" spellcheck="false"')}
+      ${field('타입', `pk_type_${i}`, `list="edTypes" ${i ? 'value="int"' : 'value="varchar(20)"'} autocomplete="off" spellcheck="false"`)}
+      ${field('논리명', `pk_logical_${i}`, 'placeholder="예: 회원 아이디" autocomplete="off"')}
+      ${field('설명', `pk_note_${i}`, 'placeholder="(선택)" autocomplete="off"')}</fieldset>`;
+    const tableFields = (prefix) => field('테이블 물리명', 'name', `placeholder="예: ${prefix}_season" autocomplete="off" spellcheck="false"`, '영문 소문자 snake_case, MySQL 예약어 불가')
+      + field('테이블 논리명', 'logical', 'placeholder="예: 시즌" autocomplete="off"')
+      + field('테이블 설명', 'note', 'placeholder="이 테이블이 무엇을 담는지" autocomplete="off"')
+      + `<h4 class="ed-sub">PK (AUTO_INCREMENT 없이 바뀌지 않는 값. 자식 테이블은 부모 키 + 번호의 복합 PK)</h4><div class="ed-pks">${pkRow(0)}</div>
+        <button type="button" class="icon-btn ed-more" data-pk-add>+ PK 컬럼 (복합 PK)</button>
+        ${field('복합 PK 설명', 'pkIdxNote', 'placeholder="예: member_id 선두라 FK 인덱스 겸용" autocomplete="off"')}
+        <p class="ed-note">등록일시(created_at)·수정일시(updated_at)는 자동으로 들어갑니다. 나머지 컬럼·FK·인덱스는 만든 뒤 카드에서 추가하세요.</p>` + typeList;
+    function bindPkRows(form) {
+      const box = form.querySelector('.ed-pks');
+      form.querySelector('[data-pk-add]').onclick = () => {
+        const n = box.querySelectorAll('.ed-pkrow').length;
+        box.insertAdjacentHTML('beforeend', pkRow(n));
+      };
+      box.addEventListener('click', (e) => { if (e.target.closest('[data-pk-del]')) e.target.closest('.ed-pkrow').remove(); });
+    }
+    const collectPks = (form) => [...form.querySelectorAll('.ed-pkrow')].map((r) => {
+      const v = (k) => (r.querySelector(`[name^="pk_${k}_"]`) || {}).value || '';
+      return { name: v('name').trim(), type: v('type').trim(), logical: v('logical').trim(), note: v('note').trim() };
+    });
 
+    // ----- 컬럼 -----
+    function colForm(T, f) {
+      const pk = f && f.keys.includes('PK');
+      return field('물리명', 'name', `${val(f && f.name)} required placeholder="예: season_code" autocomplete="off" spellcheck="false"`, f ? '바꾸면 이 테이블의 인덱스·관계(Ref)도 같이 바뀝니다' : '영문 소문자 snake_case')
+        + field('타입', 'type', `${val(f && typeOf(f))} required list="edTypes" placeholder="예: varchar(20)" autocomplete="off" spellcheck="false"`, f && f.ref ? '관계(FK)로 이어진 컬럼은 타입을 바꿀 수 없습니다(양쪽이 같아야 함)' : '') + typeList
+        + field('논리명', 'logical', `${val(f && f.logical)} required placeholder="예: 시즌 코드" autocomplete="off"`, '한글 이름. 같은 물리명은 모든 테이블에서 같은 논리명으로')
+        + field('설명', 'note', `${val(f && f.note)} placeholder="예: 26SS/26FW. 허용 값은 A/B/C 형식" autocomplete="off"`)
+        + `<label class="ed-c"><input type="checkbox" name="notNull"${f && f.nn ? ' checked' : ''}${pk ? ' disabled' : ''}> NOT NULL (필수 값)${pk ? ' · PK라 항상 필수' : ''}</label>`
+        + field('기본값', 'def', `${val(f && f.def)} placeholder="비우면 없음 · 예: 0, 'Y', CURRENT_TIMESTAMP" autocomplete="off"`, "문자는 'Y'처럼 따옴표, 숫자는 그대로");
+    }
     function colAdd(t) {
       const T = D.tables[t];
-      const tailIdx = T.fields.findIndex((f) => ['created_by', 'updated_by', 'created_at', 'updated_at'].includes(f.name));
+      const tailIdx = T.fields.findIndex((f) => AUDIT.includes(f.name));
       const opts = T.fields.map((f, i) => `<option value="${esc(f.name)}"${i === tailIdx ? ' selected' : ''}>${esc(f.logical || f.name)} (${esc(f.name)}) 앞</option>`).join('')
         + `<option value=""${tailIdx < 0 ? ' selected' : ''}>맨 끝</option>`;
       open(`컬럼 추가 · ${esc(T.logical || t)} <code class="phys">${esc(t)}</code>`,
-        field('물리명', 'name', 'required placeholder="예: season_code" autocomplete="off" spellcheck="false"', '영문 소문자 snake_case')
-        + field('타입', 'type', 'required list="edTypes" placeholder="예: varchar(20)" autocomplete="off" spellcheck="false"') + typeList
-        + field('논리명', 'logical', 'required placeholder="예: 시즌 코드" autocomplete="off"', '한글 이름. 같은 물리명은 모든 테이블에서 같은 논리명으로')
-        + field('설명', 'note', 'placeholder="예: 26SS/26FW. 허용 값은 A/B/C 형식" autocomplete="off"')
-        + `<label class="ed-c"><input type="checkbox" name="notNull"> NOT NULL (필수 값)</label>`
-        + field('기본값', 'def', 'placeholder="비우면 없음 · 예: 0, Y, CURRENT_TIMESTAMP" autocomplete="off"')
-        + `<label class="ed-f"><span>넣을 위치</span><select name="before">${opts}</select><small>시간·감사 컬럼(created_*, updated_*)은 맨 끝에 두는 규칙</small></label>`,
+        colForm(T, null) + `<label class="ed-f"><span>넣을 위치</span><select name="before">${opts}</select><small>시간·감사 컬럼(created_*, updated_*)은 맨 끝에 두는 규칙</small></label>`,
         '추가', (d) => { keepHash(T.group, t); return post('/api/column/add', { table: t, ...d }); });
+    }
+    function colEdit(t, c) {
+      const T = D.tables[t], f = T.fields.find((x) => x.name === c);
+      open(`컬럼 수정 · ${esc(T.logical || t)} <code class="phys">${esc(t)}.${esc(c)}</code>`, colForm(T, f),
+        '저장', (d) => { keepHash(T.group, t); return post('/api/column/edit', { table: t, column: c, ...d }); });
     }
     function colDel(t, c) {
       const T = D.tables[t], f = T.fields.find((x) => x.name === c);
       open('컬럼 삭제', `<p class="ed-q"><b>${esc(T.logical || t)}</b>의 <b>${esc((f && f.logical) || c)}</b> <code class="phys">${esc(t)}.${esc(c)}</code> 컬럼을 지울까요?</p>
-        <p class="ed-note">이 컬럼의 관계(FK)와 단일 컬럼 인덱스도 함께 지웁니다. PK이거나 다른 테이블이 참조하는 컬럼은 지워지지 않습니다. 되돌리려면 git으로.</p>`,
+        <p class="ed-note">이 컬럼의 관계(FK)와 단일 컬럼 인덱스도 함께 지웁니다. PK이거나 다른 테이블이 참조하거나 복합 인덱스에 든 컬럼은 지워지지 않습니다. 되돌리려면 git으로.</p>`,
         '삭제', () => { keepHash(T.group, t); return post('/api/column/delete', { table: t, column: c }); }, true);
     }
+    // ----- PK -----
+    function pkSet(t) {
+      const T = D.tables[t];
+      const cur = pkOrder(T);
+      const ix = T.indexes.find((x) => x.pk);
+      let get;
+      open(`PK 변경 · ${esc(T.logical || t)} <code class="phys">${esc(t)}</code>`,
+        `<p class="ed-note">지금 PK: <b>${esc(cur.join(', ')) || '(없음)'}</b>. 2개 이상 고르면 복합 PK가 됩니다 (예: 부모 키 + 번호).</p>` + pickList(T, cur)
+        + field('복합 PK 설명', 'note', `${val(ix && ix.note)} placeholder="예: member_id 선두라 FK 인덱스 겸용" autocomplete="off"`, '복합 PK일 때만 씁니다'),
+        '저장', (d) => { keepHash(T.group, t); return post('/api/pk/set', { table: t, columns: get(), note: d.note }); }, false,
+        (form) => { get = bindPick(form); });
+    }
+    // ----- 인덱스 -----
+    function idxAdd(t) {
+      const T = D.tables[t];
+      let get, auto = true;
+      open(`인덱스 추가 · ${esc(T.logical || t)} <code class="phys">${esc(t)}</code>`,
+        `<label class="ed-f"><span>종류</span><select name="kind"><option value="index">일반 인덱스 (ix_)</option><option value="unique">UNIQUE (uk_)</option></select></label>`
+        + `<h4 class="ed-sub">컬럼</h4>` + pickList(T, [])
+        + field('인덱스 이름', 'name', 'autocomplete="off" spellcheck="false"', '컬럼을 고르면 자동으로 지어집니다 (직접 바꿔도 됨)')
+        + field('설명', 'note', 'placeholder="예: FK 인덱스, 기간별 조회" autocomplete="off"'),
+        '추가', (d) => { keepHash(T.group, t); return post('/api/index/add', { table: t, kind: d.kind, name: d.name, note: d.note, columns: get() }); }, false,
+        (form) => {
+          const nameEl = form.querySelector('[name=name]'), kindEl = form.querySelector('[name=kind]');
+          const gen = (cols) => { if (auto) nameEl.value = cols.length ? `${kindEl.value === 'unique' ? 'uk' : 'ix'}_${t}_${cols.join('_')}`.slice(0, 64) : ''; };
+          get = bindPick(form, gen);
+          nameEl.addEventListener('input', () => { auto = !nameEl.value; });
+          kindEl.addEventListener('change', () => gen(get()));
+        });
+    }
+    function idxDel(t, name) {
+      const T = D.tables[t];
+      open('인덱스 삭제', `<p class="ed-q"><b>${esc(T.logical || t)}</b>의 인덱스 <code>${esc(name)}</code>을(를) 지울까요?</p><p class="ed-note">PK는 [PK 변경]으로 바꿉니다.</p>`,
+        '삭제', () => { keepHash(T.group, t); return post('/api/index/delete', { table: t, name }); }, true);
+    }
+    // ----- 관계(FK) -----
+    function fkAdd(t) {
+      const T = D.tables[t];
+      const has = new Set(T.out.map((r) => r.col));
+      const own = T.fields.filter((f) => !has.has(f.name) && !AUDIT.includes(f.name));
+      const tables = Object.keys(D.tables).sort();
+      const keyCols = (pt) => { const P = D.tables[pt]; const pk = pkOf(P); return P.fields.filter((f) => (pk.length === 1 && pk[0] === f.name) || f.keys.includes('UK') || P.indexes.some((i) => (i.unique || i.pk) && i.cols === f.name)); };
+      open(`관계(FK) 추가 · ${esc(T.logical || t)} <code class="phys">${esc(t)}</code>`,
+        `<label class="ed-f"><span>이 테이블의 컬럼 (자식)</span><select name="column">${own.map((f) => `<option value="${esc(f.name)}">${esc(f.logical || f.name)} (${esc(f.name)} ${esc(typeOf(f))})</option>`).join('')}</select><small>이미 관계가 있는 컬럼과 감사 컬럼은 빠져 있습니다</small></label>`
+        + `<label class="ed-f"><span>참조할 테이블 (부모)</span><select name="parent">${tables.map((x) => `<option value="${x}">${esc(D.tables[x].logical || x)} (${x})</option>`).join('')}</select></label>`
+        + `<label class="ed-f"><span>참조할 컬럼</span><select name="parentColumn"></select><small>PK(단일)나 UNIQUE 컬럼만. 타입이 같아야 합니다</small></label>`
+        + `<label class="ed-f"><span>관계</span><select name="rel"><option value="N:1">N:1 (여러 행이 부모 하나를 가리킴)</option><option value="1:1">1:1 (확장 테이블)</option></select></label>`
+        + `<label class="ed-f"><span>부모가 지워지면</span><select name="onDelete"><option value="">지정 안 함 (기본: 막음)</option><option value="cascade">같이 지움 (CASCADE)</option><option value="set null">NULL로 (SET NULL)</option><option value="restrict">막음 (RESTRICT)</option></select><small>CHECK 제약에 쓰는 FK 컬럼은 참조 동작을 지정하지 않습니다(MySQL 제한)</small></label>`
+        + `<label class="ed-c"><input type="checkbox" name="addIndex" checked> FK 인덱스도 추가 (이미 인덱스 선두 컬럼이면 건너뜀)</label>`,
+        '추가', (d) => { keepHash(T.group, t); return post('/api/ref/add', { table: t, ...d }); }, false,
+        (form) => {
+          const ps = form.querySelector('[name=parent]'), pc = form.querySelector('[name=parentColumn]'), cs = form.querySelector('[name=column]');
+          const fill = () => { pc.innerHTML = keyCols(ps.value).map((f) => `<option value="${esc(f.name)}">${esc(f.logical || f.name)} (${esc(f.name)} ${esc(typeOf(f))})</option>`).join('') || '<option value="">(가리킬 수 있는 컬럼 없음)</option>'; };
+          // 컬럼 이름이 같은 PK를 가진 테이블을 먼저 골라 둠 (예: member_id → member_account)
+          const guess = () => { const c = cs.value; const hit = tables.find((x) => x !== t && pkOf(D.tables[x]).length === 1 && pkOf(D.tables[x])[0] === c); if (hit) ps.value = hit; fill(); };
+          ps.addEventListener('change', fill); cs.addEventListener('change', guess);
+          // 처음에는 다른 테이블 PK와 이름이 같은 컬럼(FK 후보)을, 없으면 PK가 아닌 첫 컬럼을 고름
+          const pk = pkOf(T);
+          const cand = own.find((f) => tables.some((x) => x !== t && pkOf(D.tables[x]).length === 1 && pkOf(D.tables[x])[0] === f.name))
+            || own.find((f) => !pk.includes(f.name));
+          if (cand) cs.value = cand.name;
+          guess();
+        });
+    }
+    function fkDel(t, c) {
+      const T = D.tables[t], r = T.out.find((x) => x.col === c);
+      open('관계(FK) 삭제', `<p class="ed-q"><code class="phys">${esc(t)}.${esc(c)}</code> → <code class="phys">${esc(r ? `${r.table}.${r.pcol}` : '?')}</code> 관계를 지울까요?</p><p class="ed-note">컬럼과 FK 인덱스는 남겨 둡니다.</p>`,
+        '삭제', () => { keepHash(T.group, t); return post('/api/ref/delete', { table: t, column: c }); }, true);
+    }
+    // ----- 테이블 -----
     function tblAdd(g) {
       const G = D.groups[g];
-      open(`테이블 추가 · ${esc(G.title)} <code class="phys">${esc(g)}</code>`,
-        field('물리명', 'name', 'required placeholder="예: product_season" autocomplete="off" spellcheck="false"', '영문 소문자 snake_case, MySQL 예약어 불가')
-        + field('논리명', 'logical', 'required placeholder="예: 시즌" autocomplete="off"')
-        + field('설명', 'note', 'placeholder="이 테이블이 무엇을 담는지" autocomplete="off"')
-        + '<h4 class="ed-sub">PK 컬럼 (AUTO_INCREMENT 없이, 바뀌지 않는 값)</h4>'
-        + field('PK 물리명', 'pkName', 'required placeholder="예: season_code" autocomplete="off" spellcheck="false"')
-        + field('PK 타입', 'pkType', 'required list="edTypes" value="varchar(20)" autocomplete="off" spellcheck="false"') + typeList
-        + field('PK 논리명', 'pkLogical', 'required placeholder="예: 시즌 코드" autocomplete="off"')
-        + field('PK 설명', 'pkNote', 'placeholder="예: 26SS/26FW" autocomplete="off"')
-        + '<p class="ed-note">등록일시(created_at)·수정일시(updated_at)는 자동으로 들어갑니다. 복합 PK·FK·인덱스는 채팅으로 요청해 주세요.</p>',
-        '추가', (d) => { keepHash(g, d.name); return post('/api/table/add', { group: g, ...d }); });
+      const prefix = D.stages[stageOf(g)].prefix;
+      open(`테이블 추가 · ${esc(G.title)} <code class="phys">${esc(g)}</code>`, tableFields(prefix),
+        '추가', (d, form) => { keepHash(g, d.name); return post('/api/table/add', { group: g, name: d.name, logical: d.logical, note: d.note, pkIdxNote: d.pkIdxNote, pks: collectPks(form) }); }, false, bindPkRows);
     }
     function tblDel(t) {
       const T = D.tables[t];
       open('테이블 삭제', `<p class="ed-q"><b>${esc(T.logical || t)}</b> <code class="phys">${esc(t)}</code> 테이블을 지울까요? (컬럼 ${T.fields.length}개)</p>
-        <p class="ed-note">이 테이블에서 나가는 관계와 묶음 목록에서도 빠집니다. 다른 테이블이 참조하고 있으면 지워지지 않습니다. 되돌리려면 git으로.</p>`,
+        <p class="ed-note">이 테이블에서 나가는 관계와 묶음 목록에서도 빠집니다. 묶음이 비면 묶음도 지웁니다. 다른 테이블이 참조하고 있으면 지워지지 않습니다. 되돌리려면 git으로.</p>`,
         '삭제', () => { keepHash(T.group); return post('/api/table/delete', { table: t }); }, true);
     }
+    // ----- 묶음 -----
+    function grpAdd(prefix) {
+      const s = D.stages.find((x) => x.prefix === prefix);
+      open(`묶음 추가 · ${esc(s ? s.name : prefix)} 영역`,
+        field('묶음 물리명', 'groupName', `value="${prefix}_" autocomplete="off" spellcheck="false"`, `${prefix}_ 로 시작 (예: ${prefix}_basic). 영역은 이름 앞부분으로 정해집니다`)
+        + field('묶음 이름', 'groupTitle', 'placeholder="예: 상품 기본" autocomplete="off"', `화면 제목. "${esc(s ? s.name : '')} - 이름"으로 저장`)
+        + field('묶음 설명', 'groupDesc', 'placeholder="이 묶음에 무엇이 있는지 (ERD 페이지 상단에 표시)" autocomplete="off"')
+        + `<h4 class="ed-sub">첫 테이블 (묶음은 테이블이 있어야 만들어집니다)</h4>` + tableFields(prefix),
+        '추가', (d, form) => { history.replaceState(null, '', `#g=${d.groupName}&t=${d.name}`); return post('/api/group/add', { area: prefix, groupName: d.groupName, groupTitle: d.groupTitle, groupDesc: d.groupDesc, name: d.name, logical: d.logical, note: d.note, pkIdxNote: d.pkIdxNote, pks: collectPks(form) }); }, false, bindPkRows);
+    }
+
     document.addEventListener('click', (e) => {
       if (e.target.closest('[data-ed-close]')) { close(); return; }
       const b = e.target.closest('[data-ed]');
       if (!b) return;
       e.preventDefault(); e.stopPropagation();
-      ({ 'col-add': () => colAdd(b.dataset.t), 'col-del': () => colDel(b.dataset.t, b.dataset.c), 'tbl-add': () => tblAdd(b.dataset.g), 'tbl-del': () => tblDel(b.dataset.t) })[b.dataset.ed]();
+      const d = b.dataset;
+      ({
+        'col-add': () => colAdd(d.t), 'col-edit': () => colEdit(d.t, d.c), 'col-del': () => colDel(d.t, d.c),
+        'pk-set': () => pkSet(d.t), 'idx-add': () => idxAdd(d.t), 'idx-del': () => idxDel(d.t, d.i),
+        'fk-add': () => fkAdd(d.t), 'fk-del': () => fkDel(d.t, d.c),
+        'tbl-add': () => tblAdd(d.g), 'tbl-del': () => tblDel(d.t), 'grp-add': () => grpAdd(d.a),
+      })[d.ed]();
     }, true);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
   }
