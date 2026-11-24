@@ -699,6 +699,7 @@
         <div class="ed-act"><button type="submit" class="icon-btn ed-ok${danger ? ' danger' : ''}">${submitLabel}</button><button type="button" class="icon-btn" data-ed-close>취소</button></div>
       </form>`;
       panel.hidden = false;
+      panel.classList.toggle('wide', body.includes('ed-grid')); // 빠른 입력 표는 넓게
       panel.scrollTop = 0;
       const form = panel.querySelector('form');
       if (onMount) onMount(form);
@@ -742,50 +743,75 @@
       });
       return () => order;
     }
-    // PK 컬럼 입력 줄 (테이블·묶음 추가)
-    const pkRow = (i) => `<fieldset class="ed-pkrow" data-pk="${i}"><legend>PK 컬럼 ${i + 1}${i ? ' <button type="button" class="ed-x on" data-pk-del aria-label="이 PK 컬럼 빼기">×</button>' : ''}</legend>
-      ${field('물리명', `pk_name_${i}`, 'placeholder="예: member_id / address_no" autocomplete="off" spellcheck="false"')}
-      ${field('타입', `pk_type_${i}`, `list="edTypes" ${i ? 'value="int"' : 'value="varchar(20)"'} autocomplete="off" spellcheck="false"`)}
-      ${field('논리명', `pk_logical_${i}`, 'placeholder="예: 회원 아이디" autocomplete="off"')}
-      ${field('설명', `pk_note_${i}`, 'placeholder="(선택)" autocomplete="off"')}</fieldset>`;
-    const tableFields = (prefix) => field('테이블 물리명', 'name', `placeholder="예: ${prefix}_season" autocomplete="off" spellcheck="false"`, '영문 소문자 snake_case, MySQL 예약어 불가')
-      + field('테이블 논리명', 'logical', 'placeholder="예: 시즌" autocomplete="off"')
-      + field('테이블 설명', 'note', 'placeholder="이 테이블이 무엇을 담는지" autocomplete="off"')
-      + `<h4 class="ed-sub">PK (AUTO_INCREMENT 없이 바뀌지 않는 값. 자식 테이블은 부모 키 + 번호의 복합 PK)</h4><div class="ed-pks">${pkRow(0)}</div>
-        <button type="button" class="icon-btn ed-more" data-pk-add>+ PK 컬럼 (복합 PK)</button>
-        ${field('복합 PK 설명', 'pkIdxNote', 'placeholder="예: member_id 선두라 FK 인덱스 겸용" autocomplete="off"')}
-        <p class="ed-note">등록일시(created_at)·수정일시(updated_at)는 자동으로 들어갑니다. 나머지 컬럼·FK·인덱스는 만든 뒤 카드에서 추가하세요.</p>` + typeList;
-    function bindPkRows(form) {
-      const box = form.querySelector('.ed-pks');
-      form.querySelector('[data-pk-add]').onclick = () => {
-        const n = box.querySelectorAll('.ed-pkrow').length;
-        box.insertAdjacentHTML('beforeend', pkRow(n));
+    // ----- 빠른 입력 표: 한 줄 = 컬럼 하나. 논리명·물리명·키만 필수, 나머지는 선택 -----
+    // 키: PK / FK(참조 테이블 선택) / PK+FK(부모 키를 물려받는 자식 테이블) / UK. FK 타입은 부모에서 자동
+    const fkTables = () => Object.keys(D.tables).sort().filter((x) => pkOf(D.tables[x]).length === 1);
+    const KEY_OPTS = [['', '—'], ['PK', 'PK'], ['FK', 'FK'], ['PK+FK', 'PK+FK'], ['UK', 'UK']];
+    const gridRow = (key = '') => `<tr class="ed-gr">
+        <td><input data-g="logical" placeholder="예: 브랜드 아이디" autocomplete="off" aria-label="논리명"></td>
+        <td><input data-g="name" class="mono" placeholder="brand_id" autocomplete="off" spellcheck="false" aria-label="물리명"></td>
+        <td><select data-g="key" aria-label="키">${KEY_OPTS.map(([v, l]) => `<option value="${v}"${v === key ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
+        <td><select data-g="parent" aria-label="참조 테이블" disabled><option value="">—</option>${fkTables().map((x) => `<option value="${x}">${esc(D.tables[x].logical || x)} (${x})</option>`).join('')}</select></td>
+        <td><input data-g="type" class="mono" list="edTypes" placeholder="자동" autocomplete="off" spellcheck="false" aria-label="타입"></td>
+        <td class="c"><input type="checkbox" data-g="notNull" data-multi aria-label="NOT NULL"></td>
+        <td><input data-g="note" placeholder="(선택)" autocomplete="off" aria-label="설명"></td>
+        <td><button type="button" class="ed-x on" data-gr-del aria-label="이 줄 빼기">×</button></td></tr>`;
+    const grid = (firstKey, rows = 3) => `<table class="ed-grid"><thead><tr><th>논리명 *</th><th>물리명 *</th><th>키</th><th>참조 테이블 (FK)</th><th>타입</th><th>NN</th><th>설명</th><th></th></tr></thead>
+        <tbody>${Array.from({ length: rows }, (_, i) => gridRow(i === 0 ? firstKey : '')).join('')}</tbody></table>
+        <div class="ed-grid-foot"><button type="button" class="icon-btn ed-more" data-gr-add>+ 줄</button>
+        <small>Enter: 다음 줄 · Ctrl+Enter: 저장 · 빈 줄은 무시 · 타입을 비우면 PK varchar(20), FK는 부모와 같게, 그 외 varchar(50) · 물리명이 다른 테이블 PK와 같으면 FK로 자동 선택</small></div>${typeList}`;
+    function bindGrid(form, selfTable) {
+      const body = form.querySelector('.ed-grid tbody');
+      const sync = (tr) => {
+        const k = tr.querySelector('[data-g=key]').value, ps = tr.querySelector('[data-g=parent]');
+        ps.disabled = !k.includes('FK');
+        if (ps.disabled) ps.value = '';
       };
-      box.addEventListener('click', (e) => { if (e.target.closest('[data-pk-del]')) e.target.closest('.ed-pkrow').remove(); });
+      const add = () => { body.insertAdjacentHTML('beforeend', gridRow()); return body.lastElementChild; };
+      form.querySelector('[data-gr-add]').onclick = () => add().querySelector('input').focus();
+      body.addEventListener('click', (e) => { if (e.target.closest('[data-gr-del]')) { const tr = e.target.closest('tr'); if (body.rows.length > 1) tr.remove(); else tr.querySelectorAll('input').forEach((i) => (i.value = '')); } });
+      body.addEventListener('change', (e) => { if (e.target.dataset.g === 'key') sync(e.target.closest('tr')); });
+      // 물리명이 다른 테이블의 단일 PK와 같으면 FK로 골라 둠 (예: brand_id → brand)
+      body.addEventListener('input', (e) => {
+        if (e.target.dataset.g !== 'name') return;
+        const tr = e.target.closest('tr'), ks = tr.querySelector('[data-g=key]'), ps = tr.querySelector('[data-g=parent]');
+        const hit = fkTables().find((x) => x !== selfTable && pkOf(D.tables[x])[0] === e.target.value.trim());
+        if (hit && (ks.value === '' || ks.value === 'PK')) { ks.value = ks.value === 'PK' ? 'PK+FK' : 'FK'; sync(tr); ps.value = hit; tr.dataset.auto = '1'; }
+        else if (!hit && tr.dataset.auto) { ks.value = ks.value === 'PK+FK' ? 'PK' : ''; sync(tr); delete tr.dataset.auto; }
+      });
+      form.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || e.target.tagName === 'BUTTON') return;
+        e.preventDefault();
+        if (e.ctrlKey || e.metaKey) { form.requestSubmit(); return; }
+        const tr = e.target.closest('.ed-gr');
+        if (!tr) { const f = body.querySelector('input'); if (f) f.focus(); return; }
+        (tr.nextElementSibling || add()).querySelector('input').focus();
+      });
+      [...body.rows].forEach(sync);
     }
-    const collectPks = (form) => [...form.querySelectorAll('.ed-pkrow')].map((r) => {
-      const v = (k) => (r.querySelector(`[name^="pk_${k}_"]`) || {}).value || '';
-      return { name: v('name').trim(), type: v('type').trim(), logical: v('logical').trim(), note: v('note').trim() };
+    const collectRows = (form) => [...form.querySelectorAll('.ed-gr')].map((tr) => {
+      const g = (k) => tr.querySelector(`[data-g=${k}]`);
+      return { logical: g('logical').value.trim(), name: g('name').value.trim(), key: g('key').value, parent: g('parent').value, type: g('type').value.trim(), notNull: g('notNull').checked, note: g('note').value.trim() };
     });
+    const tableHead = (prefix) => `<div class="ed-two">${field('테이블 논리명 *', 'logical', 'placeholder="예: 상품 컬러" autocomplete="off"')}${field('테이블 물리명 *', 'name', `class="mono" placeholder="예: ${prefix}_color" autocomplete="off" spellcheck="false"`)}</div>`
+      + field('테이블 설명', 'note', 'placeholder="(선택)" autocomplete="off"');
 
     // ----- 컬럼 -----
     function colForm(T, f) {
       const pk = f && f.keys.includes('PK');
-      return field('물리명', 'name', `${val(f && f.name)} required placeholder="예: season_code" autocomplete="off" spellcheck="false"`, f ? '바꾸면 이 테이블의 인덱스·관계(Ref)도 같이 바뀝니다' : '영문 소문자 snake_case')
-        + field('타입', 'type', `${val(f && typeOf(f))} required list="edTypes" placeholder="예: varchar(20)" autocomplete="off" spellcheck="false"`, f && f.ref ? '관계(FK)로 이어진 컬럼은 타입을 바꿀 수 없습니다(양쪽이 같아야 함)' : '') + typeList
-        + field('논리명', 'logical', `${val(f && f.logical)} required placeholder="예: 시즌 코드" autocomplete="off"`, '한글 이름. 같은 물리명은 모든 테이블에서 같은 논리명으로')
+      return field('논리명 *', 'logical', `${val(f && f.logical)} required placeholder="예: 시즌 코드" autocomplete="off"`, '한글 이름. 같은 물리명은 모든 테이블에서 같은 논리명으로')
+        + field('물리명 *', 'name', `${val(f && f.name)} class="mono" required placeholder="예: season_code" autocomplete="off" spellcheck="false"`, f ? '바꾸면 이 테이블의 인덱스·관계(Ref)도 같이 바뀝니다' : '영문 소문자 snake_case')
+        + field('타입', 'type', `${val(f && typeOf(f))} class="mono" list="edTypes" placeholder="비우면 varchar(50)" autocomplete="off" spellcheck="false"`, f && f.ref ? '관계(FK)로 이어진 컬럼은 타입을 바꿀 수 없습니다(양쪽이 같아야 함)' : '') + typeList
         + field('설명', 'note', `${val(f && f.note)} placeholder="예: 26SS/26FW. 허용 값은 A/B/C 형식" autocomplete="off"`)
         + `<label class="ed-c"><input type="checkbox" name="notNull"${f && f.nn ? ' checked' : ''}${pk ? ' disabled' : ''}> NOT NULL (필수 값)${pk ? ' · PK라 항상 필수' : ''}</label>`
         + field('기본값', 'def', `${val(f && f.def)} placeholder="비우면 없음 · 예: 0, 'Y', CURRENT_TIMESTAMP" autocomplete="off"`, "문자는 'Y'처럼 따옴표, 숫자는 그대로");
     }
     function colAdd(t) {
       const T = D.tables[t];
-      const tailIdx = T.fields.findIndex((f) => AUDIT.includes(f.name));
-      const opts = T.fields.map((f, i) => `<option value="${esc(f.name)}"${i === tailIdx ? ' selected' : ''}>${esc(f.logical || f.name)} (${esc(f.name)}) 앞</option>`).join('')
-        + `<option value=""${tailIdx < 0 ? ' selected' : ''}>맨 끝</option>`;
       open(`컬럼 추가 · ${esc(T.logical || t)} <code class="phys">${esc(t)}</code>`,
-        colForm(T, null) + `<label class="ed-f"><span>넣을 위치</span><select name="before">${opts}</select><small>시간·감사 컬럼(created_*, updated_*)은 맨 끝에 두는 규칙</small></label>`,
-        '추가', (d) => { keepHash(T.group, t); return post('/api/column/add', { table: t, ...d }); });
+        grid('') + '<p class="ed-note">등록·수정 컬럼(created_*, updated_*) 앞에 들어갑니다. 키를 PK로 고르면 지금 PK 뒤에 붙어 복합 PK가 됩니다.</p>',
+        '추가', (d, form) => { keepHash(T.group, t); return post('/api/columns/add', { table: t, rows: collectRows(form) }); }, false,
+        (form) => bindGrid(form, t));
     }
     function colEdit(t, c) {
       const T = D.tables[t], f = T.fields.find((x) => x.name === c);
@@ -871,8 +897,10 @@
     function tblAdd(g) {
       const G = D.groups[g];
       const prefix = D.stages[stageOf(g)].prefix;
-      open(`테이블 추가 · ${esc(G.title)} <code class="phys">${esc(g)}</code>`, tableFields(prefix),
-        '추가', (d, form) => { keepHash(g, d.name); return post('/api/table/add', { group: g, name: d.name, logical: d.logical, note: d.note, pkIdxNote: d.pkIdxNote, pks: collectPks(form) }); }, false, bindPkRows);
+      open(`테이블 추가 · ${esc(G.title)} <code class="phys">${esc(g)}</code>`,
+        tableHead(prefix) + '<h4 class="ed-sub">컬럼 (PK 하나 이상. 등록일시·수정일시는 자동)</h4>' + grid('PK', 4),
+        '추가', (d, form) => { keepHash(g, d.name); return post('/api/table/add', { group: g, name: d.name, logical: d.logical, note: d.note, rows: collectRows(form) }); }, false,
+        (form) => bindGrid(form, null));
     }
     function tblDel(t) {
       const T = D.tables[t];
@@ -884,11 +912,11 @@
     function grpAdd(prefix) {
       const s = D.stages.find((x) => x.prefix === prefix);
       open(`묶음 추가 · ${esc(s ? s.name : prefix)} 영역`,
-        field('묶음 물리명', 'groupName', `value="${prefix}_" autocomplete="off" spellcheck="false"`, `${prefix}_ 로 시작 (예: ${prefix}_basic). 영역은 이름 앞부분으로 정해집니다`)
-        + field('묶음 이름', 'groupTitle', 'placeholder="예: 상품 기본" autocomplete="off"', `화면 제목. "${esc(s ? s.name : '')} - 이름"으로 저장`)
-        + field('묶음 설명', 'groupDesc', 'placeholder="이 묶음에 무엇이 있는지 (ERD 페이지 상단에 표시)" autocomplete="off"')
-        + `<h4 class="ed-sub">첫 테이블 (묶음은 테이블이 있어야 만들어집니다)</h4>` + tableFields(prefix),
-        '추가', (d, form) => { history.replaceState(null, '', `#g=${d.groupName}&t=${d.name}`); return post('/api/group/add', { area: prefix, groupName: d.groupName, groupTitle: d.groupTitle, groupDesc: d.groupDesc, name: d.name, logical: d.logical, note: d.note, pkIdxNote: d.pkIdxNote, pks: collectPks(form) }); }, false, bindPkRows);
+        `<div class="ed-two">${field('묶음 이름 *', 'groupTitle', 'placeholder="예: 상품 기본" autocomplete="off"')}${field('묶음 물리명 *', 'groupName', `class="mono" value="${prefix}_" autocomplete="off" spellcheck="false"`)}</div>`
+        + field('묶음 설명', 'groupDesc', 'placeholder="(선택) ERD 페이지 상단에 표시" autocomplete="off"')
+        + `<h4 class="ed-sub">첫 테이블 (묶음은 테이블이 있어야 만들어집니다)</h4>` + tableHead(prefix) + grid('PK', 4),
+        '추가', (d, form) => { history.replaceState(null, '', `#g=${d.groupName}&t=${d.name}`); return post('/api/group/add', { area: prefix, groupName: d.groupName, groupTitle: d.groupTitle, groupDesc: d.groupDesc, name: d.name, logical: d.logical, note: d.note, rows: collectRows(form) }); }, false,
+        (form) => bindGrid(form, null));
     }
 
     document.addEventListener('click', (e) => {

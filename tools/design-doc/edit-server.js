@@ -7,7 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
-const { execFileSync, exec } = require('child_process');
+const { execFileSync, execFile, exec } = require('child_process');
 const { Parser } = require('@dbml/core');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -233,7 +233,7 @@ const ops = {
   'column/add'(lines, S, p) {
     const t = tableOf(S, p.table);
     checkName('컬럼', p.name);
-    p.type = normType(p.type);
+    p.type = normType(has(p.type) ? p.type : DEFAULT_TYPE);
     checkLogical('컬럼', p.logical);
     if (t.fields.some((f) => f.name === p.name)) fail(`${p.table}에 이미 ${p.name} 컬럼이 있습니다`);
     const b = mustBlock(lines, 'Table', p.table);
@@ -244,12 +244,19 @@ const ops = {
     lines.splice(at, 0, columnLine(p));
     return `${p.table}.${p.name} 컬럼을 추가했습니다`;
   },
+  // 여러 컬럼을 한 번에: 논리명·물리명·키만 필수, 타입은 비우면 자동
+  'columns/add'(lines, S, p) {
+    const t = tableOf(S, p.table);
+    const rows = prepRows(S, p.rows, p.table, t.fields.map((f) => f.name));
+    if (!rows.length) fail('추가할 컬럼을 한 줄 이상 적어 주세요');
+    return `${p.table}에 컬럼 ${rows.length}개를 추가했습니다${finishRows(lines, p.table, rows)}`;
+  },
   'column/edit'(lines, S, p) {
     const t = tableOf(S, p.table);
     const f = fieldOf(t, p.column);
     const name = String(p.name || p.column).trim();
     checkName('컬럼', name);
-    const type = normType(p.type);
+    const type = normType(has(p.type) ? p.type : typeOf(f)); // 비우면 지금 타입 유지
     checkLogical('컬럼', p.logical);
     if (name !== p.column && t.fields.some((x) => x.name === name)) fail(`${p.table}에 이미 ${name} 컬럼이 있습니다`);
     const refs = refsOf(S);
@@ -426,13 +433,15 @@ const ops = {
   'table/add'(lines, S, p) {
     const g = S.tableGroups.find((x) => x.name === p.group) || fail(`묶음이 없습니다: ${p.group}`);
     if (S.tables.some((x) => x.name === p.name)) fail(`이미 ${p.name} 테이블이 있습니다`);
+    const rest = rowsToPks(S, p);
     const body = tableBlock(p);
     const last = g.tables.map((x) => block(lines, 'Table', x.name)).filter(Boolean).sort((a, b) => b.end - a.end)[0];
     const at = last ? last.end + 1 : relHeader(lines);
     lines.splice(at, 0, '', ...body);
     const gb = mustBlock(lines, 'TableGroup', p.group);
     lines.splice(gb.end, 0, `  ${p.name}`);
-    return `${p.name} 테이블을 ${p.group} 묶음에 추가했습니다 (등록일시·수정일시 자동 포함)`;
+    const more = finishRows(lines, p.name, rest);
+    return `${p.name} 테이블을 ${p.group} 묶음에 추가했습니다${more}`;
   },
   'table/delete'(lines, S, p) {
     tableOf(S, p.table);
@@ -462,6 +471,7 @@ const ops = {
     if (!has(p.groupTitle) || /['[\]]/.test(p.groupTitle)) fail('묶음 이름(한글)을 적어 주세요 (작은따옴표·대괄호 불가)');
     if (S.tables.some((x) => x.name === p.name)) fail(`이미 ${p.name} 테이블이 있습니다`);
     const title = String(p.groupTitle).trim();
+    const rest = rowsToPks(S, p);
     const body = tableBlock(p); // 묶음은 테이블이 있어야 그릴 수 있어서 첫 테이블을 같이 만듦
     // 같은 영역의 마지막 묶음 테이블 뒤, 없으면 관계 구역 앞
     const sameArea = S.tableGroups.filter((g) => g.name.startsWith(area.prefix + '_'));
@@ -475,7 +485,8 @@ const ops = {
     if (lastG) lines.splice(lastG.end + 1, 0, '', ...gl);
     else { while (lines.length && lines[lines.length - 1].trim() === '') lines.pop(); lines.push('', ...gl, ''); }
     if (has(p.groupDesc)) pendingDesc = { name, desc: String(p.groupDesc).trim() };
-    return `${area.name} 영역에 묶음 ${name}(${title})을(를) 만들고 ${p.name} 테이블을 넣었습니다`;
+    const more = finishRows(lines, p.name, rest);
+    return `${area.name} 영역에 묶음 ${name}(${title})을(를) 만들고 ${p.name} 테이블을 넣었습니다${more}`;
   },
 };
 let pendingDesc = null; // 묶음 설명은 dbml이 아니라 lib.js groupDesc에 (저장 성공 후 기록)
@@ -496,6 +507,67 @@ function writeGroupDesc({ name, desc }) {
   if (new RegExp(`^  ${re(name)}:`, 'm').test(src)) return;
   const out = src.replace(/^const groupDesc = \{\r?\n/m, (m0) => `${m0}  ${name}: '${desc.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}',\n`);
   if (out !== src) fs.writeFileSync(LIB, out, 'utf8');
+}
+
+// ---------- 줄(row) 단위 빠른 입력: 논리명·물리명·키 ----------
+const DEFAULT_TYPE = 'varchar(50)', DEFAULT_PK_TYPE = 'varchar(20)';
+const KEYS = ['', 'PK', 'FK', 'PK+FK', 'UK'];
+const isPkKey = (k) => k === 'PK' || k === 'PK+FK';
+const isFkKey = (k) => k === 'FK' || k === 'PK+FK';
+// 고친 줄로 다시 파싱해서 다른 동작을 이어서 실행
+const runOp = (lines, op, p) => ops[op](lines, parse(lines.join('\n')), p);
+// 입력 줄 검사 + 타입 채우기 (FK는 부모 PK 타입, PK는 varchar(20), 나머지 varchar(50))
+function prepRows(S, rows, table, existing) {
+  const seen = new Set(existing || []);
+  return (Array.isArray(rows) ? rows : []).filter((r) => r && (has(r.name) || has(r.logical))).map((r, i) => {
+    const n = `${i + 1}번째 줄`;
+    const row = { name: String(r.name || '').trim(), logical: String(r.logical || '').trim(), key: KEYS.includes(r.key) ? r.key : '',
+      parent: String(r.parent || '').trim(), note: r.note, notNull: !!r.notNull };
+    try { checkLogical('컬럼', row.logical); checkName('컬럼', row.name); } catch (e) { fail(`${n}: ${e.message}`); }
+    if (seen.has(row.name)) fail(`${n}: 컬럼 이름이 겹칩니다: ${row.name}`);
+    seen.add(row.name);
+    if (AUDIT_TAIL.includes(row.name)) fail(`${n}: ${row.name}은(는) 자동으로 들어가거나 끝에 두는 시간·감사 컬럼입니다`);
+    let parentType = null;
+    if (isFkKey(row.key)) {
+      if (!has(row.parent)) fail(`${n}: FK는 참조할 테이블을 골라야 합니다`);
+      if (row.parent === table) fail(`${n}: 자기 테이블 참조는 테이블을 만든 뒤 [+ FK]로 걸어 주세요`);
+      const pt = S.tables.find((x) => x.name === row.parent) || fail(`${n}: 참조할 테이블이 없습니다: ${row.parent}`);
+      const pk = pkCols(pt);
+      if (pk.length !== 1) fail(`${n}: ${row.parent}의 PK가 ${pk.length ? '복합' : '없음'}이라 이 줄로는 FK를 걸 수 없습니다 (채팅으로 요청)`);
+      row.parentColumn = pk[0];
+      parentType = typeOf(fieldOf(pt, pk[0]));
+    }
+    try {
+      row.type = has(r.type) ? normType(r.type) : parentType || (isPkKey(row.key) ? DEFAULT_PK_TYPE : DEFAULT_TYPE);
+    } catch (e) { fail(`${n}: ${e.message}`); }
+    if (parentType && row.type !== parentType) fail(`${n}: FK 타입은 부모(${row.parent}.${row.parentColumn})와 같아야 합니다: ${parentType} (타입 칸을 비우면 자동)`);
+    return row;
+  });
+}
+// 테이블·묶음 추가: 줄 중 PK를 p.pks로 옮기고 나머지 줄을 돌려줌
+function rowsToPks(S, p) {
+  if (!Array.isArray(p.rows)) return [];
+  checkName('테이블', p.name);
+  const rows = prepRows(S, p.rows, p.name, []);
+  const pkRows = rows.filter((r) => isPkKey(r.key));
+  if (!pkRows.length) fail('PK 컬럼이 하나 이상 있어야 합니다 (키 칸에서 PK 선택)');
+  p.pks = pkRows.map((r) => ({ name: r.name, type: r.type, logical: r.logical, note: r.note }));
+  return rows.map((r) => (isPkKey(r.key) ? { ...r, pkDone: true } : r));
+}
+// 컬럼 추가 → PK 반영 → FK → UNIQUE 순서로 처리하고 덧붙일 안내 문구를 돌려줌
+function finishRows(lines, table, rows) {
+  if (!rows.length) return '';
+  const notes = [];
+  const t0 = tableOf(parse(lines.join('\n')), table);
+  const tail = t0.fields.find((f) => AUDIT_TAIL.includes(f.name));
+  rows.filter((r) => !r.pkDone).forEach((r) => runOp(lines, 'column/add', { table, name: r.name, type: r.type, logical: r.logical, note: r.note, notNull: r.notNull || isFkKey(r.key), before: tail ? tail.name : '' }));
+  const newPk = rows.filter((r) => isPkKey(r.key) && !r.pkDone).map((r) => r.name);
+  if (newPk.length) { runOp(lines, 'pk/set', { table, columns: [...pkCols(t0), ...newPk] }); notes.push('PK'); }
+  rows.filter((r) => isFkKey(r.key)).forEach((r) => runOp(lines, 'ref/add', { table, column: r.name, parent: r.parent, parentColumn: r.parentColumn, rel: 'N:1', addIndex: true }));
+  if (rows.some((r) => isFkKey(r.key))) notes.push('FK');
+  rows.filter((r) => r.key === 'UK').forEach((r) => runOp(lines, 'index/add', { table, kind: 'unique', columns: [r.name] }));
+  if (rows.some((r) => r.key === 'UK')) notes.push('UNIQUE');
+  return notes.length ? ` (${notes.join('·')} 설정 포함)` : '';
 }
 
 function apply(op, p) {
@@ -519,11 +591,22 @@ function apply(op, p) {
   return msg;
 }
 
+// 저장 응답을 빠르게: 편집 화면만 바로 만들고, 공개 페이지·draw.io는 뒤에서 (연달아 저장하면 마지막 것만)
 function rebuild() {
-  const run = (...a) => execFileSync(process.execPath, a, { cwd: __dirname, stdio: 'pipe' });
-  run('erd-page.js', SRC, EDIT_HTML, '--edit');
-  run('erd-page.js', SRC, PUBLIC_HTML);
-  run('drawio.js', SRC, DRAWIO);
+  execFileSync(process.execPath, ['erd-page.js', SRC, EDIT_HTML, '--edit'], { cwd: __dirname, stdio: 'pipe' });
+  scheduleOutputs();
+}
+let bgRunning = false, bgAgain = false;
+function scheduleOutputs() {
+  if (bgRunning) { bgAgain = true; return; }
+  bgRunning = true; bgAgain = false;
+  execFile(process.execPath, ['erd-page.js', SRC, PUBLIC_HTML], { cwd: __dirname }, (e1) => {
+    execFile(process.execPath, ['drawio.js', SRC, DRAWIO], { cwd: __dirname }, (e2) => {
+      if (e1 || e2) console.error('공개 페이지·draw.io 생성 실패:', String((e1 || e2).message).split('\n')[0]);
+      bgRunning = false;
+      if (bgAgain) scheduleOutputs();
+    });
+  });
 }
 
 // ---------- 서버 ----------
