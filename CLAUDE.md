@@ -20,8 +20,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 2 | 고객 · 약관·알림 | `terms`, `member_terms_agreement`, `member_notification_setting` | 대기 |
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history` (운영자 계정·접속 기록은 운영 영역으로 이동) | 대기 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
-| 5 | 브랜드 기본 | `brand`, `brand_user`, `brand_status_history`, `brand_like` | 대기 |
-| 6~ | 상품 | 카테고리(품목군), 사이즈 체계·실측, 상품·컬러·SKU, 이미지, 고시, 재고·가격 이력 | 대기 |
+| 5 | 브랜드 기본 `brand_basic` | `brand` / 나중에: 사업자 정보(판매자 정보 고시), 배송비·교환/반품 정책, `brand_user`, `brand_status_history`, `brand_like` | `brand`만 반영 (상품 FK용, 2026-11-24 사용자 결정: 상품 설계를 위해 브랜드는 포괄적으로만) |
+| 6-1 | 상품 · 기준 데이터 | `product_category`(계층형, 품목군·고시 유형), 표준 색상 | 다음 (컬럼 제안 → 확인) |
+| 6-2 | 상품 · 상품 기본 | `product`(PK 상품코드), `product_detail`(1:1, 상세 본문), `product_color`, `product_image`, `product_sku` | 대기 |
+| 6-3 | 상품 · 사이즈·실측 | 품목군별 실측 항목 기준표, 상품별 실측값 | 대기 |
+| 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시 | 대기 |
+| 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
+| 6-6 | 상품 · 고객 연결 | 상품 찜, 재입고 알림(회원-SKU) | 대기 |
+
+상품 상세페이지 항목 중 상품 영역 밖: 판매자 정보·배송비·교환/반품 기준은 브랜드, 청약철회·환불지연 배상 등 법정 문구는 플랫폼 공통, 리뷰·Q&A는 커뮤니티, 쿠폰·기획전(더블유위크)은 혜택, 카드 혜택가·무이자·장바구니·바로구매·선물하기는 주문·결제, 함께 본 상품·맞춤 추천·스타일링은 추천(나중). 별점·리뷰 수·찜 수는 상품 캐시 컬럼, 할인율·선택 상품 총액은 계산값.
 
 회원 등급은 W컨셉 등급 체계를 벤치마킹해 먼저 만들었다(2026-11-23). 점수 원천(배송완료 금액·활동포인트)과 등급 쿠폰 지급은 주문·포인트·혜택 단계에서 연결한다.
 
@@ -108,6 +115,10 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `member_grade_history`: PK (member_id, history_no). 가입·월 산정·예외 승급·관리자 조정마다 1행(**변경 유형** `change_type` 코드 + **변경 사유** `reason` 자유 입력, 운영자 권한 이력의 `action_type` + `reason`과 같은 구조로 나란히 배치), 산정 당시 구매 금액 점수·활동포인트·합계와 산정 기간.
 - `member_account.grade_code`: 현재 등급(신규 GREEN), 월 1회 갱신.
 - 나중: 활동 미션(출석·하트·앱 푸시·리뷰 포인트, 하루 한도·적립 시점)은 포인트 단계, 결제 프로모션은 주문·결제 단계, 마케팅 수신동의 이벤트는 약관 묶음.
+
+### 5. 브랜드 · 브랜드 기본 (`brand_basic`, 일부)
+- 구조: W컨셉(플랫폼) → 입점 브랜드 → 브랜드별 상품. 상품은 한 브랜드에 속한다.
+- `brand`: PK **브랜드 아이디** `brand_id varchar(30)`(영문 소문자·숫자·하이픈, 변경·재사용 불가, 브랜드관 URL). 한글명·영문명(UK, 대표 표기)·브랜드 유형(DESIGNER/OWN/IMPORT)·로고·소개·상태(ACTIVE/PAUSED/CLOSED ↔ `closed_at`)·좋아요 수 캐시. `created_by`/`updated_by`는 FK 없이(운영자 테이블 생기면 연결).
 
 ### 나중에 재검토
 - **운영 영역 (운영자 기본 `admin_basic`)**: 2026-11-24 사용자 요청으로 ERD에서 뺐다("아직 거기까지 다루고 싶지 않다"). 사용자가 다시 꺼내기 전에는 제안하지 않는다. 빼기 전 설계(`admin_user`·`admin_login`·`admin_role`·`admin_role_history`·`admin_access_log`, 개인정보 안전성 확보조치 기준 반영)는 커밋 `8692840`~`ad4d30d`에 있다. 지금 `created_by`/`updated_by` 컬럼(등급 기준표·혜택·등급 이력)은 FK 없이 운영자 아이디 `varchar(20)`만 두고, 운영자 테이블을 만들 때 `admin_user.admin_id` FK로 연결한다.
