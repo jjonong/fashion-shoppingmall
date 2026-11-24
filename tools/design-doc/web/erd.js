@@ -154,10 +154,12 @@
   const link = (name, col) => `<a href="#g=${D.tables[name].group}&t=${name}">${esc(tLg(name))}${col ? '.' + esc(fLg(name, col)) : ''}</a> ${phys(name + (col ? '.' + col : ''))}`;
   const keyBadges = (f) => f.keys.map((k) => `<span class="badge ${k}">${k}</span>`).join('') + (f.inc ? '<span class="badge AI">AI</span>' : '');
 
+  const AUDIT_TAIL_COLS = ['created_by', 'updated_by', 'created_at', 'updated_at']; // 맨 끝 고정 (편집 서버와 같음)
   function specCard(t, no) {
     const T = D.tables[t];
-    const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
-        <td class="c-lg">${esc(f.logical || f.name)}</td>
+    const movable = (f) => EDIT && !AUDIT_TAIL_COLS.includes(f.name);
+    const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}"${EDIT ? ` data-mv-t="${t}" data-mv-c="${esc(f.name)}"` : ''}>
+        <td class="c-lg">${movable(f) ? '<span class="ed-drag" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>' : EDIT ? '<span class="ed-drag off" aria-hidden="true"></span>' : ''}${esc(f.logical || f.name)}</td>
         <td class="c-name">${esc(f.name)}${EDIT ? `<span class="ed-row"><button class="ed-x" data-ed="col-edit" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 수정" aria-label="${esc(f.name)} 컬럼 수정">✎</button><button class="ed-x" data-ed="col-del" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 삭제" aria-label="${esc(f.name)} 컬럼 삭제">×</button></span>` : ''}</td>
         <td class="c-type">${esc(f.type)}</td>
         <td class="c-key">${keyBadges(f)}</td>
@@ -918,6 +920,68 @@
         '추가', (d, form) => { history.replaceState(null, '', `#g=${d.groupName}&t=${d.name}`); return post('/api/group/add', { area: prefix, groupName: d.groupName, groupTitle: d.groupTitle, groupDesc: d.groupDesc, name: d.name, logical: d.logical, note: d.note, rows: collectRows(form) }); }, false,
         (form) => bindGrid(form, null));
     }
+
+    // ----- 컬럼 순서 드래그: 손잡이(⠿)를 잡고 끌어서 다른 컬럼 위/아래에 놓음 -----
+    const toast = document.createElement('div');
+    toast.className = 'ed-toast'; toast.hidden = true;
+    document.body.appendChild(toast);
+    const say = (text, err) => { toast.hidden = false; toast.textContent = text; toast.classList.toggle('err', !!err); };
+    let drag = null; // { t, c, tr }
+    const clearMarks = () => document.querySelectorAll('.ed-drop-before, .ed-drop-after').forEach((x) => x.classList.remove('ed-drop-before', 'ed-drop-after'));
+    document.addEventListener('mousedown', (e) => {
+      const h = e.target.closest('.ed-drag');
+      if (h) h.closest('tr').draggable = true;
+    });
+    document.addEventListener('mouseup', () => { if (!drag) document.querySelectorAll('tr[draggable="true"]').forEach((x) => (x.draggable = false)); });
+    document.addEventListener('dragstart', (e) => {
+      const tr = e.target.closest && e.target.closest('tr[data-mv-c]');
+      if (!tr || !tr.draggable) return;
+      drag = { t: tr.dataset.mvT, c: tr.dataset.mvC, tr };
+      tr.classList.add('ed-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', drag.c);
+    });
+    document.addEventListener('dragend', () => {
+      if (drag) { drag.tr.classList.remove('ed-dragging'); drag.tr.draggable = false; }
+      drag = null; clearMarks();
+    });
+    // 놓을 위치: 마우스가 행의 위쪽 절반이면 그 행 앞, 아래쪽이면 다음 행 앞
+    const dropAt = (e) => {
+      const tr = drag && e.target.closest && e.target.closest('tr[data-mv-c]');
+      if (!tr || tr.dataset.mvT !== drag.t) return null;
+      const r = tr.getBoundingClientRect();
+      const after = e.clientY > r.top + r.height / 2;
+      return { tr, after };
+    };
+    document.addEventListener('dragover', (e) => {
+      const d = dropAt(e);
+      if (!d) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearMarks();
+      d.tr.classList.add(d.after ? 'ed-drop-after' : 'ed-drop-before');
+    });
+    document.addEventListener('drop', async (e) => {
+      const d = dropAt(e);
+      if (!d) return;
+      e.preventDefault();
+      const { t, c } = drag;
+      const target = d.after ? d.tr.nextElementSibling : d.tr;
+      const before = target ? target.dataset.mvC : '';
+      clearMarks();
+      if (before === c || (target && target.previousElementSibling === drag.tr) || (!target && d.tr === drag.tr)) return; // 제자리
+      say('순서를 저장하고 ERD를 다시 만드는 중…');
+      keepHash(D.tables[t].group, t);
+      try {
+        const j = await (await post('/api/column/move', { table: t, column: c, before })).json();
+        if (!j.ok) throw new Error(j.msg);
+        say(j.msg + ' · 화면을 새로 고칩니다');
+        setTimeout(() => location.reload(), 300);
+      } catch (err) {
+        say(err.message || String(err), true);
+        setTimeout(() => (toast.hidden = true), 5000);
+      }
+    });
 
     document.addEventListener('click', (e) => {
       if (e.target.closest('[data-ed-close]')) { close(); return; }

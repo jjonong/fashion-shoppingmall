@@ -711,3 +711,12 @@ tr:hover .ed-x, .ed-x:focus-visible, .ed-x.on { visibility: visible; }
 .ed-grid th:nth-child(4) { width: 20%; } .ed-grid th:nth-child(5) { width: 12%; } .ed-grid th:nth-child(6) { width: 4%; } .ed-grid th:nth-child(8) { width: 3%; }
 .ed-grid-foot { display: flex; gap: 12px; align-items: center; }
 .ed-grid-foot small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+/* 컬럼 순서 드래그 (편집 모드) */
+.ed-drag { display: inline-block; width: 14px; margin-right: 6px; color: var(--muted); cursor: grab; user-select: none; visibility: hidden; }
+tr:hover .ed-drag { visibility: visible; }
+tr.ed-dragging { opacity: .35; }
+tr.ed-drop-before td { box-shadow: inset 0 2px 0 var(--text); }
+tr.ed-drop-after td { box-shadow: inset 0 -2px 0 var(--text); }
+.ed-toast { position: fixed; z-index: 90; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(640px, 90vw); padding: 10px 16px; background: var(--text); color: var(--bg); font-size: 13px; border-radius: 0; }
+.ed-toast.err { background: #b00020; color: #fff; }
+.ed-drag.off { cursor: default; }

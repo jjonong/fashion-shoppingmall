@@ -251,6 +251,27 @@ const ops = {
     if (!rows.length) fail('추가할 컬럼을 한 줄 이상 적어 주세요');
     return `${p.table}에 컬럼 ${rows.length}개를 추가했습니다${finishRows(lines, p.table, rows)}`;
   },
+  // 컬럼 순서 바꾸기 (드래그): before 컬럼 앞으로, 비우면 시간·감사 컬럼 앞(맨 끝)
+  'column/move'(lines, S, p) {
+    const t = tableOf(S, p.table);
+    fieldOf(t, p.column);
+    if (AUDIT_TAIL.includes(p.column)) fail(`${p.column}은(는) 맨 끝에 두는 시간·감사 컬럼이라 옮길 수 없습니다`);
+    if (has(p.before) && p.before === p.column) fail('같은 위치입니다');
+    const b = mustBlock(lines, 'Table', p.table);
+    const row = fieldLines(lines, b).find((x) => x.name === p.column) || fail(`컬럼 줄을 찾지 못했습니다: ${p.column}`);
+    const text = lines[row.i];
+    lines.splice(row.i, 1);
+    const fl = fieldLines(lines, mustBlock(lines, 'Table', p.table));
+    const firstTail = fl.find((x) => AUDIT_TAIL.includes(x.name));
+    let at;
+    if (has(p.before)) {
+      const tgt = fl.find((x) => x.name === p.before) || fail(`위치 기준 컬럼이 없습니다: ${p.before}`);
+      if (AUDIT_TAIL.includes(p.before) && tgt !== firstTail) fail('시간·감사 컬럼 사이에는 둘 수 없습니다 (항상 맨 끝)');
+      at = tgt.i;
+    } else at = firstTail ? firstTail.i : fl[fl.length - 1].i + 1;
+    lines.splice(at, 0, text);
+    return `${p.table}.${p.column} 컬럼을 ${has(p.before) ? `${p.before} 앞으로` : '맨 끝(시간 컬럼 앞)으로'} 옮겼습니다`;
+  },
   'column/edit'(lines, S, p) {
     const t = tableOf(S, p.table);
     const f = fieldOf(t, p.column);

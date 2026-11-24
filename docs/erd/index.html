@@ -721,6 +721,15 @@ tr:hover .ed-x, .ed-x:focus-visible, .ed-x.on { visibility: visible; }
 .ed-grid th:nth-child(4) { width: 20%; } .ed-grid th:nth-child(5) { width: 12%; } .ed-grid th:nth-child(6) { width: 4%; } .ed-grid th:nth-child(8) { width: 3%; }
 .ed-grid-foot { display: flex; gap: 12px; align-items: center; }
 .ed-grid-foot small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+/* 컬럼 순서 드래그 (편집 모드) */
+.ed-drag { display: inline-block; width: 14px; margin-right: 6px; color: var(--muted); cursor: grab; user-select: none; visibility: hidden; }
+tr:hover .ed-drag { visibility: visible; }
+tr.ed-dragging { opacity: .35; }
+tr.ed-drop-before td { box-shadow: inset 0 2px 0 var(--text); }
+tr.ed-drop-after td { box-shadow: inset 0 -2px 0 var(--text); }
+.ed-toast { position: fixed; z-index: 90; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(640px, 90vw); padding: 10px 16px; background: var(--text); color: var(--bg); font-size: 13px; border-radius: 0; }
+.ed-toast.err { background: #b00020; color: #fff; }
+.ed-drag.off { cursor: default; }
 </style>
 </head>
 <body>
@@ -2648,304 +2657,304 @@ tr:hover .ed-x, .ed-x:focus-visible, .ed-x.on { visibility: visible; }
 
 </svg></template>
 <template id="svg-__all"><svg
- viewBox="0.00 0.00 1522.43 687.44" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="all_graph0" class="graph" transform="scale(1 1) rotate(0) translate(14.4 673.04)">
+ viewBox="0.00 0.00 1501.12 757.17" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="all_graph0" class="graph" transform="scale(1 1) rotate(0) translate(14.4 742.77)">
 
 <g id="all_clust1" class="cluster">
 <title>cluster_member_basic</title>
-<polygon fill="#f7f7f7" stroke="#111111" points="560.56,0 560.56,-300.6 1030.03,-300.6 1030.03,0 560.56,0"/>
-<text text-anchor="middle" x="795.29" y="-281.3" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 기본</text>
+<polygon fill="#f7f7f7" stroke="#111111" points="567.58,0 567.58,-300.6 1037.06,-300.6 1037.06,0 567.58,0"/>
+<text text-anchor="middle" x="802.32" y="-281.3" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 기본</text>
 </g>
 <g id="all_clust2" class="cluster">
 <title>cluster_member_grading</title>
-<polygon fill="#f7f7f7" stroke="#111111" points="1099.61,-7.53 1099.61,-293.03 1493.63,-293.03 1493.63,-7.53 1099.61,-7.53"/>
-<text text-anchor="middle" x="1296.62" y="-273.73" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 등급</text>
+<polygon fill="#f7f7f7" stroke="#111111" points="1108.36,-46.59 1108.36,-253.97 1472.32,-253.97 1472.32,-46.59 1108.36,-46.59"/>
+<text text-anchor="middle" x="1290.34" y="-234.67" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 등급</text>
 </g>
 <g id="all_clust3" class="cluster">
 <title>cluster_brand_basic</title>
-<polygon fill="#f7f7f7" stroke="#555555" points="53.71,-568.48 53.71,-658.64 196.71,-658.64 196.71,-568.48 53.71,-568.48"/>
-<text text-anchor="middle" x="125.21" y="-639.34" font-family="Malgun Gothic" font-size="17.00" fill="#555555">브랜드 · 브랜드 기본</text>
+<polygon fill="#f7f7f7" stroke="#555555" points="22.12,-638.21 22.12,-728.37 165.12,-728.37 165.12,-638.21 22.12,-638.21"/>
+<text text-anchor="middle" x="93.62" y="-709.07" font-family="Malgun Gothic" font-size="17.00" fill="#555555">브랜드 · 브랜드 기본</text>
 </g>
 <g id="all_clust4" class="cluster">
 <title>cluster_product_master</title>
-<polygon fill="#f7f7f7" stroke="#999999" points="464.2,-322.31 464.2,-606.95 848.8,-606.95 848.8,-322.31 464.2,-322.31"/>
-<text text-anchor="middle" x="656.5" y="-587.65" font-family="Malgun Gothic" font-size="17.00" fill="#999999">상품 · 기준 데이터</text>
+<polygon fill="#f7f7f7" stroke="#999999" points="429.75,-384.89 429.75,-689.94 822.23,-689.94 822.23,-384.89 429.75,-384.89"/>
+<text text-anchor="middle" x="625.99" y="-670.64" font-family="Malgun Gothic" font-size="17.00" fill="#999999">상품 · 기준 데이터</text>
 </g>
 <g id="all_clust5" class="cluster">
 <title>cluster_product_basic</title>
-<polygon fill="#f7f7f7" stroke="#999999" points="0,-70.39 0,-375.99 404.31,-375.99 404.31,-70.39 0,-70.39"/>
-<text text-anchor="middle" x="202.15" y="-356.69" font-family="Malgun Gothic" font-size="17.00" fill="#999999">상품 · 상품 기본</text>
+<polygon fill="#f7f7f7" stroke="#999999" points="0,-70.29 0,-432.85 389.33,-432.85 389.33,-70.29 0,-70.29"/>
+<text text-anchor="middle" x="194.66" y="-413.55" font-family="Malgun Gothic" font-size="17.00" fill="#999999">상품 · 상품 기본</text>
 </g>
 <!-- member_account -->
 <g id="all_node1" class="node">
 <title>member_account</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="970.82,-262.2 840.96,-262.2 840.96,-220.44 970.82,-220.44 970.82,-262.2"/>
-<text text-anchor="middle" x="905.89" y="-245.82" font-family="Consolas" font-size="15.00">회원</text>
-<text text-anchor="middle" x="905.89" y="-227.82" font-family="Consolas" font-size="15.00">member_account</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="977.84,-262.2 847.99,-262.2 847.99,-220.44 977.84,-220.44 977.84,-262.2"/>
+<text text-anchor="middle" x="912.92" y="-245.82" font-family="Consolas" font-size="15.00">회원</text>
+<text text-anchor="middle" x="912.92" y="-227.82" font-family="Consolas" font-size="15.00">member_account</text>
 </g>
 <!-- member_login -->
 <g id="all_node2" class="node">
 <title>member_login</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="814.4,-121.76 610.32,-121.76 610.32,-80 814.4,-80 814.4,-121.76"/>
-<text text-anchor="middle" x="712.36" y="-105.38" font-family="Consolas" font-size="15.00">회원 로그인 상태</text>
-<text text-anchor="middle" x="712.36" y="-87.38" font-family="Consolas" font-size="15.00">member_login</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="821.43,-121.76 617.35,-121.76 617.35,-80 821.43,-80 821.43,-121.76"/>
+<text text-anchor="middle" x="719.39" y="-105.38" font-family="Consolas" font-size="15.00">회원 로그인 상태</text>
+<text text-anchor="middle" x="719.39" y="-87.38" font-family="Consolas" font-size="15.00">member_login</text>
 </g>
 <!-- member_account&#45;&gt;member_login -->
 <g id="all_edge1" class="edge">
 <title>member_account&#45;&gt;member_login</title>
-<path fill="none" stroke="#9a9a9a" d="M876.5,-219.99C840.87,-194.14 781.06,-150.73 744.32,-124.07"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="740.22,-125.42 744.34,-119.76 745.47,-120.58 741.36,-126.25 740.22,-125.42"/>
-<polyline fill="none" stroke="#9a9a9a" points="741.71,-122.18 744.55,-124.24"/>
+<path fill="none" stroke="#9a9a9a" d="M883.52,-219.99C847.9,-194.14 788.09,-150.73 751.35,-124.07"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="747.25,-125.42 751.36,-119.76 752.5,-120.58 748.38,-126.25 747.25,-125.42"/>
+<polyline fill="none" stroke="#9a9a9a" points="748.74,-122.18 751.57,-124.24"/>
 </g>
 <!-- member_social_account -->
 <g id="all_node3" class="node">
 <title>member_social_account</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="958.16,-191.76 770.57,-191.76 770.57,-150 958.16,-150 958.16,-191.76"/>
-<text text-anchor="middle" x="864.36" y="-175.38" font-family="Consolas" font-size="15.00">소셜 계정 연동</text>
-<text text-anchor="middle" x="864.36" y="-157.38" font-family="Consolas" font-size="15.00">member_social_account</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="965.18,-191.76 777.6,-191.76 777.6,-150 965.18,-150 965.18,-191.76"/>
+<text text-anchor="middle" x="871.39" y="-175.38" font-family="Consolas" font-size="15.00">소셜 계정 연동</text>
+<text text-anchor="middle" x="871.39" y="-157.38" font-family="Consolas" font-size="15.00">member_social_account</text>
 </g>
 <!-- member_account&#45;&gt;member_social_account -->
 <g id="all_edge2" class="edge">
 <title>member_account&#45;&gt;member_social_account</title>
-<path fill="none" stroke="#9a9a9a" d="M893.43,-220.18C889.32,-213.22 884.7,-205.37 880.37,-198.03"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="880.54,-198.32 879.7,-190.69 878.59,-195.01 877.15,-192.58 877.15,-192.58 877.15,-192.58 878.59,-195.01 874.27,-193.89 880.54,-198.32"/>
+<path fill="none" stroke="#9a9a9a" d="M900.46,-220.18C896.35,-213.22 891.73,-205.37 887.39,-198.03"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="887.56,-198.32 886.72,-190.69 885.62,-195.01 884.18,-192.58 884.18,-192.58 884.18,-192.58 885.62,-195.01 881.3,-193.89 887.56,-198.32"/>
 </g>
 <!-- member_body -->
 <g id="all_node4" class="node">
 <title>member_body</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="692.17,-51.76 570.56,-51.76 570.56,-10 692.17,-10 692.17,-51.76"/>
-<text text-anchor="middle" x="631.36" y="-35.38" font-family="Consolas" font-size="15.00">회원 체형</text>
-<text text-anchor="middle" x="631.36" y="-17.38" font-family="Consolas" font-size="15.00">member_body</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="699.2,-51.76 577.58,-51.76 577.58,-10 699.2,-10 699.2,-51.76"/>
+<text text-anchor="middle" x="638.39" y="-35.38" font-family="Consolas" font-size="15.00">회원 체형</text>
+<text text-anchor="middle" x="638.39" y="-17.38" font-family="Consolas" font-size="15.00">member_body</text>
 </g>
 <!-- member_account&#45;&gt;member_body -->
 <g id="all_edge3" class="edge">
 <title>member_account&#45;&gt;member_body</title>
-<path fill="none" stroke="#9a9a9a" d="M878.05,-219.98C826.13,-180.18 714.9,-94.92 661.37,-53.88"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="657.29,-55.16 661.55,-49.61 662.66,-50.46 658.4,-56.02 657.29,-55.16"/>
-<polyline fill="none" stroke="#9a9a9a" points="658.86,-51.96 661.64,-54.09"/>
+<path fill="none" stroke="#9a9a9a" d="M885.08,-219.98C833.15,-180.18 721.93,-94.92 668.39,-53.88"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="664.31,-55.16 668.57,-49.61 669.68,-50.46 665.43,-56.02 664.31,-55.16"/>
+<polyline fill="none" stroke="#9a9a9a" points="665.89,-51.96 668.67,-54.09"/>
 </g>
 <!-- member_address -->
 <g id="all_node5" class="node">
 <title>member_address</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="750.29,-241.76 620.43,-241.76 620.43,-200 750.29,-200 750.29,-241.76"/>
-<text text-anchor="middle" x="685.36" y="-225.38" font-family="Consolas" font-size="15.00">배송지</text>
-<text text-anchor="middle" x="685.36" y="-207.38" font-family="Consolas" font-size="15.00">member_address</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="757.32,-241.76 627.46,-241.76 627.46,-200 757.32,-200 757.32,-241.76"/>
+<text text-anchor="middle" x="692.39" y="-225.38" font-family="Consolas" font-size="15.00">배송지</text>
+<text text-anchor="middle" x="692.39" y="-207.38" font-family="Consolas" font-size="15.00">member_address</text>
 </g>
 <!-- member_account&#45;&gt;member_address -->
 <g id="all_edge4" class="edge">
 <title>member_account&#45;&gt;member_address</title>
-<path fill="none" stroke="#9a9a9a" d="M840.62,-235.27C814.5,-232.85 784.32,-230.05 757.55,-227.57"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="757.77,-227.59 751.09,-223.81 753.95,-227.24 751.13,-226.98 751.13,-226.98 751.13,-226.98 753.95,-227.24 750.51,-230.08 757.77,-227.59"/>
+<path fill="none" stroke="#9a9a9a" d="M847.65,-235.27C821.53,-232.85 791.35,-230.05 764.58,-227.57"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="764.8,-227.59 758.12,-223.81 760.98,-227.24 758.16,-226.98 758.16,-226.98 758.16,-226.98 760.98,-227.24 757.53,-230.08 764.8,-227.59"/>
 </g>
 <!-- member_refund_account -->
 <g id="all_node6" class="node">
 <title>member_refund_account</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="908.16,-51.76 720.57,-51.76 720.57,-10 908.16,-10 908.16,-51.76"/>
-<text text-anchor="middle" x="814.36" y="-35.38" font-family="Consolas" font-size="15.00">회원 환불 계좌</text>
-<text text-anchor="middle" x="814.36" y="-17.38" font-family="Consolas" font-size="15.00">member_refund_account</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="915.18,-51.76 727.6,-51.76 727.6,-10 915.18,-10 915.18,-51.76"/>
+<text text-anchor="middle" x="821.39" y="-35.38" font-family="Consolas" font-size="15.00">회원 환불 계좌</text>
+<text text-anchor="middle" x="821.39" y="-17.38" font-family="Consolas" font-size="15.00">member_refund_account</text>
 </g>
 <!-- member_account&#45;&gt;member_refund_account -->
 <g id="all_edge5" class="edge">
 <title>member_account&#45;&gt;member_refund_account</title>
-<path fill="none" stroke="#9a9a9a" d="M896.61,-219.98C879.43,-180.49 842.8,-96.27 824.79,-54.87"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="820.6,-54 827.02,-51.21 827.58,-52.49 821.16,-55.28 820.6,-54"/>
-<polyline fill="none" stroke="#9a9a9a" points="823.53,-51.96 824.93,-55.17"/>
+<path fill="none" stroke="#9a9a9a" d="M903.64,-219.98C886.46,-180.49 849.83,-96.27 831.82,-54.87"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="827.63,-54 834.05,-51.21 834.6,-52.49 828.19,-55.28 827.63,-54"/>
+<polyline fill="none" stroke="#9a9a9a" points="830.56,-51.96 831.95,-55.17"/>
 </g>
 <!-- member_withdrawal -->
 <g id="all_node7" class="node">
 <title>member_withdrawal</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1020.03,-121.76 840.69,-121.76 840.69,-80 1020.03,-80 1020.03,-121.76"/>
-<text text-anchor="middle" x="930.36" y="-105.38" font-family="Consolas" font-size="15.00">회원 탈퇴 정보</text>
-<text text-anchor="middle" x="930.36" y="-87.38" font-family="Consolas" font-size="15.00">member_withdrawal</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1027.06,-121.76 847.72,-121.76 847.72,-80 1027.06,-80 1027.06,-121.76"/>
+<text text-anchor="middle" x="937.39" y="-105.38" font-family="Consolas" font-size="15.00">회원 탈퇴 정보</text>
+<text text-anchor="middle" x="937.39" y="-87.38" font-family="Consolas" font-size="15.00">member_withdrawal</text>
 </g>
 <!-- member_account&#45;&gt;member_withdrawal -->
 <g id="all_edge6" class="edge">
 <title>member_account&#45;&gt;member_withdrawal</title>
-<path fill="none" stroke="#9a9a9a" d="M909.61,-219.99C914.05,-194.48 921.48,-151.87 926.14,-125.13"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="923.12,-122.04 930.02,-123.24 929.78,-124.62 922.88,-123.42 923.12,-122.04"/>
-<polyline fill="none" stroke="#9a9a9a" points="926.69,-121.95 926.09,-125.4"/>
+<path fill="none" stroke="#9a9a9a" d="M916.63,-219.99C921.08,-194.48 928.5,-151.87 933.16,-125.13"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="930.15,-122.04 937.05,-123.24 936.8,-124.62 929.91,-123.42 930.15,-122.04"/>
+<polyline fill="none" stroke="#9a9a9a" points="933.72,-121.95 933.12,-125.4"/>
 </g>
 <!-- member_grade_history -->
 <g id="all_node10" class="node">
 <title>member_grade_history</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1288.95,-59.29 1109.61,-59.29 1109.61,-17.53 1288.95,-17.53 1288.95,-59.29"/>
-<text text-anchor="middle" x="1199.28" y="-42.91" font-family="Consolas" font-size="15.00">회원 등급 이력</text>
-<text text-anchor="middle" x="1199.28" y="-24.91" font-family="Consolas" font-size="15.00">member_grade_history</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1297.7,-215.57 1118.36,-215.57 1118.36,-173.81 1297.7,-173.81 1297.7,-215.57"/>
+<text text-anchor="middle" x="1208.03" y="-199.19" font-family="Consolas" font-size="15.00">회원 등급 이력</text>
+<text text-anchor="middle" x="1208.03" y="-181.19" font-family="Consolas" font-size="15.00">member_grade_history</text>
 </g>
 <!-- member_account&#45;&gt;member_grade_history -->
 <g id="all_edge9" class="edge">
 <title>member_account&#45;&gt;member_grade_history</title>
-<path fill="none" stroke="#9a9a9a" d="M936.73,-219.99C991.21,-182.31 1104.21,-104.16 1162.59,-63.79"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="1162.38,-63.94 1169.93,-62.54 1165.53,-61.75 1167.86,-60.14 1167.86,-60.14 1167.86,-60.14 1165.53,-61.75 1166.35,-57.36 1162.38,-63.94"/>
+<path fill="none" stroke="#9a9a9a" d="M978.04,-231.03C1016.96,-224.88 1067.13,-216.96 1110.67,-210.08"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="1110.64,-210.08 1118.04,-212.1 1114.42,-209.48 1117.22,-209.04 1117.22,-209.04 1117.22,-209.04 1114.42,-209.48 1117.06,-205.88 1110.64,-210.08"/>
 </g>
 <!-- member_grade -->
 <g id="all_node8" class="node">
 <title>member_grade</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1285.15,-176.52 1163.54,-176.52 1163.54,-134.76 1285.15,-134.76 1285.15,-176.52"/>
-<text text-anchor="middle" x="1224.34" y="-160.14" font-family="Consolas" font-size="15.00">회원 등급</text>
-<text text-anchor="middle" x="1224.34" y="-142.14" font-family="Consolas" font-size="15.00">member_grade</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1243.77,-98.35 1122.16,-98.35 1122.16,-56.59 1243.77,-56.59 1243.77,-98.35"/>
+<text text-anchor="middle" x="1182.97" y="-81.97" font-family="Consolas" font-size="15.00">회원 등급</text>
+<text text-anchor="middle" x="1182.97" y="-63.97" font-family="Consolas" font-size="15.00">member_grade</text>
 </g>
 <!-- member_grade&#45;&gt;member_account -->
 <g id="all_edge7" class="edge">
 <title>member_grade&#45;&gt;member_account</title>
-<path fill="none" stroke="#9a9a9a" d="M1163.32,-172.06C1110.49,-186.27 1034.01,-206.85 978.14,-221.88"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="978.17,-221.87 970.59,-220.65 974.47,-222.87 971.73,-223.6 971.73,-223.6 971.73,-223.6 974.47,-222.87 972.23,-226.73 978.17,-221.87"/>
+<path fill="none" stroke="#9a9a9a" d="M1147.94,-98.72C1098.16,-128.93 1007.12,-184.16 954.15,-216.3"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="954.15,-216.3 946.53,-217.24 950.87,-218.29 948.45,-219.76 948.45,-219.76 948.45,-219.76 950.87,-218.29 949.8,-222.62 954.15,-216.3"/>
 </g>
 <!-- member_grade_benefit -->
 <g id="all_node9" class="node">
 <title>member_grade_benefit</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1483.63,-254.63 1304.29,-254.63 1304.29,-212.87 1483.63,-212.87 1483.63,-254.63"/>
-<text text-anchor="middle" x="1393.96" y="-238.25" font-family="Consolas" font-size="15.00">회원 등급 혜택</text>
-<text text-anchor="middle" x="1393.96" y="-220.25" font-family="Consolas" font-size="15.00">member_grade_benefit</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="1462.32,-113.69 1282.98,-113.69 1282.98,-71.93 1462.32,-71.93 1462.32,-113.69"/>
+<text text-anchor="middle" x="1372.65" y="-97.31" font-family="Consolas" font-size="15.00">회원 등급 혜택</text>
+<text text-anchor="middle" x="1372.65" y="-79.31" font-family="Consolas" font-size="15.00">member_grade_benefit</text>
 </g>
 <!-- member_grade&#45;&gt;member_grade_benefit -->
 <g id="all_edge8" class="edge">
 <title>member_grade&#45;&gt;member_grade_benefit</title>
-<path fill="none" stroke="#9a9a9a" d="M1270.69,-176.98C1292.47,-187.02 1318.55,-199.02 1341.1,-209.41"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="1341.01,-209.36 1346.05,-215.15 1344.49,-210.97 1347.06,-212.15 1347.06,-212.15 1347.06,-212.15 1344.49,-210.97 1348.68,-209.43 1341.01,-209.36"/>
+<path fill="none" stroke="#9a9a9a" d="M1244.03,-82.41C1254.06,-83.22 1264.67,-84.08 1275.32,-84.94"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="1275.39,-84.94 1282.11,-88.65 1279.21,-85.25 1282.03,-85.48 1282.03,-85.48 1282.03,-85.48 1279.21,-85.25 1282.62,-82.37 1275.39,-84.94"/>
 </g>
 <!-- member_grade&#45;&gt;member_grade_history -->
 <g id="all_edge10" class="edge">
 <title>member_grade&#45;&gt;member_grade_history</title>
-<path fill="none" stroke="#9a9a9a" d="M1219.8,-134.41C1215.74,-115.41 1209.75,-87.4 1205.3,-66.54"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="1205.32,-66.66 1206.94,-59.15 1204.52,-62.91 1203.93,-60.14 1203.93,-60.14 1203.93,-60.14 1204.52,-62.91 1200.78,-60.47 1205.32,-66.66"/>
+<path fill="none" stroke="#9a9a9a" d="M1187.51,-98.7C1191.57,-117.7 1197.56,-145.71 1202.01,-166.57"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="1201.99,-166.45 1200.37,-173.96 1202.79,-170.2 1203.38,-172.97 1203.38,-172.97 1203.38,-172.97 1202.79,-170.2 1206.53,-172.64 1201.99,-166.45"/>
 </g>
 <!-- brand -->
 <g id="all_node11" class="node">
 <title>brand</title>
-<polygon fill="white" stroke="#555555" stroke-width="1.1" points="169.52,-620.24 80.89,-620.24 80.89,-578.48 169.52,-578.48 169.52,-620.24"/>
-<text text-anchor="middle" x="125.21" y="-603.86" font-family="Consolas" font-size="15.00">브랜드</text>
-<text text-anchor="middle" x="125.21" y="-585.86" font-family="Consolas" font-size="15.00">brand</text>
+<polygon fill="white" stroke="#555555" stroke-width="1.1" points="137.93,-689.97 49.3,-689.97 49.3,-648.21 137.93,-648.21 137.93,-689.97"/>
+<text text-anchor="middle" x="93.62" y="-673.59" font-family="Consolas" font-size="15.00">브랜드</text>
+<text text-anchor="middle" x="93.62" y="-655.59" font-family="Consolas" font-size="15.00">brand</text>
 </g>
 <!-- product -->
 <g id="all_node15" class="node">
 <title>product</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="82.13,-246.13 10,-246.13 10,-204.37 82.13,-204.37 82.13,-246.13"/>
-<text text-anchor="middle" x="46.06" y="-229.75" font-family="Consolas" font-size="15.00">상품</text>
-<text text-anchor="middle" x="46.06" y="-211.75" font-family="Consolas" font-size="15.00">product</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="82.13,-205.37 10,-205.37 10,-163.61 82.13,-163.61 82.13,-205.37"/>
+<text text-anchor="middle" x="46.06" y="-188.99" font-family="Consolas" font-size="15.00">상품</text>
+<text text-anchor="middle" x="46.06" y="-170.99" font-family="Consolas" font-size="15.00">product</text>
 </g>
 <!-- brand&#45;&gt;product -->
 <g id="all_edge11" class="edge">
 <title>brand&#45;&gt;product</title>
-<path fill="none" stroke="#9a9a9a" d="M120.72,-578.17C107.26,-514.51 67.15,-324.9 51.97,-253.16"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="52.02,-253.37 53.65,-245.87 51.22,-249.62 50.64,-246.85 50.64,-246.85 50.64,-246.85 51.22,-249.62 47.48,-247.18 52.02,-253.37"/>
+<path fill="none" stroke="#9a9a9a" d="M91.54,-647.96C83.93,-570.42 57.55,-301.55 48.86,-213"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="48.87,-213.03 51.32,-205.76 48.49,-209.22 48.21,-206.4 48.21,-206.4 48.21,-206.4 48.49,-209.22 45.05,-206.37 48.87,-213.03"/>
 </g>
 <!-- product_category -->
 <g id="all_node12" class="node">
 <title>product_category</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="620.55,-568.55 474.2,-568.55 474.2,-526.79 620.55,-526.79 620.55,-568.55"/>
-<text text-anchor="middle" x="547.37" y="-552.17" font-family="Consolas" font-size="15.00">카테고리</text>
-<text text-anchor="middle" x="547.37" y="-534.17" font-family="Consolas" font-size="15.00">product_category</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="812.23,-566.66 665.88,-566.66 665.88,-524.9 812.23,-524.9 812.23,-566.66"/>
+<text text-anchor="middle" x="739.05" y="-550.28" font-family="Consolas" font-size="15.00">카테고리</text>
+<text text-anchor="middle" x="739.05" y="-532.28" font-family="Consolas" font-size="15.00">product_category</text>
 </g>
 <!-- product_category&#45;&gt;product -->
 <g id="all_edge12" class="edge">
 <title>product_category&#45;&gt;product</title>
-<path fill="none" stroke="#9a9a9a" d="M514.48,-526.51C425.6,-469.35 180.88,-311.95 85.16,-250.39"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="85.25,-250.45 81.06,-244.01 82.02,-248.37 79.64,-246.84 79.64,-246.84 79.64,-246.84 82.02,-248.37 77.66,-249.31 85.25,-250.45"/>
+<path fill="none" stroke="#9a9a9a" d="M698.29,-524.53C576.16,-460.86 213.94,-272.01 89,-206.87"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="89.03,-206.89 84.28,-200.86 85.63,-205.12 83.12,-203.81 83.12,-203.81 83.12,-203.81 85.63,-205.12 81.37,-206.44 89.03,-206.89"/>
 </g>
 <!-- product_std_color -->
 <g id="all_node13" class="node">
 <title>product_std_color</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="646.87,-374.07 492.27,-374.07 492.27,-332.31 646.87,-332.31 646.87,-374.07"/>
-<text text-anchor="middle" x="569.57" y="-357.69" font-family="Consolas" font-size="15.00">표준 색상</text>
-<text text-anchor="middle" x="569.57" y="-339.69" font-family="Consolas" font-size="15.00">product_std_color</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="633.62,-436.65 479.02,-436.65 479.02,-394.89 633.62,-394.89 633.62,-436.65"/>
+<text text-anchor="middle" x="556.32" y="-420.27" font-family="Consolas" font-size="15.00">표준 색상</text>
+<text text-anchor="middle" x="556.32" y="-402.27" font-family="Consolas" font-size="15.00">product_std_color</text>
 </g>
 <!-- product_color -->
 <g id="all_node16" class="node">
 <title>product_color</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="225.07,-337.59 103.46,-337.59 103.46,-295.83 225.07,-295.83 225.07,-337.59"/>
-<text text-anchor="middle" x="164.26" y="-321.21" font-family="Consolas" font-size="15.00">상품 컬러</text>
-<text text-anchor="middle" x="164.26" y="-303.21" font-family="Consolas" font-size="15.00">product_color</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="240.89,-122.05 119.28,-122.05 119.28,-80.29 240.89,-80.29 240.89,-122.05"/>
+<text text-anchor="middle" x="180.09" y="-105.67" font-family="Consolas" font-size="15.00">상품 컬러</text>
+<text text-anchor="middle" x="180.09" y="-87.67" font-family="Consolas" font-size="15.00">product_color</text>
 </g>
 <!-- product_std_color&#45;&gt;product_color -->
 <g id="all_edge14" class="edge">
 <title>product_std_color&#45;&gt;product_color</title>
-<path fill="none" stroke="#9a9a9a" d="M491.9,-346.2C416.9,-339.45 304.43,-329.33 232.7,-322.87"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="232.77,-322.88 226.08,-319.11 228.95,-322.53 226.13,-322.28 226.13,-322.28 226.13,-322.28 228.95,-322.53 225.51,-325.39 232.77,-322.88"/>
+<path fill="none" stroke="#9a9a9a" d="M530.75,-394.4C463.7,-338.32 282.95,-187.19 210.62,-126.7"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="210.82,-126.87 207.47,-119.96 207.88,-124.41 205.7,-122.59 205.7,-122.59 205.7,-122.59 207.88,-124.41 203.43,-124.8 210.82,-126.87"/>
 </g>
 <!-- product_std_material -->
 <g id="all_node14" class="node">
 <title>product_std_material</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="838.8,-488.27 659.45,-488.27 659.45,-446.51 838.8,-446.51 838.8,-488.27"/>
-<text text-anchor="middle" x="749.13" y="-471.89" font-family="Consolas" font-size="15.00">표준 소재</text>
-<text text-anchor="middle" x="749.13" y="-453.89" font-family="Consolas" font-size="15.00">product_std_material</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="619.09,-651.54 439.75,-651.54 439.75,-609.78 619.09,-609.78 619.09,-651.54"/>
+<text text-anchor="middle" x="529.42" y="-635.16" font-family="Consolas" font-size="15.00">표준 소재</text>
+<text text-anchor="middle" x="529.42" y="-617.16" font-family="Consolas" font-size="15.00">product_std_material</text>
 </g>
 <!-- product_material -->
 <g id="all_node19" class="node">
 <title>product_material</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="223.22,-137.37 76.87,-137.37 76.87,-95.61 223.22,-95.61 223.22,-137.37"/>
-<text text-anchor="middle" x="150.04" y="-120.99" font-family="Consolas" font-size="15.00">상품 소재</text>
-<text text-anchor="middle" x="150.04" y="-102.99" font-family="Consolas" font-size="15.00">product_material</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="209.55,-323.01 63.19,-323.01 63.19,-281.25 209.55,-281.25 209.55,-323.01"/>
+<text text-anchor="middle" x="136.37" y="-306.63" font-family="Consolas" font-size="15.00">상품 소재</text>
+<text text-anchor="middle" x="136.37" y="-288.63" font-family="Consolas" font-size="15.00">product_material</text>
 </g>
 <!-- product_std_material&#45;&gt;product_material -->
 <g id="all_edge20" class="edge">
 <title>product_std_material&#45;&gt;product_material</title>
-<path fill="none" stroke="#9a9a9a" d="M713,-446.23C608.23,-384.86 304.58,-207.01 192.37,-141.28"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="192.55,-141.38 188.1,-135.13 189.24,-139.45 186.79,-138.02 186.79,-138.02 186.79,-138.02 189.24,-139.45 184.91,-140.57 192.55,-141.38"/>
+<path fill="none" stroke="#9a9a9a" d="M503.93,-609.36C434.63,-551.43 242.91,-391.18 167.46,-328.11"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="167.43,-328.09 164.08,-321.18 164.48,-325.63 162.31,-323.81 162.31,-323.81 162.31,-323.81 164.48,-325.63 160.04,-326.02 167.43,-328.09"/>
 </g>
 <!-- product&#45;&gt;product_color -->
 <g id="all_edge13" class="edge">
 <title>product&#45;&gt;product_color</title>
-<path fill="none" stroke="#9a9a9a" d="M73.48,-246.46C90.78,-259.85 113.24,-277.22 131.48,-291.34"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="131.2,-291.12 134.81,-297.9 134.23,-293.47 136.47,-295.2 136.47,-295.2 136.47,-295.2 134.23,-293.47 138.66,-292.92 131.2,-291.12"/>
+<path fill="none" stroke="#9a9a9a" d="M80.23,-163.25C98.35,-151.99 120.72,-138.08 139.69,-126.29"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="139.75,-126.25 147.36,-125.23 143.01,-124.22 145.41,-122.73 145.41,-122.73 145.41,-122.73 143.01,-124.22 144.04,-119.87 139.75,-126.25"/>
 </g>
 <!-- product_option -->
 <g id="all_node17" class="node">
 <title>product_option</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="379.31,-122.15 249.45,-122.15 249.45,-80.39 379.31,-80.39 379.31,-122.15"/>
-<text text-anchor="middle" x="314.38" y="-105.77" font-family="Consolas" font-size="15.00">상품 옵션</text>
-<text text-anchor="middle" x="314.38" y="-87.77" font-family="Consolas" font-size="15.00">product_option</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="379.33,-330.45 249.47,-330.45 249.47,-288.69 379.33,-288.69 379.33,-330.45"/>
+<text text-anchor="middle" x="314.4" y="-314.07" font-family="Consolas" font-size="15.00">상품 옵션</text>
+<text text-anchor="middle" x="314.4" y="-296.07" font-family="Consolas" font-size="15.00">product_option</text>
 </g>
 <!-- product&#45;&gt;product_option -->
 <g id="all_edge15" class="edge">
 <title>product&#45;&gt;product_option</title>
-<path fill="none" stroke="#9a9a9a" d="M82.53,-208.4C128.84,-187 209.06,-149.93 261.93,-125.5"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="261.9,-125.51 269.58,-125.44 265.38,-123.91 267.95,-122.72 267.95,-122.72 267.95,-122.72 265.38,-123.91 266.94,-119.72 261.9,-125.51"/>
+<path fill="none" stroke="#9a9a9a" d="M82.53,-201.49C128.84,-223.07 209.07,-260.47 261.95,-285.12"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="261.93,-285.11 266.94,-290.93 265.4,-286.73 267.97,-287.93 267.97,-287.93 267.97,-287.93 265.4,-286.73 269.6,-285.22 261.93,-285.11"/>
 </g>
 <!-- product_image -->
 <g id="all_node18" class="node">
 <title>product_image</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="343.79,-257.15 114.97,-257.15 114.97,-215.39 343.79,-215.39 343.79,-257.15"/>
-<text text-anchor="middle" x="229.38" y="-240.77" font-family="Consolas" font-size="15.00">상품 갤러리 이미지</text>
-<text text-anchor="middle" x="229.38" y="-222.77" font-family="Consolas" font-size="15.00">product_image</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="350.81,-250.45 121.99,-250.45 121.99,-208.69 350.81,-208.69 350.81,-250.45"/>
+<text text-anchor="middle" x="236.4" y="-234.07" font-family="Consolas" font-size="15.00">상품 갤러리 이미지</text>
+<text text-anchor="middle" x="236.4" y="-216.07" font-family="Consolas" font-size="15.00">product_image</text>
 </g>
 <!-- product&#45;&gt;product_image -->
 <g id="all_edge17" class="edge">
 <title>product&#45;&gt;product_image</title>
-<path fill="none" stroke="#9a9a9a" d="M82.28,-227.42C89.94,-227.88 98.42,-228.39 107.34,-228.93"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="107.25,-228.92 114.05,-232.49 111.08,-229.15 113.91,-229.32 113.91,-229.32 113.91,-229.32 111.08,-229.15 114.43,-226.2 107.25,-228.92"/>
+<path fill="none" stroke="#9a9a9a" d="M82.31,-193.07C98.72,-196.96 118.97,-201.76 139.33,-206.58"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="139.4,-206.6 145.49,-211.27 143.13,-207.48 145.89,-208.13 145.89,-208.13 145.89,-208.13 143.13,-207.48 146.94,-205.14 139.4,-206.6"/>
 </g>
 <!-- product&#45;&gt;product_material -->
 <g id="all_edge19" class="edge">
 <title>product&#45;&gt;product_material</title>
-<path fill="none" stroke="#9a9a9a" d="M66.36,-204.02C83.11,-186.5 106.95,-161.57 124.9,-142.79"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="124.73,-142.97 131.85,-140.08 127.38,-140.19 129.34,-138.15 129.34,-138.15 129.34,-138.15 127.38,-140.19 127.29,-135.73 124.73,-142.97"/>
+<path fill="none" stroke="#9a9a9a" d="M62.42,-205.79C77.38,-225.28 99.58,-254.2 115.75,-275.27"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="115.67,-275.17 117.44,-282.64 118.01,-278.21 119.73,-280.45 119.73,-280.45 119.73,-280.45 118.01,-278.21 122.43,-278.8 115.67,-275.17"/>
 </g>
 <!-- product_detail -->
 <g id="all_node20" class="node">
 <title>product_detail</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="394.31,-332.15 264.45,-332.15 264.45,-290.39 394.31,-290.39 394.31,-332.15"/>
-<text text-anchor="middle" x="329.38" y="-315.77" font-family="Consolas" font-size="15.00">상품 상세</text>
-<text text-anchor="middle" x="329.38" y="-297.77" font-family="Consolas" font-size="15.00">product_detail</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="219.33,-394.45 89.47,-394.45 89.47,-352.69 219.33,-352.69 219.33,-394.45"/>
+<text text-anchor="middle" x="154.4" y="-378.07" font-family="Consolas" font-size="15.00">상품 상세</text>
+<text text-anchor="middle" x="154.4" y="-360.07" font-family="Consolas" font-size="15.00">product_detail</text>
 </g>
 <!-- product&#45;&gt;product_detail -->
 <g id="all_edge21" class="edge">
 <title>product&#45;&gt;product_detail</title>
-<path fill="none" stroke="#9a9a9a" d="M82.52,-236.32C127.44,-249.95 204.67,-273.4 260.81,-290.45"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="264.49,-287.91 262.45,-294.6 261.11,-294.2 263.15,-287.5 264.49,-287.91"/>
-<polyline fill="none" stroke="#9a9a9a" points="264.14,-291.46 260.79,-290.44"/>
+<path fill="none" stroke="#9a9a9a" d="M58.28,-205.81C78.65,-241.37 119.43,-312.53 140.73,-349.71"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="144.92,-349.98 138.84,-353.46 138.15,-352.25 144.22,-348.77 144.92,-349.98"/>
+<polyline fill="none" stroke="#9a9a9a" points="142.23,-352.33 140.49,-349.29"/>
 </g>
 <!-- product_color&#45;&gt;product_option -->
 <g id="all_edge16" class="edge">
 <title>product_color&#45;&gt;product_option</title>
-<path fill="none" stroke="#9a9a9a" d="M178.93,-295.66C206.34,-256.32 265.29,-171.72 295.58,-128.25"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="295.46,-128.42 302.05,-124.48 297.65,-125.27 299.27,-122.95 299.27,-122.95 299.27,-122.95 297.65,-125.27 296.88,-120.88 295.46,-128.42"/>
+<path fill="none" stroke="#9a9a9a" d="M193.7,-122.3C218.19,-160.3 269.62,-240.1 296.76,-282.21"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="296.77,-282.22 297.92,-289.81 298.85,-285.45 300.38,-287.83 300.38,-287.83 300.38,-287.83 298.85,-285.45 303.21,-286.4 296.77,-282.22"/>
 </g>
 <!-- product_color&#45;&gt;product_image -->
 <g id="all_edge18" class="edge">
 <title>product_color&#45;&gt;product_image</title>
-<path fill="none" stroke="#9a9a9a" d="M181.37,-295.57C189.38,-285.68 199.02,-273.77 207.55,-263.23"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="207.55,-263.24 214.4,-259.78 209.96,-260.26 211.74,-258.06 211.74,-258.06 211.74,-258.06 209.96,-260.26 209.5,-255.82 207.55,-263.24"/>
+<path fill="none" stroke="#9a9a9a" d="M189.39,-122.38C198.88,-144.03 213.67,-177.76 224.13,-201.59"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="224.14,-201.62 224.07,-209.3 225.68,-205.13 226.82,-207.73 226.82,-207.73 226.82,-207.73 225.68,-205.13 229.84,-206.77 224.14,-201.62"/>
 </g>
 </g>
 </svg>
@@ -3107,10 +3116,12 @@ tr:hover .ed-x, .ed-x:focus-visible, .ed-x.on { visibility: visible; }
   const link = (name, col) => `<a href="#g=${D.tables[name].group}&t=${name}">${esc(tLg(name))}${col ? '.' + esc(fLg(name, col)) : ''}</a> ${phys(name + (col ? '.' + col : ''))}`;
   const keyBadges = (f) => f.keys.map((k) => `<span class="badge ${k}">${k}</span>`).join('') + (f.inc ? '<span class="badge AI">AI</span>' : '');
 
+  const AUDIT_TAIL_COLS = ['created_by', 'updated_by', 'created_at', 'updated_at']; // 맨 끝 고정 (편집 서버와 같음)
   function specCard(t, no) {
     const T = D.tables[t];
-    const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
-        <td class="c-lg">${esc(f.logical || f.name)}</td>
+    const movable = (f) => EDIT && !AUDIT_TAIL_COLS.includes(f.name);
+    const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}"${EDIT ? ` data-mv-t="${t}" data-mv-c="${esc(f.name)}"` : ''}>
+        <td class="c-lg">${movable(f) ? '<span class="ed-drag" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>' : EDIT ? '<span class="ed-drag off" aria-hidden="true"></span>' : ''}${esc(f.logical || f.name)}</td>
         <td class="c-name">${esc(f.name)}${EDIT ? `<span class="ed-row"><button class="ed-x" data-ed="col-edit" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 수정" aria-label="${esc(f.name)} 컬럼 수정">✎</button><button class="ed-x" data-ed="col-del" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 삭제" aria-label="${esc(f.name)} 컬럼 삭제">×</button></span>` : ''}</td>
         <td class="c-type">${esc(f.type)}</td>
         <td class="c-key">${keyBadges(f)}</td>
@@ -3871,6 +3882,68 @@ tr:hover .ed-x, .ed-x:focus-visible, .ed-x.on { visibility: visible; }
         '추가', (d, form) => { history.replaceState(null, '', `#g=${d.groupName}&t=${d.name}`); return post('/api/group/add', { area: prefix, groupName: d.groupName, groupTitle: d.groupTitle, groupDesc: d.groupDesc, name: d.name, logical: d.logical, note: d.note, rows: collectRows(form) }); }, false,
         (form) => bindGrid(form, null));
     }
+
+    // ----- 컬럼 순서 드래그: 손잡이(⠿)를 잡고 끌어서 다른 컬럼 위/아래에 놓음 -----
+    const toast = document.createElement('div');
+    toast.className = 'ed-toast'; toast.hidden = true;
+    document.body.appendChild(toast);
+    const say = (text, err) => { toast.hidden = false; toast.textContent = text; toast.classList.toggle('err', !!err); };
+    let drag = null; // { t, c, tr }
+    const clearMarks = () => document.querySelectorAll('.ed-drop-before, .ed-drop-after').forEach((x) => x.classList.remove('ed-drop-before', 'ed-drop-after'));
+    document.addEventListener('mousedown', (e) => {
+      const h = e.target.closest('.ed-drag');
+      if (h) h.closest('tr').draggable = true;
+    });
+    document.addEventListener('mouseup', () => { if (!drag) document.querySelectorAll('tr[draggable="true"]').forEach((x) => (x.draggable = false)); });
+    document.addEventListener('dragstart', (e) => {
+      const tr = e.target.closest && e.target.closest('tr[data-mv-c]');
+      if (!tr || !tr.draggable) return;
+      drag = { t: tr.dataset.mvT, c: tr.dataset.mvC, tr };
+      tr.classList.add('ed-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', drag.c);
+    });
+    document.addEventListener('dragend', () => {
+      if (drag) { drag.tr.classList.remove('ed-dragging'); drag.tr.draggable = false; }
+      drag = null; clearMarks();
+    });
+    // 놓을 위치: 마우스가 행의 위쪽 절반이면 그 행 앞, 아래쪽이면 다음 행 앞
+    const dropAt = (e) => {
+      const tr = drag && e.target.closest && e.target.closest('tr[data-mv-c]');
+      if (!tr || tr.dataset.mvT !== drag.t) return null;
+      const r = tr.getBoundingClientRect();
+      const after = e.clientY > r.top + r.height / 2;
+      return { tr, after };
+    };
+    document.addEventListener('dragover', (e) => {
+      const d = dropAt(e);
+      if (!d) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearMarks();
+      d.tr.classList.add(d.after ? 'ed-drop-after' : 'ed-drop-before');
+    });
+    document.addEventListener('drop', async (e) => {
+      const d = dropAt(e);
+      if (!d) return;
+      e.preventDefault();
+      const { t, c } = drag;
+      const target = d.after ? d.tr.nextElementSibling : d.tr;
+      const before = target ? target.dataset.mvC : '';
+      clearMarks();
+      if (before === c || (target && target.previousElementSibling === drag.tr) || (!target && d.tr === drag.tr)) return; // 제자리
+      say('순서를 저장하고 ERD를 다시 만드는 중…');
+      keepHash(D.tables[t].group, t);
+      try {
+        const j = await (await post('/api/column/move', { table: t, column: c, before })).json();
+        if (!j.ok) throw new Error(j.msg);
+        say(j.msg + ' · 화면을 새로 고칩니다');
+        setTimeout(() => location.reload(), 300);
+      } catch (err) {
+        say(err.message || String(err), true);
+        setTimeout(() => (toast.hidden = true), 5000);
+      }
+    });
 
     document.addEventListener('click', (e) => {
       if (e.target.closest('[data-ed-close]')) { close(); return; }
