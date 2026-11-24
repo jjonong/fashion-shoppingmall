@@ -19,7 +19,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 1-2 | 고객 · 회원 등급 `member_grading` | `member_grade`, `member_grade_benefit`, `member_grade_history` (+ `member_account.grade_code`) | 반영 (시험 반영, 사용자가 롤백할 수 있음) |
 | 2 | 고객 · 약관·알림 | `terms`, `member_terms_agreement`, `member_notification_setting` | 대기 |
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history` (운영자 계정·접속 기록은 운영 영역으로 이동) | 대기 |
-| A1 | 운영 · 운영자 기본 `admin_basic` | `admin_user`, `admin_login`, `admin_role`, `admin_role_history`, `admin_access_log` | 반영 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 | `brand`, `brand_user`, `brand_status_history`, `brand_like` | 대기 |
 | 6~ | 상품 | 카테고리(품목군), 사이즈 체계·실측, 상품·컬러·SKU, 이미지, 고시, 재고·가격 이력 | 대기 |
@@ -110,16 +109,8 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 - `member_account.grade_code`: 현재 등급(신규 GREEN), 월 1회 갱신.
 - 나중: 활동 미션(출석·하트·앱 푸시·리뷰 포인트, 하루 한도·적립 시점)은 포인트 단계, 결제 프로모션은 주문·결제 단계, 마케팅 수신동의 이벤트는 약관 묶음.
 
-### A1. 운영 · 운영자 기본 (`admin_basic`)
-운영자는 개인정보취급자라 개인정보의 안전성 확보조치 기준이 의무로 적용된다 (고객보다 요구가 많음).
-- `admin_user`: 사람마다 따로 발급, 공유 금지. 아이디 PK(변경·재사용 불가, 퇴사 후에도 행 유지). 상태 ACTIVE/SUSPENDED/RETIRED(퇴사·인사이동 시 지체 없이 권한 말소). 2차 인증 OTP 비밀키(`otp_secret_enc`, 외부 접속 시 필수). 비밀번호 변경일시.
-- `admin_login` (1:1): 로그인할 때마다 바뀌는 값 분리(고객과 같은 규칙). 5회 실패 잠금은 운영자에게 **의무**이고, 시간 경과로 풀지 않고 최고관리자가 해제.
-- `admin_role`: SUPER/OPERATOR/CS/MD/MARKETING. 역할별 개인정보 마스킹 해제·다운로드 가능 여부(최소 권한). 메뉴·기능 단위 세부 권한표는 관리자 화면 설계 때 추가.
-- `admin_role_history`: 권한 부여·변경·말소(GRANT/CHANGE/REVOKE) 이력, **3년 보관**, 수정·삭제 금지.
-- `admin_access_log`: 로그인·로그아웃·실패와 개인정보 처리(조회·마스킹 해제·다운로드·수정·삭제) 기록, 대상 회원·항목·다운로드 사유·IP. **2년 보관**, 월 1회 이상 점검, 수정·삭제 금지. 운영자 로그인 기록도 여기에 남김.
-- 다른 테이블의 `created_by`/`updated_by`는 `admin_user.admin_id` FK(등급 기준표·혜택·등급 이력 연결 완료).
-
 ### 나중에 재검토
+- **운영 영역 (운영자 기본 `admin_basic`)**: 2026-11-24 사용자 요청으로 ERD에서 뺐다("아직 거기까지 다루고 싶지 않다"). 사용자가 다시 꺼내기 전에는 제안하지 않는다. 빼기 전 설계(`admin_user`·`admin_login`·`admin_role`·`admin_role_history`·`admin_access_log`, 개인정보 안전성 확보조치 기준 반영)는 커밋 `8692840`~`ad4d30d`에 있다. 지금 `created_by`/`updated_by` 컬럼(등급 기준표·혜택·등급 이력)은 FK 없이 운영자 아이디 `varchar(20)`만 두고, 운영자 테이블을 만들 때 `admin_user.admin_id` FK로 연결한다.
 - **Involved Party 패턴** (사람·회사를 상위 `party`로 묶고 고객·운영자·브랜드 관리자를 역할로): 사용자가 나중에 다시 검토하기로 함. 고객·운영자 계정은 보안상 분리 유지가 기본안이고, 적용한다면 브랜드(사업자·정산 주체) 쪽이 유력. 도입 시 자연키가 없어 ULID 같은 앱 생성 키가 필요(AUTO_INCREMENT 금지 규칙과 함께 검토).
 
 ## 저장소 메모
