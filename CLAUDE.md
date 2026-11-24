@@ -131,7 +131,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 
 ### 6-2. 상품 · 상품 기본 (`product_basic`)
 - 구조: 상품 1행 + 컬러 N + 옵션(컬러 × 사이즈) N. 예: 울 코트(상품 1000123) → 컬러 2(블랙·크림 베이지) × 사이즈 3 = 옵션 6행, 재고는 옵션마다.
-- `product`: PK **상품 코드** `product_code varchar(20)`(숫자만, 앱 발급 채번, 브랜드 접두사 없음, 변경 불가, 상품 URL). 브랜드 1개 + **말단(3단계) 카테고리 1개**(앱 검증, 여러 카테고리 노출은 범위 밖). 품목 유형은 카테고리에서 따라오고(복사 안 함), 고시 유형은 6-4 상품 고시. 성별 `gender` WOMEN/MEN/UNISEX(A안), 브랜드 품번 `style_no`(선택, 브랜드 안 UK), 정가·판매가(CHECK 판매가 ≤ 정가, 할인율은 계산값), 단독 여부, 상태 ACTIVE/PAUSED/ENDED ↔ `ended_at`(품절은 상태가 아니라 옵션 재고), 출시일시, 캐시(찜 수·리뷰 수·평균 별점). `created_by`/`updated_by`는 FK 없이(브랜드 관리자·운영자 테이블 생기면 연결).
+- `product`: PK **상품 코드** `product_code varchar(20)`(숫자만, 앱 발급 채번, 브랜드 접두사 없음, 변경 불가, 상품 URL). 브랜드 1개 + **말단(3단계) 카테고리 1개**(앱 검증, 여러 카테고리 노출은 범위 밖). 품목 유형은 카테고리에서 따라오고(복사 안 함), 고시 유형은 6-4 상품 고시. 성별 `gender` WOMEN/MEN/UNISEX(A안), 브랜드 품번 `style_no`(선택, 브랜드 안 UK), 정가·판매가(CHECK 판매가 ≤ 정가, 할인율은 계산값), 단독 여부, 상태 ACTIVE/PAUSED/ENDED ↔ `ended_at`(품절은 상태가 아니라 옵션 재고), **판매 시작일시** `sale_started_at`(NOT NULL, 등록일시와 별개: 검수 후 공개·예약 오픈 대응, 노출 조건 `status = 'ACTIVE' AND sale_started_at <= NOW()`, 신상품 정렬 기준, 사용자 결정 2026-11-24: 출시일시에서 변경), 캐시(찜 수·리뷰 수·평균 별점). `created_by`/`updated_by`는 FK 없이(브랜드 관리자·운영자 테이블 생기면 연결).
 - `product_detail` (1:1): 상세 본문 `detail_html mediumtext`. 목록 조회에서 큰 본문을 분리.
 - `product_color`: PK (product_code, color_no). 브랜드 색상 이름 `brand_color_name`(예: 크림 베이지) + 표준 색상 코드(필터). 정렬 맨 앞이 대표 컬러.
 - `product_option`: PK (product_code, option_no). **SKU라는 용어 대신 옵션**(사용자 요청). 컬러 번호(복합 FK → product_color) + 사이즈 `size_label`(S/M/230/FREE, 사이즈 기준표는 6-3), 추가 금액, 재고 수량(0이면 품절, 이력은 6-5), 상태 ACTIVE/PAUSED. UK (product_code, color_no, size_label).

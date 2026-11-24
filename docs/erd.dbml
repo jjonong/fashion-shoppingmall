@@ -298,8 +298,8 @@ Table product [note: '[상품] 브랜드가 등록한 판매 상품. 말단(3단
   sale_price bigint [not null, note: '[판매가] 원 단위. CHECK (sale_price <= list_price). 할인율은 계산값, 변경 이력은 6-5']
   is_exclusive char(1) [not null, default: 'N', note: '[단독 여부] W컨셉 단독 판매 상품. Y/N']
   status varchar(20) [not null, default: 'ACTIVE', note: '[상태] ACTIVE/PAUSED/ENDED (판매중/판매 중지/판매 종료). 품절은 상태가 아니라 옵션 재고로 판단']
+  sale_started_at datetime [not null, note: '[판매 시작일시] 고객에게 보이기 시작하는 시각. 노출 조건 status = ACTIVE AND sale_started_at <= NOW() (미래면 오픈 예정). 바로 판매하면 등록 시각을 넣음. 신상품 정렬 기준']
   ended_at datetime [note: '[판매 종료일시] status = ENDED 처리 시각']
-  released_at datetime [note: '[출시일시] 신상품 정렬 기준. NULL이면 등록일시']
   like_count int [not null, default: 0, note: '[찜 수] 캐시. 원본(상품 찜)은 6-6']
   review_count int [not null, default: 0, note: '[리뷰 수] 캐시. 원본(리뷰)은 커뮤니티 단계']
   rating_avg decimal(2,1) [not null, default: 0.0, note: '[평균 별점] 캐시. 0.0~5.0']
@@ -309,8 +309,8 @@ Table product [note: '[상품] 브랜드가 등록한 판매 상품. 말단(3단
   updated_at datetime [note: '[수정일시] 상품 수정일시']
 
   indexes {
-    (brand_id, status) [name: 'ix_product_brand', note: 'FK 인덱스, 브랜드관 판매중 상품 조회']
-    (category_code, status) [name: 'ix_product_category', note: 'FK 인덱스, 카테고리 판매중 상품 조회']
+    (brand_id, status, sale_started_at) [name: 'ix_product_brand', note: 'FK 인덱스, 브랜드관 판매중 상품 조회·신상품 정렬']
+    (category_code, status, sale_started_at) [name: 'ix_product_category', note: 'FK 인덱스, 카테고리 판매중 상품 조회·신상품 정렬']
     (brand_id, style_no) [unique, name: 'uk_product_brand_style', note: '브랜드 안에서 품번 중복 금지. NULL은 중복 허용']
   }
 }
