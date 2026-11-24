@@ -21,8 +21,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history` (운영자 계정·접속 기록은 운영 영역으로 이동) | 대기 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 `brand_basic` | `brand` / 나중에: 사업자 정보(판매자 정보 고시), 배송비·교환/반품 정책, `brand_user`, `brand_status_history`, `brand_like` | `brand`만 반영 (상품 FK용, 2026-11-24 사용자 결정: 상품 설계를 위해 브랜드는 포괄적으로만) |
-| 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color` | 반영 |
-| 6-2 | 상품 · 상품 기본 | `product`(PK 상품코드, 성별 `gender` WOMEN/MEN/UNISEX: A안), `product_detail`(1:1, 상세 본문), `product_color`, `product_image`, `product_option`(옵션, SKU라는 용어 대신) / 소재는 **상품 단위**(컬러별 소재 없음, 2026-11-24 사용자 결정. 컬러마다 소재가 다르면 다른 상품으로 등록) | 대기 |
+| 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color`, `product_std_material` | 반영 |
+| 6-2 | 상품 · 상품 기본 | `product`(PK 상품코드, 성별 `gender` WOMEN/MEN/UNISEX: A안), `product_detail`(1:1, 상세 본문), `product_color`, `product_image`, `product_option`(옵션, SKU라는 용어 대신), `product_material`(상품 소재·혼용률: PK (product_code, part_type, material_code), 부위 `part_type` OUTER/LINING/FILLING/UPPER/SOLE, 비율 `ratio decimal(5,2)` NULL 허용(신발·가방), 부위별 합계 100%는 앱 검증) / 소재는 **상품 단위**(컬러별 소재 없음, 2026-11-24 사용자 결정. 컬러마다 소재가 다르면 다른 상품으로 등록) | 대기 |
 | 6-3 | 상품 · 사이즈·실측 | 품목군별 실측 항목 기준표, 상품별 실측값 | 대기 |
 | 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시. 상품 고시 행에 실제 `notice_type` 저장(카테고리 `default_notice_type`에서 시작) | 대기 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
@@ -127,6 +127,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - **여성/남성 구분은 A안** (사용자 결정, 2026-11-24): 카테고리 트리는 하나, 성별은 상품 컬럼(`product.gender`, 6-2에서 추가). 남녀공용 상품이 양쪽 메뉴에 나옴.
 - `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3, 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **기본 고시 유형** `default_notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠. 고시 유형은 카테고리에 기본값만 두고(상품 등록 시 고시 폼 자동 선택) 실제 유형은 상품 고시(6-4)에 저장(사용자 결정 A안, 2026-11-24: 액세서리 중 귀금속처럼 카테고리로 안 갈리는 상품 대응). UK (parent_code, name).
 - `product_std_color`: 필터용 표준 색상(코드·이름·`hex_code`). 브랜드 색 이름은 6-2 `product_color`가 이 표를 참조.
+- `product_std_material`: 표준 소재(코드·이름 UK·정렬·사용 여부). **소재 B안** (사용자 결정, 2026-11-24): 소재를 데이터로 구조화해 필터·혼용률 표에 쓰고, 상품별 부위·비율은 6-2 `product_material`. 법정 고시 소재 문구는 6-4에 브랜드 문구 그대로 저장(`product_material`로 초안 생성).
 
 ### 나중에 재검토
 - **운영 영역 (운영자 기본 `admin_basic`)**: 2026-11-24 사용자 요청으로 ERD에서 뺐다("아직 거기까지 다루고 싶지 않다"). 사용자가 다시 꺼내기 전에는 제안하지 않는다. 빼기 전 설계(`admin_user`·`admin_login`·`admin_role`·`admin_role_history`·`admin_access_log`, 개인정보 안전성 확보조치 기준 반영)는 커밋 `8692840`~`ad4d30d`에 있다. 지금 `created_by`/`updated_by` 컬럼(등급 기준표·혜택·등급 이력)은 FK 없이 운영자 아이디 `varchar(20)`만 두고, 운영자 테이블을 만들 때 `admin_user.admin_id` FK로 연결한다.
