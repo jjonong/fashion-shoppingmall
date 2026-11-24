@@ -347,7 +347,7 @@ Table product_option [note: '[상품 옵션] 컬러 × 사이즈. 실제 주문�
   }
 }
 
-Table product_image [note: '[상품 이미지] 상세페이지 상단 갤러리의 대표·추가 이미지(목록 썸네일은 대표). 컬러별 이미지는 컬러 번호, 공통 이미지는 NULL'] {
+Table product_image [note: '[상품 갤러리 이미지] 상세페이지 상단 갤러리의 대표·추가 이미지(목록 썸네일은 대표). 컬러별 이미지는 컬러 번호, 공통 이미지는 NULL'] {
   product_code varchar(20) [not null, note: '[상품 코드] 이미지가 속한 상품']
   image_no smallint [not null, note: '[이미지 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
   color_no smallint [note: '[컬러 번호] 이 컬러를 고르면 보이는 이미지. NULL이면 공통']
@@ -380,7 +380,7 @@ Table product_material [note: '[상품 소재] 부위별 소재와 혼용률. �
 
 Table product_detail [note: '[상품 상세] 상품 1:1. 상세페이지 아래 상품 정보 영역. 큰 본문을 목록 조회와 분리'] {
   product_code varchar(20) [pk, note: '[상품 코드] 상세페이지의 상품']
-  detail_html mediumtext [not null, note: '[상세 본문] 상세페이지 HTML. 브랜드가 만든 긴 상세 이미지(<img>)와 글. 상단 갤러리 이미지는 상품 이미지']
+  detail_html mediumtext [not null, note: '[상세 본문] 상세페이지 HTML. 브랜드가 만든 긴 상세 이미지(<img>)와 글. 상단 갤러리 이미지는 상품 갤러리 이미지']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세페이지 등록일시']
   updated_at datetime [note: '[수정일시] 상세페이지 수정일시']
 }

@@ -135,7 +135,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `product_detail` (1:1): 상세 본문 `detail_html mediumtext`(NOT NULL)에 브랜드가 만든 **긴 상세 이미지(`<img>`)와 글**을 함께 담는다(사용자 결정 2026-11-24: 상세 이미지를 행으로 나누지 않음, 이미지는 썸네일·갤러리 `product_image`와 상세 HTML 두 곳뿐). 목록 조회에서 큰 본문을 분리.
 - `product_color`: PK (product_code, color_no). 브랜드 색상 이름 `brand_color_name`(예: 크림 베이지) + 표준 색상 코드(필터). 정렬 맨 앞이 대표 컬러.
 - `product_option`: PK (product_code, option_no). **SKU라는 용어 대신 옵션**(사용자 요청). 컬러 번호(복합 FK → product_color) + 사이즈 `size_label`(S/M/230/FREE, 사이즈 기준표는 6-3), 추가 금액, 재고 수량(0이면 품절, 이력은 6-5), 상태 ACTIVE/PAUSED. UK (product_code, color_no, size_label).
-- `product_image`: PK (product_code, image_no). 컬러 번호 선택(NULL이면 공통, 복합 FK), 유형 MAIN/SUB, URL, 정렬.
+- `product_image` [상품 갤러리 이미지]: PK (product_code, image_no). 상세페이지 최상단 갤러리(썸네일 포함). 컬러 번호 선택(NULL이면 공통, 복합 FK), 유형 MAIN/SUB, URL, 정렬.
 - `product_material`: PK (product_code, part_type, material_code). 소재는 **상품 단위**(컬러별 아님). 부위 OUTER/LINING/FILLING/UPPER/SOLE, 혼용률 `ratio decimal(5,2)`(신발·가방은 NULL 가능, 부위별 합계 100%는 앱 검증). 법정 고시 소재 문구는 6-4에 브랜드 문구 그대로.
 - 복합 FK(옵션·이미지 → 컬러)는 ERD에서 `color_no` 선으로 그린다(`lib.load`가 마지막 컬럼을 대표로). 편집 모드에서 복합 FK 삭제는 채팅으로.
 
