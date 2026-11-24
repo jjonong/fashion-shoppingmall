@@ -8,3 +8,8 @@ tools/design-doc/preview*/
 
 # Claude Code 대화 기록 (export 파일명)
 conversation-*.txt
+
+# 참고용 캡처 이미지 (커밋하지 않음)
+docs/grade*.jpg
+docs/grade*.png
+docs/화면 캡처*.png
