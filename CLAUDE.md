@@ -21,8 +21,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 3 | 고객 · 보안·상태 | `member_status_history`, `login_history`, `member_session`, `member_token`, `password_history` (운영자 계정·접속 기록은 운영 영역으로 이동) | 대기 |
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 `brand_basic` | `brand` / 나중에: 사업자 정보(판매자 정보 고시), 배송비·교환/반품 정책, `brand_user`, `brand_status_history`, `brand_like` | `brand`만 반영 (상품 FK용, 2026-11-24 사용자 결정: 상품 설계를 위해 브랜드는 포괄적으로만) |
-| 6-1 | 상품 · 기준 데이터 | `product_category`(계층형, 품목군·고시 유형), 표준 색상 | 다음 (컬럼 제안 → 확인) |
-| 6-2 | 상품 · 상품 기본 | `product`(PK 상품코드), `product_detail`(1:1, 상세 본문), `product_color`, `product_image`, `product_sku` | 대기 |
+| 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color` | 반영 |
+| 6-2 | 상품 · 상품 기본 | `product`(PK 상품코드, 성별 `gender` WOMEN/MEN/UNISEX: A안), `product_detail`(1:1, 상세 본문), `product_color`, `product_image`, `product_sku` | 대기 |
 | 6-3 | 상품 · 사이즈·실측 | 품목군별 실측 항목 기준표, 상품별 실측값 | 대기 |
 | 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시 | 대기 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
@@ -119,6 +119,11 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 ### 5. 브랜드 · 브랜드 기본 (`brand_basic`, 일부)
 - 구조: W컨셉(플랫폼) → 입점 브랜드 → 브랜드별 상품. 상품은 한 브랜드에 속한다.
 - `brand`: PK **브랜드 아이디** `brand_id varchar(30)`(영문 소문자·숫자·하이픈, 변경·재사용 불가, 브랜드관 URL). 한글명·영문명(UK, 대표 표기)·브랜드 유형(DESIGNER/OWN/IMPORT)·로고·소개·상태(ACTIVE/PAUSED/CLOSED ↔ `closed_at`)·좋아요 수 캐시. `created_by`/`updated_by`는 FK 없이(운영자 테이블 생기면 연결).
+
+### 6-1. 상품 · 기준 데이터 (`product_master`)
+- **여성/남성 구분은 A안** (사용자 결정, 2026-11-24): 카테고리 트리는 하나, 성별은 상품 컬럼(`product.gender`, 6-2에서 추가). 남녀공용 상품이 양쪽 메뉴에 나옴.
+- `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3, 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **고시 유형** `notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠(잡화 중 주얼리·시계는 고시 항목이 다름). UK (parent_code, name).
+- `product_std_color`: 필터용 표준 색상(코드·이름·`hex_code`). 브랜드 색 이름은 6-2 `product_color`가 이 표를 참조.
 
 ### 나중에 재검토
 - **운영 영역 (운영자 기본 `admin_basic`)**: 2026-11-24 사용자 요청으로 ERD에서 뺐다("아직 거기까지 다루고 싶지 않다"). 사용자가 다시 꺼내기 전에는 제안하지 않는다. 빼기 전 설계(`admin_user`·`admin_login`·`admin_role`·`admin_role_history`·`admin_access_log`, 개인정보 안전성 확보조치 기준 반영)는 커밋 `8692840`~`ad4d30d`에 있다. 지금 `created_by`/`updated_by` 컬럼(등급 기준표·혜택·등급 이력)은 FK 없이 운영자 아이디 `varchar(20)`만 두고, 운영자 테이블을 만들 때 `admin_user.admin_id` FK로 연결한다.
