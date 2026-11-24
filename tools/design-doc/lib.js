@@ -39,8 +39,9 @@ function load(src) {
     let child = a, parent = b;
     if (a.relation === '1' && b.relation === '*') { child = b; parent = a; }
     return {
-      child: child.tableName, ccol: child.fieldNames[0],
-      parent: parent.tableName, pcol: parent.fieldNames[0],
+      // 복합 FK(예: (product_code, color_no))는 마지막 컬럼을 대표로 그림 (앞 컬럼은 보통 부모 FK와 겹침)
+      child: child.tableName, ccol: child.fieldNames.at(-1), ccols: child.fieldNames,
+      parent: parent.tableName, pcol: parent.fieldNames.at(-1), pcols: parent.fieldNames,
       oneToOne: a.relation === '1' && b.relation === '1',
     };
   });
@@ -264,7 +265,8 @@ const groupDesc = {
   member_basic: '구매 고객 계정(본인인증 필수·프로필·가입 수단/경로·상태), 로그인 상태(마지막 로그인·로그인 잠금·휴면 안내, 1:1), 소셜 계정 연동(제공자별 1개), 체형(사이즈 추천·비슷한 체형 리뷰), 배송지(기본 배송지 1개), 환불 계좌(1:1), 탈퇴 정보(사유·의견, 1:1).',
   admin_basic: '운영자 계정(개인별 발급·2차 인증), 로그인 상태(실패 잠금 의무, 1:1), 역할 기준표(개인정보 열람·다운로드 권한), 권한 부여·변경·말소 이력(3년 보관), 접속·개인정보 처리 기록(2년 보관).',
   brand_basic: '입점 브랜드(아이디·한글/영문명·유형·입점 상태·좋아요 수 캐시). 상품 FK용으로 먼저 두고, 사업자 정보·배송/교환 정책·브랜드 관리자·좋아요는 나중에.',
-  product_master: '카테고리(계층형 3단계, 품목 유형·고시 유형 기본값, 성별 구분 없음), 필터용 표준 색상(색상값). 여성/남성은 상품의 성별로 구분.',
+  product_master: '카테고리(계층형 3단계, 품목 유형·고시 유형 기본값, 성별 구분 없음), 필터용 표준 색상(색상값)·표준 소재. 여성/남성은 상품의 성별로 구분.',
+  product_basic: '상품(브랜드·말단 카테고리·성별·정가/판매가·상태), 상세 본문(1:1), 컬러(브랜드 색 이름 + 표준 색상), 옵션(컬러 × 사이즈, 재고), 이미지, 소재(부위별 혼용률).',
   member_grading: '회원 등급 기준표(GREEN/BLUE/GOLD/BLACK, 최소 점수·적립률), 등급별 혜택 목록, 등급 이력(가입·월 산정·예외 승급·관리자 조정, 산정 당시 점수). 회원등급점수 = 최근 6개월 배송완료 금액 + 활동포인트.',
 };
 

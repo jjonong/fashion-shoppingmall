@@ -68,7 +68,7 @@ function refsOf(S) {
     const [a, b] = r.endpoints;
     let child = a, parent = b;
     if (a.relation === '1' && b.relation === '*') { child = b; parent = a; }
-    return { child: child.tableName, ccol: child.fieldNames[0], parent: parent.tableName, pcol: parent.fieldNames[0] };
+    return { child: child.tableName, ccol: child.fieldNames.at(-1), parent: parent.tableName, pcol: parent.fieldNames.at(-1), composite: child.fieldNames.length > 1 };
   });
 }
 const tableOf = (S, name) => S.tables.find((x) => x.name === name) || fail(`테이블이 없습니다: ${name}`);
@@ -422,6 +422,7 @@ const ops = {
   },
   'ref/delete'(lines, S, p) {
     const r = refsOf(S).find((x) => x.child === p.table && x.ccol === p.column) || fail(`관계를 찾지 못했습니다: ${p.table}.${p.column}`);
+    if (r.composite) fail('복합 FK는 편집 화면에서 지울 수 없습니다 (채팅으로 요청해 주세요)');
     const a = tok(r.child, r.ccol), b = tok(r.parent, r.pcol);
     const i = lines.findIndex((l) => /^Ref\b/.test(l) && a.test(l) && b.test(l));
     if (i < 0) fail('Ref 줄을 찾지 못했습니다 (컬럼 설정 안에 ref가 있으면 채팅으로 요청해 주세요)');

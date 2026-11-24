@@ -187,7 +187,7 @@ async function main() {
   ${EDIT ? '<span class="ed-mode" title="저장하면 docs/erd.dbml이 바로 바뀝니다. 커밋·푸시는 따로">편집 모드</span>' : ''}
   <span class="meta">MySQL 8.0 · 테이블 ${data.counts.tables} · 관계 ${data.counts.refs}</span>
   <div class="search">
-    <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
+    <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: 옵션, 재고, 소재)" autocomplete="off" aria-label="테이블·컬럼 검색">
     <div id="results" class="results" hidden></div>
   </div>
   <button class="icon-btn theme-btn" id="themeBtn" type="button">DARK</button>
