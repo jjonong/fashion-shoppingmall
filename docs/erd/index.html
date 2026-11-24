@@ -668,12 +668,44 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 .g-card { background: var(--panel); }
 .chips span, .cols tr.is-pk td, .cols tbody tr:hover td { background: var(--content-2); }
 .main .icon-btn { background: var(--panel); }
+
+/* ---------- 로컬 편집 모드 (edit-server.js 화면에서만 보임) ---------- */
+.ed-mode { font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 3px 8px; background: var(--accent); color: var(--on-accent); }
+.ed-btn { font-size: 12px; height: 26px; }
+.spec-h .ed-btn:first-of-type { margin-left: auto; }
+.spec-h .ed-btn + .to-erd { margin-left: 0; }
+h1 .ed-btn { vertical-align: middle; margin-left: 8px; }
+.ed-x { margin-left: 6px; border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 1px 5px; border-radius: 0; visibility: hidden; }
+tr:hover .ed-x, .ed-x:focus-visible { visibility: visible; }
+.ed-x:hover { color: var(--text); border-color: var(--line-strong); }
+.ed-panel { position: fixed; z-index: 80; top: 56px; right: 0; bottom: 0; width: min(420px, 100vw); background: var(--panel); border-left: 1px solid var(--line-strong); overflow-y: auto; }
+.ed-form { display: flex; flex-direction: column; min-height: 100%; }
+.ed-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+.ed-h h3 { margin: 0; font-size: 15px; }
+.ed-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+.ed-f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.ed-f > span { font-weight: 600; }
+.ed-f input, .ed-f select { height: 34px; border: 1px solid var(--line); border-radius: 0; background: var(--bg); color: var(--text); padding: 0 10px; font: inherit; }
+.ed-f input:focus, .ed-f select:focus { outline: none; border-color: var(--line-strong); }
+.ed-f input[name="name"], .ed-f input[name="type"], .ed-f input[name="pkName"], .ed-f input[name="pkType"] { font-family: var(--mono); }
+.ed-f small, .ed-note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0; }
+.ed-c { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ed-sub { margin: 6px 0 0; font-size: 13px; padding-top: 12px; border-top: 1px solid var(--line); }
+.ed-q { margin: 0; font-size: 14px; line-height: 1.6; }
+.ed-msg { margin: 0 18px; padding: 10px 12px; font-size: 13px; background: var(--panel-2); border-left: 2px solid var(--line-strong); }
+.ed-msg.err { border-left-color: #c62828; color: #c62828; }
+.ed-act { display: flex; gap: 8px; padding: 14px 18px 18px; margin-top: auto; border-top: 1px solid var(--line); }
+.ed-ok { background: var(--accent); color: var(--on-accent); border-color: var(--accent); padding: 0 18px; }
+.ed-ok:hover { background: var(--accent); opacity: .85; }
+.ed-ok.danger { background: #c62828; border-color: #c62828; color: #fff; }
+.ed-ok:disabled { opacity: .5; cursor: wait; }
 </style>
 </head>
 <body>
 <header class="top">
   <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기" aria-expanded="false">☰</button>
   <a class="brand" href="#" aria-label="개요로 이동"><span>Fashion Mall</span><small>ERD</small></a>
+  
   <span class="meta">MySQL 8.0 · 테이블 13 · 관계 12</span>
   <div class="search">
     <input id="q" type="search" placeholder="테이블·컬럼 검색 (예: sku, 재고, 배송비)" autocomplete="off" aria-label="테이블·컬럼 검색">
@@ -1750,8 +1782,8 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 
 </svg></template>
 <template id="svg-__all"><svg
- viewBox="0.00 0.00 953.55 521.42" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="all_graph0" class="graph" transform="scale(1 1) rotate(0) translate(14.4 507.02)">
+ viewBox="0.00 0.00 1026.81 558.98" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="all_graph0" class="graph" transform="scale(1 1) rotate(0) translate(14.4 544.58)">
 
 <g id="all_clust1" class="cluster">
 <title>cluster_member_basic</title>
@@ -1760,18 +1792,18 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 </g>
 <g id="all_clust2" class="cluster">
 <title>cluster_member_grading</title>
-<polygon fill="#f7f7f7" stroke="#111111" points="540.77,-46.59 540.77,-253.97 904.73,-253.97 904.73,-46.59 540.77,-46.59"/>
-<text text-anchor="middle" x="722.75" y="-234.67" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 등급</text>
+<polygon fill="#f7f7f7" stroke="#111111" points="539.06,-7.53 539.06,-293.03 933.08,-293.03 933.08,-7.53 539.06,-7.53"/>
+<text text-anchor="middle" x="736.07" y="-273.73" font-family="Malgun Gothic" font-size="17.00" fill="#111111">고객 · 회원 등급</text>
 </g>
 <g id="all_clust3" class="cluster">
 <title>cluster_brand_basic</title>
-<polygon fill="#f7f7f7" stroke="#555555" points="407.51,-369.46 407.51,-459.62 550.51,-459.62 550.51,-369.46 407.51,-369.46"/>
-<text text-anchor="middle" x="479.01" y="-440.32" font-family="Malgun Gothic" font-size="17.00" fill="#555555">브랜드 · 브랜드 기본</text>
+<polygon fill="#f7f7f7" stroke="#555555" points="480.77,-370.02 480.77,-460.18 623.77,-460.18 623.77,-370.02 480.77,-370.02"/>
+<text text-anchor="middle" x="552.27" y="-440.88" font-family="Malgun Gothic" font-size="17.00" fill="#555555">브랜드 · 브랜드 기본</text>
 </g>
 <g id="all_clust4" class="cluster">
 <title>cluster_product_master</title>
-<polygon fill="#f7f7f7" stroke="#999999" points="629.27,-332.46 629.27,-492.62 924.75,-492.62 924.75,-332.46 629.27,-332.46"/>
-<text text-anchor="middle" x="777.01" y="-473.32" font-family="Malgun Gothic" font-size="17.00" fill="#999999">상품 · 기준 데이터</text>
+<polygon fill="#f7f7f7" stroke="#999999" points="702.54,-370.02 702.54,-530.18 998.01,-530.18 998.01,-370.02 702.54,-370.02"/>
+<text text-anchor="middle" x="850.27" y="-510.88" font-family="Malgun Gothic" font-size="17.00" fill="#999999">상품 · 기준 데이터</text>
 </g>
 <!-- member_account -->
 <g id="all_node1" class="node">
@@ -1865,68 +1897,68 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 <!-- member_grade_history -->
 <g id="all_node10" class="node">
 <title>member_grade_history</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="730.11,-215.57 550.77,-215.57 550.77,-173.81 730.11,-173.81 730.11,-215.57"/>
-<text text-anchor="middle" x="640.44" y="-199.19" font-family="Consolas" font-size="15.00">회원 등급 이력</text>
-<text text-anchor="middle" x="640.44" y="-181.19" font-family="Consolas" font-size="15.00">member_grade_history</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="728.4,-59.29 549.06,-59.29 549.06,-17.53 728.4,-17.53 728.4,-59.29"/>
+<text text-anchor="middle" x="638.73" y="-42.91" font-family="Consolas" font-size="15.00">회원 등급 이력</text>
+<text text-anchor="middle" x="638.73" y="-24.91" font-family="Consolas" font-size="15.00">member_grade_history</text>
 </g>
 <!-- member_account&#45;&gt;member_grade_history -->
 <g id="all_edge9" class="edge">
 <title>member_account&#45;&gt;member_grade_history</title>
-<path fill="none" stroke="#9a9a9a" d="M410.46,-231.03C449.37,-224.88 499.54,-216.96 543.09,-210.08"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="543.05,-210.08 550.46,-212.1 546.84,-209.48 549.64,-209.04 549.64,-209.04 549.64,-209.04 546.84,-209.48 549.48,-205.88 543.05,-210.08"/>
+<path fill="none" stroke="#9a9a9a" d="M376.18,-219.99C430.65,-182.31 543.66,-104.16 602.04,-63.79"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="601.82,-63.94 609.37,-62.54 604.98,-61.75 607.31,-60.14 607.31,-60.14 607.31,-60.14 604.98,-61.75 605.79,-57.36 601.82,-63.94"/>
 </g>
 <!-- member_grade -->
 <g id="all_node8" class="node">
 <title>member_grade</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="676.19,-98.35 554.58,-98.35 554.58,-56.59 676.19,-56.59 676.19,-98.35"/>
-<text text-anchor="middle" x="615.39" y="-81.97" font-family="Consolas" font-size="15.00">회원 등급</text>
-<text text-anchor="middle" x="615.39" y="-63.97" font-family="Consolas" font-size="15.00">member_grade</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="724.59,-176.52 602.98,-176.52 602.98,-134.76 724.59,-134.76 724.59,-176.52"/>
+<text text-anchor="middle" x="663.79" y="-160.14" font-family="Consolas" font-size="15.00">회원 등급</text>
+<text text-anchor="middle" x="663.79" y="-142.14" font-family="Consolas" font-size="15.00">member_grade</text>
 </g>
 <!-- member_grade&#45;&gt;member_account -->
 <g id="all_edge7" class="edge">
 <title>member_grade&#45;&gt;member_account</title>
-<path fill="none" stroke="#9a9a9a" d="M580.36,-98.72C530.58,-128.93 439.54,-184.16 386.56,-216.3"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="386.57,-216.3 378.95,-217.24 383.29,-218.29 380.87,-219.76 380.87,-219.76 380.87,-219.76 383.29,-218.29 382.22,-222.62 386.57,-216.3"/>
+<path fill="none" stroke="#9a9a9a" d="M602.76,-172.06C549.94,-186.27 473.45,-206.85 417.58,-221.88"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="417.61,-221.87 410.04,-220.65 413.91,-222.87 411.18,-223.6 411.18,-223.6 411.18,-223.6 413.91,-222.87 411.67,-226.73 417.61,-221.87"/>
 </g>
 <!-- member_grade_benefit -->
 <g id="all_node9" class="node">
 <title>member_grade_benefit</title>
-<polygon fill="white" stroke="#111111" stroke-width="1.1" points="894.73,-113.69 715.39,-113.69 715.39,-71.93 894.73,-71.93 894.73,-113.69"/>
-<text text-anchor="middle" x="805.06" y="-97.31" font-family="Consolas" font-size="15.00">회원 등급 혜택</text>
-<text text-anchor="middle" x="805.06" y="-79.31" font-family="Consolas" font-size="15.00">member_grade_benefit</text>
+<polygon fill="white" stroke="#111111" stroke-width="1.1" points="923.08,-254.63 743.73,-254.63 743.73,-212.87 923.08,-212.87 923.08,-254.63"/>
+<text text-anchor="middle" x="833.41" y="-238.25" font-family="Consolas" font-size="15.00">회원 등급 혜택</text>
+<text text-anchor="middle" x="833.41" y="-220.25" font-family="Consolas" font-size="15.00">member_grade_benefit</text>
 </g>
 <!-- member_grade&#45;&gt;member_grade_benefit -->
 <g id="all_edge8" class="edge">
 <title>member_grade&#45;&gt;member_grade_benefit</title>
-<path fill="none" stroke="#9a9a9a" d="M676.44,-82.41C686.48,-83.22 697.09,-84.08 707.74,-84.94"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="707.8,-84.94 714.53,-88.65 711.63,-85.25 714.45,-85.48 714.45,-85.48 714.45,-85.48 711.63,-85.25 715.04,-82.37 707.8,-84.94"/>
+<path fill="none" stroke="#9a9a9a" d="M710.13,-176.98C731.92,-187.02 758,-199.02 780.55,-209.41"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="780.45,-209.36 785.49,-215.15 783.93,-210.97 786.5,-212.15 786.5,-212.15 786.5,-212.15 783.93,-210.97 788.13,-209.43 780.45,-209.36"/>
 </g>
 <!-- member_grade&#45;&gt;member_grade_history -->
 <g id="all_edge10" class="edge">
 <title>member_grade&#45;&gt;member_grade_history</title>
-<path fill="none" stroke="#9a9a9a" d="M619.92,-98.7C623.99,-117.7 629.97,-145.71 634.43,-166.57"/>
-<polygon fill="#9a9a9a" stroke="#9a9a9a" points="634.41,-166.45 632.79,-173.96 635.21,-170.2 635.8,-172.97 635.8,-172.97 635.8,-172.97 635.21,-170.2 638.95,-172.64 634.41,-166.45"/>
+<path fill="none" stroke="#9a9a9a" d="M659.25,-134.41C655.18,-115.41 649.2,-87.4 644.74,-66.54"/>
+<polygon fill="#9a9a9a" stroke="#9a9a9a" points="644.76,-66.66 646.38,-59.15 643.96,-62.91 643.37,-60.14 643.37,-60.14 643.37,-60.14 643.96,-62.91 640.22,-60.47 644.76,-66.66"/>
 </g>
 <!-- brand -->
 <g id="all_node11" class="node">
 <title>brand</title>
-<polygon fill="white" stroke="#555555" stroke-width="1.1" points="523.32,-421.22 434.7,-421.22 434.7,-379.46 523.32,-379.46 523.32,-421.22"/>
-<text text-anchor="middle" x="479.01" y="-404.84" font-family="Consolas" font-size="15.00">브랜드</text>
-<text text-anchor="middle" x="479.01" y="-386.84" font-family="Consolas" font-size="15.00">brand</text>
+<polygon fill="white" stroke="#555555" stroke-width="1.1" points="596.59,-421.78 507.96,-421.78 507.96,-380.02 596.59,-380.02 596.59,-421.78"/>
+<text text-anchor="middle" x="552.27" y="-405.4" font-family="Consolas" font-size="15.00">브랜드</text>
+<text text-anchor="middle" x="552.27" y="-387.4" font-family="Consolas" font-size="15.00">brand</text>
 </g>
 <!-- product_category -->
 <g id="all_node12" class="node">
 <title>product_category</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="914.75,-454.22 768.39,-454.22 768.39,-412.46 914.75,-412.46 914.75,-454.22"/>
-<text text-anchor="middle" x="841.57" y="-437.84" font-family="Consolas" font-size="15.00">카테고리</text>
-<text text-anchor="middle" x="841.57" y="-419.84" font-family="Consolas" font-size="15.00">product_category</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="988.01,-491.78 841.66,-491.78 841.66,-450.02 988.01,-450.02 988.01,-491.78"/>
+<text text-anchor="middle" x="914.84" y="-475.4" font-family="Consolas" font-size="15.00">카테고리</text>
+<text text-anchor="middle" x="914.84" y="-457.4" font-family="Consolas" font-size="15.00">product_category</text>
 </g>
 <!-- product_std_color -->
 <g id="all_node13" class="node">
 <title>product_std_color</title>
-<polygon fill="white" stroke="#999999" stroke-width="1.1" points="793.87,-384.22 639.27,-384.22 639.27,-342.46 793.87,-342.46 793.87,-384.22"/>
-<text text-anchor="middle" x="716.57" y="-367.84" font-family="Consolas" font-size="15.00">표준 색상</text>
-<text text-anchor="middle" x="716.57" y="-349.84" font-family="Consolas" font-size="15.00">product_std_color</text>
+<polygon fill="white" stroke="#999999" stroke-width="1.1" points="867.14,-421.78 712.54,-421.78 712.54,-380.02 867.14,-380.02 867.14,-421.78"/>
+<text text-anchor="middle" x="789.84" y="-405.4" font-family="Consolas" font-size="15.00">표준 색상</text>
+<text text-anchor="middle" x="789.84" y="-387.4" font-family="Consolas" font-size="15.00">product_std_color</text>
 </g>
 </g>
 </svg>
@@ -1946,6 +1978,8 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
   const DRAWIO = /^https?:$/.test(location.protocol)
     ? 'https://app.diagrams.net/#U' + encodeURIComponent(new URL('../erd.drawio', location.href).href)
     : '';
+
+  const EDIT = !!window.ERD_EDIT; // 로컬 편집 모드 (edit-server.js). 공개 페이지에서는 false
 
   let cur = { g: null, t: null };
   const zoomOf = {}; // 영역별 확대 비율 유지
@@ -2090,7 +2124,7 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
     const T = D.tables[t];
     const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
         <td class="c-lg">${esc(f.logical || f.name)}</td>
-        <td class="c-name">${esc(f.name)}</td>
+        <td class="c-name">${esc(f.name)}${EDIT ? `<button class="ed-x" data-ed="col-del" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 삭제" aria-label="${esc(f.name)} 컬럼 삭제">×</button>` : ''}</td>
         <td class="c-type">${esc(f.type)}</td>
         <td class="c-key">${keyBadges(f)}</td>
         <td class="c-nn">${f.nn ? 'Y' : ''}</td>
@@ -2105,6 +2139,7 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
         <span class="no">${no}</span>
         <h3>${esc(tLg(t))} ${phys(t)}</h3>
         <span class="cnt">컬럼 ${T.fields.length}</span>
+        ${EDIT ? `<button class="icon-btn ed-btn" data-ed="col-add" data-t="${t}">+ 컬럼</button><button class="icon-btn ed-btn" data-ed="tbl-del" data-t="${t}">테이블 삭제</button>` : ''}
         <button class="icon-btn to-erd" data-erd="${t}">ERD에서 보기 ↑</button>
       </header>
       <p class="tnote">${esc(T.note)}</p>
@@ -2125,7 +2160,7 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
     main.innerHTML = `<div class="g-view" style="--c:${stageColor(g)}">
       <div class="g-head">
         <div class="crumb">${esc(s.name)}</div>
-        <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span></h1>
+        <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span>${EDIT && !G.area ? ` <button class="icon-btn ed-btn" data-ed="tbl-add" data-g="${g}">+ 테이블</button>` : ''}</h1>
         <p>${esc(G.desc)}</p>
         ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → 운영자 선 생략' : ''}</p>` : ''}
         <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" title="${t}">${esc(tLg(t))}</a>`).join('')}</nav>
@@ -2602,6 +2637,103 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
   $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { refit(); }, 150); });
+
+  // ---------- 로컬 편집 모드 (edit-server.js가 띄운 화면에서만) ----------
+  // 브라우저 alert/confirm 대신 오른쪽 패널에서 입력·확인. 저장하면 서버가 erd.dbml을 고치고 페이지를 다시 만든다
+  if (EDIT) {
+    const TYPES = ['varchar(20)', 'varchar(50)', 'varchar(100)', 'varchar(200)', 'varchar(500)', 'char(1)', 'tinyint', 'smallint', 'int', 'bigint', 'decimal(10,2)', 'decimal(4,2)', 'datetime', 'date', 'text', 'mediumtext'];
+    const panel = document.createElement('aside');
+    panel.className = 'ed-panel';
+    panel.hidden = true;
+    panel.setAttribute('aria-label', '편집');
+    document.body.appendChild(panel);
+    const close = () => { panel.hidden = true; panel.innerHTML = ''; };
+    const field = (label, name, attrs = '', help = '') => `<label class="ed-f"><span>${label}</span><input name="${name}" ${attrs}>${help ? `<small>${help}</small>` : ''}</label>`;
+    const typeList = `<datalist id="edTypes">${TYPES.map((t) => `<option value="${t}">`).join('')}</datalist>`;
+    function open(title, body, submitLabel, onSubmit, danger) {
+      panel.innerHTML = `<form class="ed-form" novalidate>
+        <div class="ed-h"><h3>${title}</h3><button type="button" class="icon-btn" data-ed-close aria-label="닫기">×</button></div>
+        <div class="ed-body">${body}</div>
+        <p class="ed-msg" role="status" hidden></p>
+        <div class="ed-act"><button type="submit" class="icon-btn ed-ok${danger ? ' danger' : ''}">${submitLabel}</button><button type="button" class="icon-btn" data-ed-close>취소</button></div>
+      </form>`;
+      panel.hidden = false;
+      const form = panel.querySelector('form');
+      const first = form.querySelector('input');
+      if (first) first.focus();
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const msg = form.querySelector('.ed-msg'), ok = form.querySelector('.ed-ok');
+        const data = Object.fromEntries(new FormData(form).entries());
+        form.querySelectorAll('input[type=checkbox]').forEach((c) => (data[c.name] = c.checked));
+        ok.disabled = true;
+        msg.hidden = false; msg.className = 'ed-msg'; msg.textContent = '저장하고 ERD를 다시 만드는 중…';
+        try {
+          const r = await onSubmit(data);
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.msg);
+          msg.textContent = j.msg + ' · 화면을 새로 고칩니다';
+          setTimeout(() => location.reload(), 400);
+        } catch (err) {
+          msg.className = 'ed-msg err'; msg.textContent = err.message || String(err);
+          ok.disabled = false;
+        }
+      };
+    }
+    const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const keepHash = (g, t) => { history.replaceState(null, '', `#g=${g}${t ? `&t=${t}` : ''}`); };
+
+    function colAdd(t) {
+      const T = D.tables[t];
+      const tailIdx = T.fields.findIndex((f) => ['created_by', 'updated_by', 'created_at', 'updated_at'].includes(f.name));
+      const opts = T.fields.map((f, i) => `<option value="${esc(f.name)}"${i === tailIdx ? ' selected' : ''}>${esc(f.logical || f.name)} (${esc(f.name)}) 앞</option>`).join('')
+        + `<option value=""${tailIdx < 0 ? ' selected' : ''}>맨 끝</option>`;
+      open(`컬럼 추가 · ${esc(T.logical || t)} <code class="phys">${esc(t)}</code>`,
+        field('물리명', 'name', 'required placeholder="예: season_code" autocomplete="off" spellcheck="false"', '영문 소문자 snake_case')
+        + field('타입', 'type', 'required list="edTypes" placeholder="예: varchar(20)" autocomplete="off" spellcheck="false"') + typeList
+        + field('논리명', 'logical', 'required placeholder="예: 시즌 코드" autocomplete="off"', '한글 이름. 같은 물리명은 모든 테이블에서 같은 논리명으로')
+        + field('설명', 'note', 'placeholder="예: 26SS/26FW. 허용 값은 A/B/C 형식" autocomplete="off"')
+        + `<label class="ed-c"><input type="checkbox" name="notNull"> NOT NULL (필수 값)</label>`
+        + field('기본값', 'def', 'placeholder="비우면 없음 · 예: 0, Y, CURRENT_TIMESTAMP" autocomplete="off"')
+        + `<label class="ed-f"><span>넣을 위치</span><select name="before">${opts}</select><small>시간·감사 컬럼(created_*, updated_*)은 맨 끝에 두는 규칙</small></label>`,
+        '추가', (d) => { keepHash(T.group, t); return post('/api/column/add', { table: t, ...d }); });
+    }
+    function colDel(t, c) {
+      const T = D.tables[t], f = T.fields.find((x) => x.name === c);
+      open('컬럼 삭제', `<p class="ed-q"><b>${esc(T.logical || t)}</b>의 <b>${esc((f && f.logical) || c)}</b> <code class="phys">${esc(t)}.${esc(c)}</code> 컬럼을 지울까요?</p>
+        <p class="ed-note">이 컬럼의 관계(FK)와 단일 컬럼 인덱스도 함께 지웁니다. PK이거나 다른 테이블이 참조하는 컬럼은 지워지지 않습니다. 되돌리려면 git으로.</p>`,
+        '삭제', () => { keepHash(T.group, t); return post('/api/column/delete', { table: t, column: c }); }, true);
+    }
+    function tblAdd(g) {
+      const G = D.groups[g];
+      open(`테이블 추가 · ${esc(G.title)} <code class="phys">${esc(g)}</code>`,
+        field('물리명', 'name', 'required placeholder="예: product_season" autocomplete="off" spellcheck="false"', '영문 소문자 snake_case, MySQL 예약어 불가')
+        + field('논리명', 'logical', 'required placeholder="예: 시즌" autocomplete="off"')
+        + field('설명', 'note', 'placeholder="이 테이블이 무엇을 담는지" autocomplete="off"')
+        + '<h4 class="ed-sub">PK 컬럼 (AUTO_INCREMENT 없이, 바뀌지 않는 값)</h4>'
+        + field('PK 물리명', 'pkName', 'required placeholder="예: season_code" autocomplete="off" spellcheck="false"')
+        + field('PK 타입', 'pkType', 'required list="edTypes" value="varchar(20)" autocomplete="off" spellcheck="false"') + typeList
+        + field('PK 논리명', 'pkLogical', 'required placeholder="예: 시즌 코드" autocomplete="off"')
+        + field('PK 설명', 'pkNote', 'placeholder="예: 26SS/26FW" autocomplete="off"')
+        + '<p class="ed-note">등록일시(created_at)·수정일시(updated_at)는 자동으로 들어갑니다. 복합 PK·FK·인덱스는 채팅으로 요청해 주세요.</p>',
+        '추가', (d) => { keepHash(g, d.name); return post('/api/table/add', { group: g, ...d }); });
+    }
+    function tblDel(t) {
+      const T = D.tables[t];
+      open('테이블 삭제', `<p class="ed-q"><b>${esc(T.logical || t)}</b> <code class="phys">${esc(t)}</code> 테이블을 지울까요? (컬럼 ${T.fields.length}개)</p>
+        <p class="ed-note">이 테이블에서 나가는 관계와 묶음 목록에서도 빠집니다. 다른 테이블이 참조하고 있으면 지워지지 않습니다. 되돌리려면 git으로.</p>`,
+        '삭제', () => { keepHash(T.group); return post('/api/table/delete', { table: t }); }, true);
+    }
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-ed-close]')) { close(); return; }
+      const b = e.target.closest('[data-ed]');
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      ({ 'col-add': () => colAdd(b.dataset.t), 'col-del': () => colDel(b.dataset.t, b.dataset.c), 'tbl-add': () => tblAdd(b.dataset.g), 'tbl-del': () => tblDel(b.dataset.t) })[b.dataset.ed]();
+    }, true);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
+  }
+
   window.addEventListener('hashchange', route);
   route();
 })();

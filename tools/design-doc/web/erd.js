@@ -13,6 +13,8 @@
     ? 'https://app.diagrams.net/#U' + encodeURIComponent(new URL('../erd.drawio', location.href).href)
     : '';
 
+  const EDIT = !!window.ERD_EDIT; // 로컬 편집 모드 (edit-server.js). 공개 페이지에서는 false
+
   let cur = { g: null, t: null };
   const zoomOf = {}; // 영역별 확대 비율 유지
   const manual = {}; // 사용자가 직접 확대/축소한 영역 (아니면 창 크기·상세 패널에 맞춰 다시 맞춤)
@@ -156,7 +158,7 @@
     const T = D.tables[t];
     const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}">
         <td class="c-lg">${esc(f.logical || f.name)}</td>
-        <td class="c-name">${esc(f.name)}</td>
+        <td class="c-name">${esc(f.name)}${EDIT ? `<button class="ed-x" data-ed="col-del" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 삭제" aria-label="${esc(f.name)} 컬럼 삭제">×</button>` : ''}</td>
         <td class="c-type">${esc(f.type)}</td>
         <td class="c-key">${keyBadges(f)}</td>
         <td class="c-nn">${f.nn ? 'Y' : ''}</td>
@@ -171,6 +173,7 @@
         <span class="no">${no}</span>
         <h3>${esc(tLg(t))} ${phys(t)}</h3>
         <span class="cnt">컬럼 ${T.fields.length}</span>
+        ${EDIT ? `<button class="icon-btn ed-btn" data-ed="col-add" data-t="${t}">+ 컬럼</button><button class="icon-btn ed-btn" data-ed="tbl-del" data-t="${t}">테이블 삭제</button>` : ''}
         <button class="icon-btn to-erd" data-erd="${t}">ERD에서 보기 ↑</button>
       </header>
       <p class="tnote">${esc(T.note)}</p>
@@ -191,7 +194,7 @@
     main.innerHTML = `<div class="g-view" style="--c:${stageColor(g)}">
       <div class="g-head">
         <div class="crumb">${esc(s.name)}</div>
-        <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span></h1>
+        <h1>${esc(G.title)} <span style="color:var(--muted);font-weight:400;font-size:15px">${G.tables.length}개 테이블</span>${EDIT && !G.area ? ` <button class="icon-btn ed-btn" data-ed="tbl-add" data-g="${g}">+ 테이블</button>` : ''}</h1>
         <p>${esc(G.desc)}</p>
         ${G.ext.length ? `<p class="ext">다른 영역 참조(회색): ${G.ext.map((t) => link(t)).join(', ')}${G.hideAudit ? ' · 관리자 감사 컬럼 → 운영자 선 생략' : ''}</p>` : ''}
         <nav class="jump" aria-label="테이블 명세 바로가기">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" title="${t}">${esc(tLg(t))}</a>`).join('')}</nav>
@@ -668,6 +671,103 @@
   $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;
   window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { refit(); }, 150); });
+
+  // ---------- 로컬 편집 모드 (edit-server.js가 띄운 화면에서만) ----------
+  // 브라우저 alert/confirm 대신 오른쪽 패널에서 입력·확인. 저장하면 서버가 erd.dbml을 고치고 페이지를 다시 만든다
+  if (EDIT) {
+    const TYPES = ['varchar(20)', 'varchar(50)', 'varchar(100)', 'varchar(200)', 'varchar(500)', 'char(1)', 'tinyint', 'smallint', 'int', 'bigint', 'decimal(10,2)', 'decimal(4,2)', 'datetime', 'date', 'text', 'mediumtext'];
+    const panel = document.createElement('aside');
+    panel.className = 'ed-panel';
+    panel.hidden = true;
+    panel.setAttribute('aria-label', '편집');
+    document.body.appendChild(panel);
+    const close = () => { panel.hidden = true; panel.innerHTML = ''; };
+    const field = (label, name, attrs = '', help = '') => `<label class="ed-f"><span>${label}</span><input name="${name}" ${attrs}>${help ? `<small>${help}</small>` : ''}</label>`;
+    const typeList = `<datalist id="edTypes">${TYPES.map((t) => `<option value="${t}">`).join('')}</datalist>`;
+    function open(title, body, submitLabel, onSubmit, danger) {
+      panel.innerHTML = `<form class="ed-form" novalidate>
+        <div class="ed-h"><h3>${title}</h3><button type="button" class="icon-btn" data-ed-close aria-label="닫기">×</button></div>
+        <div class="ed-body">${body}</div>
+        <p class="ed-msg" role="status" hidden></p>
+        <div class="ed-act"><button type="submit" class="icon-btn ed-ok${danger ? ' danger' : ''}">${submitLabel}</button><button type="button" class="icon-btn" data-ed-close>취소</button></div>
+      </form>`;
+      panel.hidden = false;
+      const form = panel.querySelector('form');
+      const first = form.querySelector('input');
+      if (first) first.focus();
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const msg = form.querySelector('.ed-msg'), ok = form.querySelector('.ed-ok');
+        const data = Object.fromEntries(new FormData(form).entries());
+        form.querySelectorAll('input[type=checkbox]').forEach((c) => (data[c.name] = c.checked));
+        ok.disabled = true;
+        msg.hidden = false; msg.className = 'ed-msg'; msg.textContent = '저장하고 ERD를 다시 만드는 중…';
+        try {
+          const r = await onSubmit(data);
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.msg);
+          msg.textContent = j.msg + ' · 화면을 새로 고칩니다';
+          setTimeout(() => location.reload(), 400);
+        } catch (err) {
+          msg.className = 'ed-msg err'; msg.textContent = err.message || String(err);
+          ok.disabled = false;
+        }
+      };
+    }
+    const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const keepHash = (g, t) => { history.replaceState(null, '', `#g=${g}${t ? `&t=${t}` : ''}`); };
+
+    function colAdd(t) {
+      const T = D.tables[t];
+      const tailIdx = T.fields.findIndex((f) => ['created_by', 'updated_by', 'created_at', 'updated_at'].includes(f.name));
+      const opts = T.fields.map((f, i) => `<option value="${esc(f.name)}"${i === tailIdx ? ' selected' : ''}>${esc(f.logical || f.name)} (${esc(f.name)}) 앞</option>`).join('')
+        + `<option value=""${tailIdx < 0 ? ' selected' : ''}>맨 끝</option>`;
+      open(`컬럼 추가 · ${esc(T.logical || t)} <code class="phys">${esc(t)}</code>`,
+        field('물리명', 'name', 'required placeholder="예: season_code" autocomplete="off" spellcheck="false"', '영문 소문자 snake_case')
+        + field('타입', 'type', 'required list="edTypes" placeholder="예: varchar(20)" autocomplete="off" spellcheck="false"') + typeList
+        + field('논리명', 'logical', 'required placeholder="예: 시즌 코드" autocomplete="off"', '한글 이름. 같은 물리명은 모든 테이블에서 같은 논리명으로')
+        + field('설명', 'note', 'placeholder="예: 26SS/26FW. 허용 값은 A/B/C 형식" autocomplete="off"')
+        + `<label class="ed-c"><input type="checkbox" name="notNull"> NOT NULL (필수 값)</label>`
+        + field('기본값', 'def', 'placeholder="비우면 없음 · 예: 0, Y, CURRENT_TIMESTAMP" autocomplete="off"')
+        + `<label class="ed-f"><span>넣을 위치</span><select name="before">${opts}</select><small>시간·감사 컬럼(created_*, updated_*)은 맨 끝에 두는 규칙</small></label>`,
+        '추가', (d) => { keepHash(T.group, t); return post('/api/column/add', { table: t, ...d }); });
+    }
+    function colDel(t, c) {
+      const T = D.tables[t], f = T.fields.find((x) => x.name === c);
+      open('컬럼 삭제', `<p class="ed-q"><b>${esc(T.logical || t)}</b>의 <b>${esc((f && f.logical) || c)}</b> <code class="phys">${esc(t)}.${esc(c)}</code> 컬럼을 지울까요?</p>
+        <p class="ed-note">이 컬럼의 관계(FK)와 단일 컬럼 인덱스도 함께 지웁니다. PK이거나 다른 테이블이 참조하는 컬럼은 지워지지 않습니다. 되돌리려면 git으로.</p>`,
+        '삭제', () => { keepHash(T.group, t); return post('/api/column/delete', { table: t, column: c }); }, true);
+    }
+    function tblAdd(g) {
+      const G = D.groups[g];
+      open(`테이블 추가 · ${esc(G.title)} <code class="phys">${esc(g)}</code>`,
+        field('물리명', 'name', 'required placeholder="예: product_season" autocomplete="off" spellcheck="false"', '영문 소문자 snake_case, MySQL 예약어 불가')
+        + field('논리명', 'logical', 'required placeholder="예: 시즌" autocomplete="off"')
+        + field('설명', 'note', 'placeholder="이 테이블이 무엇을 담는지" autocomplete="off"')
+        + '<h4 class="ed-sub">PK 컬럼 (AUTO_INCREMENT 없이, 바뀌지 않는 값)</h4>'
+        + field('PK 물리명', 'pkName', 'required placeholder="예: season_code" autocomplete="off" spellcheck="false"')
+        + field('PK 타입', 'pkType', 'required list="edTypes" value="varchar(20)" autocomplete="off" spellcheck="false"') + typeList
+        + field('PK 논리명', 'pkLogical', 'required placeholder="예: 시즌 코드" autocomplete="off"')
+        + field('PK 설명', 'pkNote', 'placeholder="예: 26SS/26FW" autocomplete="off"')
+        + '<p class="ed-note">등록일시(created_at)·수정일시(updated_at)는 자동으로 들어갑니다. 복합 PK·FK·인덱스는 채팅으로 요청해 주세요.</p>',
+        '추가', (d) => { keepHash(g, d.name); return post('/api/table/add', { group: g, ...d }); });
+    }
+    function tblDel(t) {
+      const T = D.tables[t];
+      open('테이블 삭제', `<p class="ed-q"><b>${esc(T.logical || t)}</b> <code class="phys">${esc(t)}</code> 테이블을 지울까요? (컬럼 ${T.fields.length}개)</p>
+        <p class="ed-note">이 테이블에서 나가는 관계와 묶음 목록에서도 빠집니다. 다른 테이블이 참조하고 있으면 지워지지 않습니다. 되돌리려면 git으로.</p>`,
+        '삭제', () => { keepHash(T.group); return post('/api/table/delete', { table: t }); }, true);
+    }
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-ed-close]')) { close(); return; }
+      const b = e.target.closest('[data-ed]');
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      ({ 'col-add': () => colAdd(b.dataset.t), 'col-del': () => colDel(b.dataset.t, b.dataset.c), 'tbl-add': () => tblAdd(b.dataset.g), 'tbl-del': () => tblDel(b.dataset.t) })[b.dataset.ed]();
+    }, true);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
+  }
+
   window.addEventListener('hashchange', route);
   route();
 })();

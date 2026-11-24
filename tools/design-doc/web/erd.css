@@ -658,3 +658,34 @@ a.stage-h.on { background: var(--accent); color: var(--on-accent); }
 .g-card { background: var(--panel); }
 .chips span, .cols tr.is-pk td, .cols tbody tr:hover td { background: var(--content-2); }
 .main .icon-btn { background: var(--panel); }
+
+/* ---------- 로컬 편집 모드 (edit-server.js 화면에서만 보임) ---------- */
+.ed-mode { font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 3px 8px; background: var(--accent); color: var(--on-accent); }
+.ed-btn { font-size: 12px; height: 26px; }
+.spec-h .ed-btn:first-of-type { margin-left: auto; }
+.spec-h .ed-btn + .to-erd { margin-left: 0; }
+h1 .ed-btn { vertical-align: middle; margin-left: 8px; }
+.ed-x { margin-left: 6px; border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 1px 5px; border-radius: 0; visibility: hidden; }
+tr:hover .ed-x, .ed-x:focus-visible { visibility: visible; }
+.ed-x:hover { color: var(--text); border-color: var(--line-strong); }
+.ed-panel { position: fixed; z-index: 80; top: 56px; right: 0; bottom: 0; width: min(420px, 100vw); background: var(--panel); border-left: 1px solid var(--line-strong); overflow-y: auto; }
+.ed-form { display: flex; flex-direction: column; min-height: 100%; }
+.ed-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+.ed-h h3 { margin: 0; font-size: 15px; }
+.ed-body { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+.ed-f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.ed-f > span { font-weight: 600; }
+.ed-f input, .ed-f select { height: 34px; border: 1px solid var(--line); border-radius: 0; background: var(--bg); color: var(--text); padding: 0 10px; font: inherit; }
+.ed-f input:focus, .ed-f select:focus { outline: none; border-color: var(--line-strong); }
+.ed-f input[name="name"], .ed-f input[name="type"], .ed-f input[name="pkName"], .ed-f input[name="pkType"] { font-family: var(--mono); }
+.ed-f small, .ed-note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0; }
+.ed-c { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ed-sub { margin: 6px 0 0; font-size: 13px; padding-top: 12px; border-top: 1px solid var(--line); }
+.ed-q { margin: 0; font-size: 14px; line-height: 1.6; }
+.ed-msg { margin: 0 18px; padding: 10px 12px; font-size: 13px; background: var(--panel-2); border-left: 2px solid var(--line-strong); }
+.ed-msg.err { border-left-color: #c62828; color: #c62828; }
+.ed-act { display: flex; gap: 8px; padding: 14px 18px 18px; margin-top: auto; border-top: 1px solid var(--line); }
+.ed-ok { background: var(--accent); color: var(--on-accent); border-color: var(--accent); padding: 0 18px; }
+.ed-ok:hover { background: var(--accent); opacity: .85; }
+.ed-ok.danger { background: #c62828; border-color: #c62828; color: #fff; }
+.ed-ok:disabled { opacity: .5; cursor: wait; }
