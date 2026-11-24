@@ -125,7 +125,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 
 ### 6-1. 상품 · 기준 데이터 (`product_master`)
 - **여성/남성 구분은 A안** (사용자 결정, 2026-11-24): 카테고리 트리는 하나, 성별은 상품 컬럼(`product.gender`, 6-2에서 추가). 남녀공용 상품이 양쪽 메뉴에 나옴.
-- `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3, 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **기본 고시 유형** `default_notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠. 고시 유형은 카테고리에 기본값만 두고(상품 등록 시 고시 폼 자동 선택) 실제 유형은 상품 고시(6-4)에 저장(사용자 결정 A안, 2026-11-24: 액세서리 중 귀금속처럼 카테고리로 안 갈리는 상품 대응). UK (parent_code, name).
+- `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3(상위에서 계산되는 값을 조회용으로 저장, 카테고리 이동 시 하위까지 갱신), 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **기본 고시 유형** `default_notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠. 고시 유형은 카테고리에 기본값만 두고(상품 등록 시 고시 폼 자동 선택) 실제 유형은 상품 고시(6-4)에 저장(사용자 결정 A안, 2026-11-24: 액세서리 중 귀금속처럼 카테고리로 안 갈리는 상품 대응). UK (parent_code, name).
 - `product_std_color`: 필터용 표준 색상(코드·이름·`hex_code`). 브랜드 색 이름은 6-2 `product_color`가 이 표를 참조.
 - `product_std_material`: 표준 소재(코드·이름 UK·정렬·사용 여부). **소재 B안** (사용자 결정, 2026-11-24): 소재를 데이터로 구조화해 필터·혼용률 표에 쓰고, 상품별 부위·비율은 6-2 `product_material`. 법정 고시 소재 문구는 6-4에 브랜드 문구 그대로 저장(`product_material`로 초안 생성).
 
