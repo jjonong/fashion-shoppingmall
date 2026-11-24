@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 `brand_basic` | `brand` / 나중에: 사업자 정보(판매자 정보 고시), 배송비·교환/반품 정책, `brand_user`, `brand_status_history`, `brand_like` | `brand`만 반영 (상품 FK용, 2026-11-24 사용자 결정: 상품 설계를 위해 브랜드는 포괄적으로만) |
 | 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color`, `product_std_material` | 반영 |
-| 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_detail`, `product_detail_image`, `product_color`, `product_option`, `product_image`, `product_material` | 반영 |
+| 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_color`, `product_option`, `product_image`, `product_material`, `product_detail`, `product_detail_image` | 반영 |
 | 6-3 | 상품 · 사이즈·실측 | 품목군별 실측 항목 기준표, 상품별 실측값 | 대기 |
 | 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시. 상품 고시 행에 실제 `notice_type` 저장(카테고리 `default_notice_type`에서 시작) | 대기 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |

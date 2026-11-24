@@ -315,27 +315,6 @@ Table product [note: '[상품] 브랜드가 등록한 판매 상품. 말단(3단
   }
 }
 
-Table product_detail [note: '[상품 상세] 상품 1:1. 상세페이지(상단 갤러리 아래 영역). 이미지는 상품 상세 이미지, 글은 상세 본문'] {
-  product_code varchar(20) [pk, note: '[상품 코드] 상세페이지의 상품']
-  detail_html mediumtext [note: '[상세 본문] 이미지 사이·아래에 넣는 글(HTML, 선택). 큰 본문을 목록 조회와 분리']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세페이지 등록일시']
-  updated_at datetime [note: '[수정일시] 상세페이지 수정일시']
-}
-
-Table product_detail_image [note: '[상품 상세 이미지] 상세페이지에 세로로 이어 붙이는 이미지(착용컷·디테일컷 등). 상단 갤러리 이미지는 상품 이미지'] {
-  product_code varchar(20) [not null, note: '[상품 코드] 상세페이지의 상품']
-  image_no smallint [not null, note: '[이미지 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
-  image_url varchar(500) [not null, note: '[이미지 주소] 이미지 URL']
-  alt_text varchar(200) [note: '[대체 텍스트] 이미지 설명(접근성·검색). 선택']
-  sort_order smallint [not null, default: 0, note: '[정렬 순서] 위에서 아래로 표시 순서']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세 이미지 등록일시']
-  updated_at datetime [note: '[수정일시] 상세 이미지 수정일시']
-
-  indexes {
-    (product_code, image_no) [pk]
-  }
-}
-
 Table product_color [note: '[상품 컬러] 상품별 컬러. 브랜드가 붙인 색 이름 + 필터용 표준 색상'] {
   product_code varchar(20) [not null, note: '[상품 코드] 컬러가 속한 상품']
   color_no smallint [not null, note: '[컬러 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
@@ -399,6 +378,27 @@ Table product_material [note: '[상품 소재] 부위별 소재와 혼용률. �
   }
 }
 
+Table product_detail [note: '[상품 상세] 상품 1:1. 상세페이지(상단 갤러리 아래 영역). 이미지는 상품 상세 이미지, 글은 상세 본문'] {
+  product_code varchar(20) [pk, note: '[상품 코드] 상세페이지의 상품']
+  detail_html mediumtext [note: '[상세 본문] 이미지 사이·아래에 넣는 글(HTML, 선택). 큰 본문을 목록 조회와 분리']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세페이지 등록일시']
+  updated_at datetime [note: '[수정일시] 상세페이지 수정일시']
+}
+
+Table product_detail_image [note: '[상품 상세 이미지] 상세페이지에 세로로 이어 붙이는 이미지(착용컷·디테일컷 등). 상단 갤러리 이미지는 상품 이미지'] {
+  product_code varchar(20) [not null, note: '[상품 코드] 상세페이지의 상품']
+  image_no smallint [not null, note: '[이미지 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
+  image_url varchar(500) [not null, note: '[이미지 주소] 이미지 URL']
+  alt_text varchar(200) [note: '[대체 텍스트] 이미지 설명(접근성·검색). 선택']
+  sort_order smallint [not null, default: 0, note: '[정렬 순서] 위에서 아래로 표시 순서']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세 이미지 등록일시']
+  updated_at datetime [note: '[수정일시] 상세 이미지 수정일시']
+
+  indexes {
+    (product_code, image_no) [pk]
+  }
+}
+
 // =====================================================================
 // 관계
 // =====================================================================
@@ -419,8 +419,6 @@ Ref: product_category.parent_code > product_category.category_code
 
 Ref: product.brand_id > brand.brand_id
 Ref: product.category_code > product_category.category_code
-Ref: product_detail.product_code - product.product_code [delete: cascade]
-Ref: product_detail_image.product_code > product_detail.product_code [delete: cascade]
 Ref: product_color.product_code > product.product_code [delete: cascade]
 Ref: product_color.color_code > product_std_color.color_code
 Ref: product_option.product_code > product.product_code [delete: cascade]
@@ -429,6 +427,8 @@ Ref: product_image.product_code > product.product_code [delete: cascade]
 Ref: product_image.(product_code, color_no) > product_color.(product_code, color_no)
 Ref: product_material.product_code > product.product_code [delete: cascade]
 Ref: product_material.material_code > product_std_material.material_code
+Ref: product_detail.product_code - product.product_code [delete: cascade]
+Ref: product_detail_image.product_code > product_detail.product_code [delete: cascade]
 
 // =====================================================================
 // 묶음
@@ -462,10 +462,10 @@ TableGroup product_master [note: '상품 - 기준 데이터'] {
 
 TableGroup product_basic [note: '상품 - 상품 기본'] {
   product
-  product_detail
-  product_detail_image
   product_color
   product_option
   product_image
   product_material
+  product_detail
+  product_detail_image
 }
