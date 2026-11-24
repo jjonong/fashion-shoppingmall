@@ -1,7 +1,7 @@
 // =====================================================================
 // 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: W컨셉 (디자이너 브랜드 입점, 의류·신발·가방·잡화)
-// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 1개 + 상품 10개(기준 데이터 3 + 상품 기본 7) = 21개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
+// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 1개 + 상품 9개(기준 데이터 3 + 상품 기본 6) = 20개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
@@ -378,27 +378,12 @@ Table product_material [note: '[상품 소재] 부위별 소재와 혼용률. �
   }
 }
 
-Table product_detail [note: '[상품 상세] 상품 1:1. 상세페이지(상단 갤러리 아래 영역). 이미지는 상품 상세 이미지, 글은 상세 본문'] {
+Table product_detail [note: '[상품 상세] 상품 1:1. 상세페이지 아래 상품 정보 영역. 큰 본문을 목록 조회와 분리'] {
   product_code varchar(20) [pk, note: '[상품 코드] 상세페이지의 상품']
-  detail_html mediumtext [note: '[상세 본문] 이미지 사이·아래에 넣는 글(HTML, 선택). 큰 본문을 목록 조회와 분리']
+  detail_html mediumtext [not null, note: '[상세 본문] 상세페이지 HTML. 브랜드가 만든 긴 상세 이미지(<img>)와 글. 상단 갤러리 이미지는 상품 이미지']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세페이지 등록일시']
   updated_at datetime [note: '[수정일시] 상세페이지 수정일시']
 }
-
-Table product_detail_image [note: '[상품 상세 이미지] 상세페이지에 세로로 이어 붙이는 이미지(착용컷·디테일컷 등). 상단 갤러리 이미지는 상품 이미지'] {
-  product_code varchar(20) [not null, note: '[상품 코드] 상세페이지의 상품']
-  image_no smallint [not null, note: '[이미지 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
-  image_url varchar(500) [not null, note: '[이미지 주소] 이미지 URL']
-  alt_text varchar(200) [note: '[대체 텍스트] 이미지 설명(접근성·검색). 선택']
-  sort_order smallint [not null, default: 0, note: '[정렬 순서] 위에서 아래로 표시 순서']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세 이미지 등록일시']
-  updated_at datetime [note: '[수정일시] 상세 이미지 수정일시']
-
-  indexes {
-    (product_code, image_no) [pk]
-  }
-}
-
 // =====================================================================
 // 관계
 // =====================================================================
@@ -428,7 +413,6 @@ Ref: product_image.(product_code, color_no) > product_color.(product_code, color
 Ref: product_material.product_code > product.product_code [delete: cascade]
 Ref: product_material.material_code > product_std_material.material_code
 Ref: product_detail.product_code - product.product_code [delete: cascade]
-Ref: product_detail_image.product_code > product_detail.product_code [delete: cascade]
 
 // =====================================================================
 // 묶음
@@ -467,5 +451,4 @@ TableGroup product_basic [note: '상품 - 상품 기본'] {
   product_image
   product_material
   product_detail
-  product_detail_image
 }

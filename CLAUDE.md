@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 `brand_basic` | `brand` / 나중에: 사업자 정보(판매자 정보 고시), 배송비·교환/반품 정책, `brand_user`, `brand_status_history`, `brand_like` | `brand`만 반영 (상품 FK용, 2026-11-24 사용자 결정: 상품 설계를 위해 브랜드는 포괄적으로만) |
 | 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color`, `product_std_material` | 반영 |
-| 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_color`, `product_option`, `product_image`, `product_material`, `product_detail`, `product_detail_image` | 반영 |
+| 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_color`, `product_option`, `product_image`, `product_material`, `product_detail` | 반영 |
 | 6-3 | 상품 · 사이즈·실측 | 품목군별 실측 항목 기준표, 상품별 실측값 | 대기 |
 | 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시. 상품 고시 행에 실제 `notice_type` 저장(카테고리 `default_notice_type`에서 시작) | 대기 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
@@ -132,8 +132,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 ### 6-2. 상품 · 상품 기본 (`product_basic`)
 - 구조: 상품 1행 + 컬러 N + 옵션(컬러 × 사이즈) N. 예: 울 코트(상품 1000123) → 컬러 2(블랙·크림 베이지) × 사이즈 3 = 옵션 6행, 재고는 옵션마다.
 - `product`: PK **상품 코드** `product_code varchar(20)`(숫자만, 앱 발급 채번, 브랜드 접두사 없음, 변경 불가, 상품 URL). 브랜드 1개 + **말단(3단계) 카테고리 1개**(앱 검증, 여러 카테고리 노출은 범위 밖). 품목 유형은 카테고리에서 따라오고(복사 안 함), 고시 유형은 6-4 상품 고시. 성별 `gender` WOMEN/MEN/UNISEX(A안), 브랜드 품번 `style_no`(선택, 브랜드 안 UK), 정가·판매가(CHECK 판매가 ≤ 정가, 할인율은 계산값), 단독 여부, 상태 ACTIVE/PAUSED/ENDED ↔ `ended_at`(품절은 상태가 아니라 옵션 재고), **판매 시작일시** `sale_started_at`(NOT NULL, 등록일시와 별개: 검수 후 공개·예약 오픈 대응, 노출 조건 `status = 'ACTIVE' AND sale_started_at <= NOW()`, 신상품 정렬 기준, 사용자 결정 2026-11-24: 출시일시에서 변경), 캐시(찜 수·리뷰 수·평균 별점). `created_by`/`updated_by`는 FK 없이(브랜드 관리자·운영자 테이블 생기면 연결).
-- `product_detail` (1:1): 상세페이지. 상세 본문 `detail_html mediumtext`(이미지 사이 글, 선택). 목록 조회에서 큰 본문을 분리.
-- `product_detail_image`: PK (product_code, image_no), 부모는 `product_detail`. 상세페이지에 세로로 이어 붙이는 착용컷·디테일컷(사용자 요청 2026-11-24: 상세에 이미지가 들어가야 함). 상단 갤러리(대표·추가) 이미지는 `product_image`로 구분.
+- `product_detail` (1:1): 상세 본문 `detail_html mediumtext`(NOT NULL)에 브랜드가 만든 **긴 상세 이미지(`<img>`)와 글**을 함께 담는다(사용자 결정 2026-11-24: 상세 이미지를 행으로 나누지 않음, 이미지는 썸네일·갤러리 `product_image`와 상세 HTML 두 곳뿐). 목록 조회에서 큰 본문을 분리.
 - `product_color`: PK (product_code, color_no). 브랜드 색상 이름 `brand_color_name`(예: 크림 베이지) + 표준 색상 코드(필터). 정렬 맨 앞이 대표 컬러.
 - `product_option`: PK (product_code, option_no). **SKU라는 용어 대신 옵션**(사용자 요청). 컬러 번호(복합 FK → product_color) + 사이즈 `size_label`(S/M/230/FREE, 사이즈 기준표는 6-3), 추가 금액, 재고 수량(0이면 품절, 이력은 6-5), 상태 ACTIVE/PAUSED. UK (product_code, color_no, size_label).
 - `product_image`: PK (product_code, image_no). 컬러 번호 선택(NULL이면 공통, 복합 FK), 유형 MAIN/SUB, URL, 정렬.
