@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color` | 반영 |
 | 6-2 | 상품 · 상품 기본 | `product`(PK 상품코드, 성별 `gender` WOMEN/MEN/UNISEX: A안), `product_detail`(1:1, 상세 본문), `product_color`, `product_image`, `product_sku` | 대기 |
 | 6-3 | 상품 · 사이즈·실측 | 품목군별 실측 항목 기준표, 상품별 실측값 | 대기 |
-| 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시 | 대기 |
+| 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시. 상품 고시 행에 실제 `notice_type` 저장(카테고리 `default_notice_type`에서 시작) | 대기 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
 | 6-6 | 상품 · 고객 연결 | 상품 찜, 재입고 알림(회원-SKU) | 대기 |
 
@@ -122,7 +122,7 @@ npm run drawio         # 검증 후 docs/erd.drawio (draw.io 파일) 재생성
 
 ### 6-1. 상품 · 기준 데이터 (`product_master`)
 - **여성/남성 구분은 A안** (사용자 결정, 2026-11-24): 카테고리 트리는 하나, 성별은 상품 컬럼(`product.gender`, 6-2에서 추가). 남녀공용 상품이 양쪽 메뉴에 나옴.
-- `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3, 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **고시 유형** `notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠(잡화 중 주얼리·시계는 고시 항목이 다름). UK (parent_code, name).
+- `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3, 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **기본 고시 유형** `default_notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠. 고시 유형은 카테고리에 기본값만 두고(상품 등록 시 고시 폼 자동 선택) 실제 유형은 상품 고시(6-4)에 저장(사용자 결정 A안, 2026-11-24: 액세서리 중 귀금속처럼 카테고리로 안 갈리는 상품 대응). UK (parent_code, name).
 - `product_std_color`: 필터용 표준 색상(코드·이름·`hex_code`). 브랜드 색 이름은 6-2 `product_color`가 이 표를 참조.
 
 ### 나중에 재검토
