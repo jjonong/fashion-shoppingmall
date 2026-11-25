@@ -3,7 +3,7 @@
   const D = window.ERD;
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  const side = $('#side'), main = $('#main'), q = $('#q'), results = $('#results');
+  const gnb = $('#gnb'), main = $('#main'), q = $('#q'), results = $('#results');
 
   const stageOf = (g) => D.stages.findIndex((s) => g.startsWith(s.prefix + '_'));
   const stageColor = (g) => `var(--s${stageOf(g) + 1})`;
@@ -38,33 +38,38 @@
     const groupChanged = next.g !== cur.g || !main.firstChild;
     cur = next;
     if (groupChanged) next.g ? renderGroup(next.g) : renderOverview();
-    renderSide();
+    renderGnb();
     selectTable(next.t);
     document.body.classList.remove('side-open');
     syncMenu();
   }
 
-  // ---------- 사이드바 ----------
-  function renderSide() {
-    let h = `<a class="home${cur.g ? '' : ' on'}" href="#">전체 개요</a>`;
+  // ---------- 상단 영역 메뉴 (GNB): 영역 → 묶음 드롭다운. 테이블은 묶음 화면의 탭 줄(.jump) ----------
+  function renderGnb() {
+    const curStage = cur.g ? stageOf(cur.g) : -1;
+    let h = `<a class="gnb-home${cur.g ? '' : ' on'}" href="#">전체 개요</a>`;
     D.stages.forEach((s, i) => {
       const n = s.groups.reduce((a, g) => a + D.groups[g].tables.length, 0);
-      // 영역 이름을 누르면 그 영역의 모든 테이블 ERD
-      h += `<div class="stage"><a class="stage-h${s.all === cur.g ? ' on' : ''}" href="#g=${s.all}" title="${esc(s.name)} 전체 ERD 보기"><span class="dot" style="background:var(--s${i + 1})"></span>${esc(s.name)}<span class="n">${n}개</span></a>`;
-      s.groups.forEach((g) => {
-        const G = D.groups[g];
-        const on = g === cur.g;
-        h += `<a class="g-item${on ? ' on' : ''}" href="#g=${g}"><span>${esc(G.title)}</span><span class="n">${G.tables.length}</span></a>`;
-        if (on) {
-          h += `<div class="t-list">${G.tables.map((t) => `<a href="#g=${g}&t=${t}" class="${t === cur.t ? 'on' : ''}" title="${t}">${esc(tLg(t))}</a>`).join('')}</div>`;
-        }
-      });
-      h += '</div>';
+      h += `<div class="gnb-item${i === curStage ? ' on' : ''}">
+        <a class="gnb-h${s.all === cur.g ? ' sel' : ''}" href="#g=${s.all}" title="${esc(s.name)} 전체 ERD 보기" aria-haspopup="true"><span class="dot" style="background:var(--s${i + 1})"></span>${esc(s.name)}<span class="n">${n}</span></a>
+        <div class="gnb-drop">
+          <a class="gnb-g${s.all === cur.g ? ' on' : ''}" href="#g=${s.all}"><span>${esc(s.name)} 전체</span><span class="n">${n}</span></a>
+          ${s.groups.map((g) => `<a class="gnb-g${g === cur.g ? ' on' : ''}" href="#g=${g}"><span>${esc(D.groups[g].title)}</span><span class="n">${D.groups[g].tables.length}</span></a>`).join('')}
+        </div>
+      </div>`;
     });
-    side.innerHTML = h;
-    const on = $('.g-item.on', side);
-    if (on && on.scrollIntoViewIfNeeded) on.scrollIntoViewIfNeeded(false);
+    gnb.innerHTML = h;
   }
+  // 메뉴를 누른 뒤에는 드롭다운을 닫는다 (hover·focus가 남아 열려 있지 않게)
+  gnb.addEventListener('click', (e) => {
+    if (!e.target.closest('a')) return;
+    gnb.classList.add('closing');
+    if (document.activeElement && gnb.contains(document.activeElement)) document.activeElement.blur();
+  });
+  gnb.addEventListener('mouseleave', () => gnb.classList.remove('closing'));
+  gnb.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.activeElement && gnb.contains(document.activeElement)) document.activeElement.blur();
+  });
 
   // ---------- 개요 ----------
   function renderOverview() {
@@ -648,27 +653,10 @@
   darkMq.addEventListener('change', syncTheme);
   syncTheme();
 
-  // 사이드바: PC는 오른쪽 끝 ‹ / › 버튼으로 접기/펴기(상태 저장), 좁은 화면은 ☰로 오버레이 열기/닫기
-  const SKEY = 'erd-side-collapsed';
-  const menuBtn = $('#menuBtn'), sideToggle = $('#sideToggle');
-  function syncMenu() {
-    const b = document.body.classList;
-    menuBtn.setAttribute('aria-expanded', String(b.contains('side-open')));
-    const collapsed = b.contains('side-collapsed');
-    const label = collapsed ? '영역 목록 펴기' : '영역 목록 접기';
-    sideToggle.textContent = collapsed ? '›' : '‹';
-    sideToggle.setAttribute('aria-expanded', String(!collapsed));
-    sideToggle.setAttribute('aria-label', label);
-    sideToggle.title = label;
-  }
-  try { if (localStorage.getItem(SKEY) === '1') document.body.classList.add('side-collapsed'); } catch (e) { /* 저장 불가면 펼친 상태 */ }
+  // 좁은 화면: ☰로 영역 메뉴를 왼쪽 패널로 열기/닫기
+  const menuBtn = $('#menuBtn');
+  function syncMenu() { menuBtn.setAttribute('aria-expanded', String(document.body.classList.contains('side-open'))); }
   menuBtn.onclick = () => { document.body.classList.toggle('side-open'); syncMenu(); };
-  sideToggle.onclick = () => {
-    const c = document.body.classList.toggle('side-collapsed');
-    try { localStorage.setItem(SKEY, c ? '1' : '0'); } catch (e) { /* 이번 화면에서만 유지 */ }
-    syncMenu();
-  };
-  side.addEventListener('transitionend', (e) => { if (e.target === side && e.propertyName === 'width') refit(); });
   syncMenu();
   $('#scrim').onclick = () => document.body.classList.remove('side-open');
   let rt;

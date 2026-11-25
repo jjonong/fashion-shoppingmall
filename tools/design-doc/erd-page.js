@@ -182,7 +182,7 @@ async function main() {
 </head>
 <body>
 <header class="top">
-  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 목록 열기" aria-expanded="false">☰</button>
+  <button class="icon-btn menu-btn" id="menuBtn" aria-label="영역 메뉴 열기" aria-controls="gnb" aria-expanded="false">☰</button>
   <a class="brand" href="#" aria-label="개요로 이동"><span>Fashion Mall</span><small>ERD</small></a>
   ${EDIT ? '<span class="ed-mode" title="저장하면 docs/erd.dbml이 바로 바뀝니다. 커밋·푸시는 따로">편집 모드</span>' : ''}
   <span class="meta">MySQL 8.0 · 테이블 ${data.counts.tables} · 관계 ${data.counts.refs}</span>
@@ -192,9 +192,8 @@ async function main() {
   </div>
   <button class="icon-btn theme-btn" id="themeBtn" type="button">DARK</button>
 </header>
+<nav class="gnb" id="gnb" aria-label="영역 메뉴"></nav>
 <div class="layout">
-  <nav class="side" id="side" aria-label="영역 목록"></nav>
-  <button class="side-toggle" id="sideToggle" aria-controls="side" aria-expanded="true" aria-label="영역 목록 접기" title="영역 목록 접기">‹</button>
   <main class="main" id="main"></main>
 </div>
 <div class="scrim" id="scrim" hidden></div>

@@ -138,94 +138,65 @@ button { font: inherit; color: inherit; }
 .menu-btn { display: none; }
 
 /* ---------- 레이아웃 ---------- */
-.layout { display: flex; height: calc(100% - 56px); position: relative; }
-/* PC: 사이드바 오른쪽 끝 세로 가운데의 ‹ / › 버튼으로 접기/펴기 */
-.side-toggle {
-  position: absolute;
-  top: 50%;
-  left: 264px;
-  z-index: 15;
-  width: 18px;
-  height: 48px;
-  margin-top: -24px;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-left: 0;
-  border-radius: 0;
-  background: var(--panel);
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: 2px 0 6px rgba(20, 30, 45, .06);
-  transition: left .2s;
-}
-.side-toggle:hover { color: var(--accent); background: var(--panel-2); }
-body.side-collapsed .side-toggle { left: 0; }
-.side {
-  width: 264px;
-  flex: none;
-  overflow: auto;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  padding: 12px 10px 24px;
-  transition: width .2s, padding .2s;
-}
-/* 넓은 화면: ☰로 사이드바 접기 (상태는 localStorage erd-side-collapsed) */
-body.side-collapsed .side { width: 0; padding: 0; border-right: 0; overflow: hidden; }
+:root { --gnb-h: 46px; }
+.layout { display: flex; height: calc(100% - 56px - var(--gnb-h)); position: relative; }
 .main { flex: 1; min-width: 0; overflow: auto; position: relative; }
 .scrim { display: none; }
 
-/* ---------- 사이드바 ---------- */
-.side .home {
-  display: block;
-  padding: 8px 10px;
-  border-radius: 0;
-  font-weight: 600;
-  color: var(--text);
+/* ---------- 상단 영역 메뉴 (GNB): 영역 → 묶음 드롭다운 ---------- */
+.gnb {
+  height: var(--gnb-h);
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 19;
 }
-.side .home.on, .side .home:hover { background: var(--accent-soft); text-decoration: none; }
-.stage { margin-top: 14px; }
-.stage-h {
+.gnb-home, .gnb-h {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 10px;
-  margin-bottom: 2px;
-  border-radius: 0;
-  font-size: 12px;
+  gap: 8px;
+  padding: 0 16px;
   font-weight: 700;
-  color: var(--muted);
-  letter-spacing: .02em;
+  color: var(--text);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
 }
-a.stage-h:hover { background: var(--panel-2); color: var(--text); text-decoration: none; }
-a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
-.stage-h .dot { width: 8px; height: 8px; border-radius: 0; }
-.stage-h .n { margin-left: auto; font-weight: 500; }
-.g-item {
+.gnb-home:hover, .gnb-h:hover { text-decoration: none; }
+.gnb-home.on, .gnb-item.on > .gnb-h { border-bottom-color: var(--line-strong); }
+.gnb-h .dot { width: 6px; height: 6px; }
+.gnb-h .n, .gnb-g .n { color: var(--muted); font-size: 12px; font-weight: 400; }
+.gnb-item { position: relative; display: flex; }
+.gnb-drop {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  padding: 6px 0;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  z-index: 40;
+}
+.gnb-item:hover > .gnb-drop, .gnb-item:focus-within > .gnb-drop { display: block; }
+.gnb.closing .gnb-drop { display: none; }
+.gnb-g {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 0;
+  gap: 16px;
+  padding: 8px 16px;
   color: var(--text);
+  white-space: nowrap;
 }
-.g-item:hover { background: var(--panel-2); text-decoration: none; }
-.g-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.g-item .n { color: var(--muted); font-size: 12px; font-weight: 400; }
+.gnb-g:hover { background: var(--panel-2); text-decoration: none; }
+.gnb-g.on { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.gnb-g.on .n { color: var(--on-accent); opacity: .7; }
 .stage-col h2 a { color: inherit; }
 .stage-col h2 a:hover { color: var(--c); }
-.t-list { margin: 2px 0 8px 14px; padding-left: 8px; border-left: 2px solid var(--line); }
-.t-list a {
-  display: block;
-  padding: 3px 8px;
-  border-radius: 0;
-  font-family: var(--mono);
-  font-size: 12.5px;
-  color: var(--muted);
-}
-.t-list a:hover { color: var(--text); background: var(--panel-2); text-decoration: none; }
-.t-list a.on { color: var(--hl); font-weight: 600; }
 
 /* ---------- 개요 ---------- */
 .overview { padding: 28px 28px 40px; }
@@ -493,23 +464,34 @@ a.stage-h.on { background: var(--accent-soft); color: var(--accent); }
 }
 @media (max-width: 760px) {
   .menu-btn { display: inline-block; }
-  .side-toggle { display: none; }
   .meta { display: none; }
   .top { gap: 10px; }
   .brand span:last-child { display: none; }
-  .side {
+  :root { --gnb-h: 0px; }
+  /* 좁은 화면: 영역 메뉴는 ☰로 여는 왼쪽 패널, 드롭다운은 펼친 목록 */
+  .gnb {
     position: fixed;
     top: 56px;
     left: 0;
     bottom: 0;
+    width: 264px;
+    height: auto;
+    flex-direction: column;
+    gap: 0;
+    padding: 12px 0 24px;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+    overflow: auto;
     z-index: 30;
     transform: translateX(-100%);
     transition: transform .2s;
-    box-shadow: var(--shadow);
   }
-  /* 좁은 화면은 접기 대신 기존 오버레이(side-open) 방식 */
-  body.side-collapsed .side { width: 264px; padding: 12px 10px 24px; border-right: 1px solid var(--line); overflow: auto; }
-  body.side-open .side { transform: none; }
+  body.side-open .gnb { transform: none; }
+  .gnb-home, .gnb-h { padding: 10px 16px; border-bottom: 0; margin: 0; }
+  .gnb-home.on { background: var(--accent); color: var(--on-accent); }
+  .gnb-item { flex-direction: column; }
+  .gnb-h { font-size: 12px; color: var(--muted); letter-spacing: .08em; margin-top: 8px; }
+  .gnb-drop, .gnb.closing .gnb-drop { display: block; position: static; border: 0; padding: 0; min-width: 0; }
   body.side-open .scrim {
     display: block;
     position: fixed;
@@ -550,7 +532,7 @@ code.phys { font-family: var(--mono); font-size: .82em; color: var(--muted); fon
 .cols .c-name { font-weight: 400 !important; color: var(--muted); font-size: .9em; }
 .tip-h b { font-weight: 700; }
 /* 논리명(한글) 목록은 일반 글꼴로 */
-.t-list a, .chips span, .jump a, .results .r-name, .tip-ref { font-family: inherit; }
+.chips span, .jump a, .results .r-name, .tip-ref { font-family: inherit; }
 .spec-h h3 { font-family: inherit; }
 
 /* 테이블 드래그 배치 */
@@ -572,23 +554,6 @@ a:hover { text-decoration: none; }
 .icon-btn:hover { background: var(--panel); border-color: var(--line-strong); }
 .results { box-shadow: 0 8px 24px rgba(0, 0, 0, .08); }
 .results button:hover, .results button.on { background: var(--panel-2); }
-
-/* 사이드바: 선택 = 검정 반전 */
-.side { padding: 20px 14px 24px; }
-.side .home { padding: 9px 12px; font-weight: 700; }
-.side .home:hover { background: var(--panel-2); }
-.side .home.on { background: var(--accent); color: var(--on-accent); }
-.stage { margin-top: 20px; }
-.stage-h { font-size: 11px; letter-spacing: 0.1em; padding: 6px 12px; }
-.stage-h .dot { width: 6px; height: 6px; }
-a.stage-h.on { background: var(--accent); color: var(--on-accent); }
-.g-item { padding: 9px 12px; }
-.g-item.on { background: var(--accent); color: var(--on-accent); }
-.g-item.on .n { color: var(--on-accent); opacity: .7; }
-.t-list { border-left: 1px solid var(--line-strong); margin-left: 16px; }
-.t-list a.on { color: var(--text); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
-.side-toggle { box-shadow: none; color: var(--text); }
-.side-toggle:hover { color: var(--on-accent); background: var(--accent); }
 
 /* 개요: 잡지처럼 큰 제목, 카드 대신 선 */
 .overview { padding: 44px 48px 64px; }
@@ -669,7 +634,7 @@ h1 .ed-btn { vertical-align: middle; margin-left: 8px; }
 tr:hover .ed-x, .ed-x:focus-visible, .ed-x.on { visibility: visible; }
 .ed-row { white-space: nowrap; }
 .ed-x:hover { color: var(--text); border-color: var(--line-strong); }
-.ed-panel { position: fixed; z-index: 80; top: 56px; right: 0; bottom: 0; width: min(420px, 100vw); background: var(--panel); border-left: 1px solid var(--line-strong); overflow-y: auto; }
+.ed-panel { position: fixed; z-index: 80; top: calc(56px + var(--gnb-h)); right: 0; bottom: 0; width: min(420px, 100vw); background: var(--panel); border-left: 1px solid var(--line-strong); overflow-y: auto; }
 .ed-form { display: flex; flex-direction: column; min-height: 100%; }
 .ed-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
 .ed-h h3 { margin: 0; font-size: 15px; }

@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 파일 | 역할 |
 |---|---|
 | `docs/erd.dbml` | **기준 원본(source of truth)**. 상단 주석에 테이블 개수, 하단에 `Ref`·`TableGroup`. https://dbdiagram.io/d 에 붙여넣어 확인 |
-| `docs/erd/index.html` | ERD 웹페이지 (GitHub Pages: https://jjonong.github.io/fashion-shoppingmall/erd/). 영역 전체 ERD + 세부 영역별 ERD + 테이블 클릭 시 전체 컬럼·인덱스·관계, 검색, 테이블 드래그 배치(localStorage `erd-layout-v1`). 직접 수정 불가, `npm run erd`로 생성. Pages 소스는 main 브랜치 `/docs` (`docs/.nojekyll`) |
+| `docs/erd/index.html` | ERD 웹페이지 (GitHub Pages: https://jjonong.github.io/fashion-shoppingmall/erd/). 상단 영역 메뉴(GNB: 영역 → 묶음 드롭다운, 좁은 화면은 ☰ 왼쪽 패널) + 묶음 화면 테이블 탭 줄. 영역 전체 ERD + 세부 영역별 ERD + 테이블 클릭 시 전체 컬럼·인덱스·관계, 검색, 테이블 드래그 배치(localStorage `erd-layout-v1`). 직접 수정 불가, `npm run erd`로 생성. Pages 소스는 main 브랜치 `/docs` (`docs/.nojekyll`) |
 | `docs/erd-layout.json` | (선택) 웹페이지 "배치 내보내기"로 받은 공유 배치. 두고 `npm run erd`하면 모든 사람에게 같은 배치 |
 | `docs/erd.drawio` | draw.io 파일 (전체 + 영역별 페이지). 직접 수정 불가, `npm run drawio`로 생성. 한 방향(원본은 dbml) |
 | `docs/archive_interior/` | 직전 인테리어 가구몰 설계 (MySQL, 92개 테이블, PDF·ERD 웹페이지·draw.io 포함). 참고용, 갱신하지 않음 |
