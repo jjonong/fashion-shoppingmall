@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 5 | 브랜드 기본 `brand_basic` | `brand` / 나중에: 사업자 정보(판매자 정보 고시), 배송비·교환/반품 정책, `brand_user`, `brand_status_history`, `brand_like` | `brand`만 반영 (상품 FK용, 2026-11-24 사용자 결정: 상품 설계를 위해 브랜드는 포괄적으로만) |
 | 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color`, `product_std_material` | 반영 |
 | 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_color`, `product_size`, `product_option`, `product_image`, `product_material`, `product_detail` | 반영 |
-| 6-3 | 상품 · 사이즈·실측 `product_sizing` | `product_measure_item`, `product_category_measure_item`, `product_size_measure` (`product_size`는 상품 기본으로 옮김, 옵션 사이즈는 `size_no`) | 반영 |
+| 6-3 | 상품 · 실측 `product_measure` | `product_measure_item`, `product_category_measure_item`, `product_size_measure` (`product_size`는 상품 기본으로 옮김, 옵션 사이즈는 `size_no`) | 반영 |
 | 6-4 | 상품 · 정보 고시 `product_notice` | `product_notice` (상품 1:1, 공통 항목 컬럼 + 유형별 항목 NULL 가능 컬럼 + CHECK) | 반영 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
 | 6-6 | 상품 · 고객 연결 | 상품 찜, 재입고 알림(회원-옵션) | 대기 |
@@ -91,7 +91,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - **UNIQUE (MySQL 특성)**: 이메일은 대소문자 무시 콜레이션이라 일반 UNIQUE로 충분. 회원당 기본 배송지 1개는 함수 기반 `ux_member_address_default ((CASE WHEN is_default='Y' THEN member_id END))`. MySQL UNIQUE는 NULL 포함 행을 중복으로 보지 않는다.
 - **CHECK + FK 주의 (DDL 작성 시)**: MySQL은 참조 동작(`ON DELETE CASCADE`/`SET NULL`)이 있는 FK 컬럼을 CHECK에서 쓸 수 없다. CHECK에 들어가는 FK는 참조 동작 없이 만든다.
 - **다형 참조**: `target_type + target_id` 대신 대상별 nullable FK 컬럼 + CHECK.
-- **테이블 순서** (사용자 요청 2026-11-25, dbml·ERD 페이지 표시 순서): 묶음 안에서 중심 테이블 → 1:1 확장(상세·로그인 상태 등) 바로 밑 → 1:N 자식은 참조 사슬 순(컬러 → 옵션) → 기준표·매핑은 뒤. 연관도 높은 테이블을 붙여 둔다. 영역 안 묶음도 핵심 묶음을 먼저(상품 기본 → 기준 데이터 → 사이즈·실측).
+- **테이블 순서** (사용자 요청 2026-11-25, dbml·ERD 페이지 표시 순서): 묶음 안에서 중심 테이블 → 1:1 확장(상세·로그인 상태 등) 바로 밑 → 1:N 자식은 참조 사슬 순(컬러 → 옵션) → 기준표·매핑은 뒤. 연관도 높은 테이블을 붙여 둔다. 영역 안 묶음도 핵심 묶음을 먼저(상품 기본 → 기준 데이터 → 실측).
 - **컬럼 순서** (사용자 요청): 식별(PK) → 로그인(비밀번호 등) → 인적사항 → 연락처 → 선택 정보 → 인증·상태 → 시각(`created_at`, `updated_at`).
 - **개인정보**: 비밀번호는 bcrypt 단방향 해시(`password_hash`, 솔트 포함, 복원 불가 → 재설정만). 이메일은 **평문**(법적 암호화 대상 아님, UNIQUE·대소문자 무시·아이디 찾기 때문, 관리자 화면 마스킹). 휴대폰 번호는 법적 의무는 아니지만 추가 보호로 `_enc`(AES-256, 실제 번호가 필요할 때 복호화) + 검색용 `_hash`. 검색·비교용 `_hash`는 **HMAC-SHA256(서버 비밀 키)**(번호처럼 경우의 수가 적은 값은 단순 SHA-256이면 전부 대입해 풀림). CI·토큰은 해시만. 물리명은 `_enc`/`_hash`로 저장 방식을 드러내고, **논리명은 용도 중심**으로 쓴다(사용자 요청: `회원 휴대폰 번호 검색값`, `회원 중복 가입 확인값(CI)`). 탈퇴는 soft delete + 마스킹(`withdrawn_{아이디}@deleted.local`, 이름(`member_name`) `탈퇴회원`, 닉네임 `deleted_{아이디}`, 휴대폰·`ci_hash`·프로필 NULL). 아이디(PK)는 남겨서 재사용을 막는다.
 - **탈퇴 회원 정보 관리** (사용자 확정): 탈퇴하면 개인정보는 바로 파기하고, 법이 보관을 요구하는 기록만 기간 동안 남긴다.
@@ -128,9 +128,9 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `brand`: PK **브랜드 아이디** `brand_id varchar(30)`(영문 소문자·숫자·하이픈, 변경·재사용 불가, 브랜드관 URL). 브랜드 한글명 `brand_name_ko`·브랜드 영문명 `brand_name_en`(UK, 대표 표기)·브랜드 유형(DESIGNER/OWN/IMPORT)·로고·소개·상태(ACTIVE/PAUSED/CLOSED ↔ `closed_at`)·좋아요 수 캐시. `created_by`/`updated_by`는 FK 없이(운영자 테이블 생기면 연결).
 
 ### 6-1. 상품 · 기준 데이터 (`product_master`)
-- 표시 순서: 만든 순서는 기준 데이터가 먼저지만 dbml·ERD 페이지에서는 **상품 기본 → 기준 데이터 → 사이즈·실측** 순(사용자 결정 2026-11-25: 핵심인 상품을 먼저 보이게).
+- 표시 순서: 만든 순서는 기준 데이터가 먼저지만 dbml·ERD 페이지에서는 **상품 기본 → 기준 데이터 → 실측** 순(사용자 결정 2026-11-25: 핵심인 상품을 먼저 보이게).
 - **여성/남성 구분은 A안** (사용자 결정, 2026-11-24): 카테고리 트리는 하나, 성별은 상품 컬럼(`product.gender`, 6-2에서 추가). 남녀공용 상품이 양쪽 메뉴에 나옴.
-- `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3(상위에서 계산되는 값을 조회용으로 저장, 카테고리 이동 시 하위까지 갱신), 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 사이즈·실측 결정)과 **고시 유형 기본값** `default_notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠. 고시 유형은 카테고리에 기본값만 두고(상품 등록 시 고시 폼 자동 선택) 실제 유형은 상품 고시(6-4)에 저장(사용자 결정 A안, 2026-11-24: 액세서리 중 귀금속처럼 카테고리로 안 갈리는 상품 대응). UK (parent_code, name).
+- `product_category`: PK 카테고리 코드 `category_code varchar(30)`(앱이 정함, 변경 불가), 상위 코드 자기 참조, 단계 1~3(상위에서 계산되는 값을 조회용으로 저장, 카테고리 이동 시 하위까지 갱신), 정렬 순서. **품목 유형** `item_type`(CLOTHING/SHOES/BAG/ACC, 실측 결정)과 **고시 유형 기본값** `default_notice_type`(CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH)을 따로 둠. 고시 유형은 카테고리에 기본값만 두고(상품 등록 시 고시 폼 자동 선택) 실제 유형은 상품 고시(6-4)에 저장(사용자 결정 A안, 2026-11-24: 액세서리 중 귀금속처럼 카테고리로 안 갈리는 상품 대응). UK (parent_code, name).
 - `product_std_color`: 필터용 표준 색상(코드·이름·`hex_code`). 브랜드 색 이름은 6-2 `product_color`가 이 표를 참조(브랜드가 붙인 컬러명은 표준 `color_name`과 다른 물리명, 예: `brand_color_name` 브랜드 색상 이름).
 - `product_std_material`: 표준 소재(코드·이름 UK·정렬·사용 여부). **소재 B안** (사용자 결정, 2026-11-24): 소재를 데이터로 구조화해 필터·혼용률 표에 쓰고, 상품별 부위·비율은 6-2 `product_material`. 법정 고시 소재 문구는 6-4에 브랜드 문구 그대로 저장(`product_material`로 초안 생성).
 
@@ -144,8 +144,8 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `product_material`: PK (product_code, part_type, material_code). 소재는 **상품 단위**(컬러별 아님). 부위 OUTER/LINING/FILLING/UPPER/SOLE, 혼용률 `ratio decimal(5,2)`(신발·가방은 NULL 가능, 부위별 합계 100%는 앱 검증). 법정 고시 소재 문구는 6-4에 브랜드 문구 그대로.
 - 복합 FK(옵션·이미지 → 컬러)는 ERD에서 `color_no` 선으로 그린다(`lib.load`가 마지막 컬럼을 대표로). 편집 모드에서 복합 FK 삭제는 채팅으로.
 
-### 6-3. 상품 · 사이즈·실측 (`product_sizing`)
-- `product_size`는 사이즈·실측 묶음에서 만들었지만 **상품 기본 묶음 소속** (사용자 결정 2026-11-25: 옵션 = 컬러 × 사이즈라 상품의 뼈대). 실측 묶음은 실측 항목 기준표·카테고리 실측 항목·상품 실측 3개.
+### 6-3. 상품 · 실측 (`product_measure`)
+- `product_size`는 처음에 이 묶음(당시 이름 사이즈·실측 `product_sizing`)에서 만들었지만 **상품 기본 묶음 소속** (사용자 결정 2026-11-25: 옵션 = 컬러 × 사이즈라 상품의 뼈대). 묶음 이름도 **실측** `product_measure`로 변경(사용자 결정 2026-11-25). 실측 묶음은 실측 항목 기준표·카테고리 실측 항목·상품 실측 3개.
 - 상세페이지 사이즈 정보 표 = 상품 사이즈(행) × 실측 항목(열). 단위는 모두 cm(신발 사이즈 mm는 사이즈 이름).
 - `product_measure_item` [실측 항목]: 기준표(PK 코드 TOTAL_LENGTH/SHOULDER/CHEST/…/BAG_WIDTH 등, 이름 UK, 품목 유형, 측정 방법 안내, 정렬·사용 여부, 관리자 감사 컬럼).
 - `product_category_measure_item` [카테고리 실측 항목]: PK (category_code, measure_item_code) + 정렬(표 열 순서). 어느 단계 카테고리에든 지정, 상품의 말단 카테고리에서 위로 올라가 가장 가까운 매핑을 씀(앱).
