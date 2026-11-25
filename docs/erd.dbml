@@ -298,7 +298,6 @@ Table product [note: '[상품] 브랜드가 등록한 판매 상품. 말단(3단
   list_price bigint [not null, note: '[정가] 원 단위']
   sale_price bigint [not null, note: '[판매가] 원 단위. CHECK (sale_price <= list_price). 할인율은 계산값, 변경 이력은 6-5']
   is_exclusive char(1) [not null, default: 'N', note: '[단독 여부] W컨셉 단독 판매 상품. Y/N']
-  model_height smallint [note: '[모델 키] 착용 모델 키(cm). NULL이면 모델 정보 없음(가방·잡화 등). 착용 사이즈는 상품 사이즈의 모델 착용 여부']
   status varchar(20) [not null, default: 'ACTIVE', note: '[상태] ACTIVE/PAUSED/ENDED (판매중/판매 중지/판매 종료). 품절은 상태가 아니라 옵션 재고로 판단']
   sale_started_at datetime [not null, note: '[판매 시작일시] 고객에게 보이기 시작하는 시각. 노출 조건 status = ACTIVE AND sale_started_at <= NOW() (미래면 오픈 예정). 바로 판매하면 등록 시각을 넣음. 신상품 정렬 기준']
   ended_at datetime [note: '[판매 종료일시] status = ENDED 처리 시각']
@@ -429,14 +428,12 @@ Table product_size [note: '[상품 사이즈] 상품별 사이즈 목록. 옵션
   size_no smallint [not null, note: '[사이즈 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
   size_label varchar(20) [not null, note: '[사이즈] 화면 표시 사이즈 (예: S, M, 230, FREE)']
   sort_order smallint [not null, default: 0, note: '[정렬 순서] 사이즈 표시 순서 (S → M → L)']
-  is_model_size char(1) [not null, default: 'N', note: '[모델 착용 여부] 착용 모델이 입은 사이즈. 상품당 1개. Y/N. 모델 키는 상품']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 사이즈 등록일시']
   updated_at datetime [note: '[수정일시] 사이즈 수정일시']
 
   indexes {
     (product_code, size_no) [pk, note: 'product_code 선두라 FK 인덱스 겸용']
     (product_code, size_label) [unique, name: 'uk_product_size_label', note: '상품 안에서 사이즈 이름 중복 금지']
-    `CASE WHEN is_model_size = 'Y' THEN product_code END` [unique, name: 'ux_product_size_model', note: '상품당 모델 착용 사이즈 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
   }
 }
 
