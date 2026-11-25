@@ -22,8 +22,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 4 | 고객 · 취향 | `style`, `member_style` | 대기 |
 | 5 | 브랜드 기본 `brand_basic` | `brand` / 나중에: 사업자 정보(판매자 정보 고시), 배송비·교환/반품 정책, `brand_user`, `brand_status_history`, `brand_like` | `brand`만 반영 (상품 FK용, 2026-11-24 사용자 결정: 상품 설계를 위해 브랜드는 포괄적으로만) |
 | 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color`, `product_std_material` | 반영 |
-| 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_color`, `product_option`, `product_image`, `product_material`, `product_detail` | 반영 |
-| 6-3 | 상품 · 사이즈·실측 `product_sizing` | `product_measure_item`, `product_category_measure_item`, `product_size`, `product_size_measure` (+ 옵션 사이즈를 `size_no`로) | 반영 |
+| 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_color`, `product_size`, `product_option`, `product_image`, `product_material`, `product_detail` | 반영 |
+| 6-3 | 상품 · 사이즈·실측 `product_sizing` | `product_measure_item`, `product_category_measure_item`, `product_size_measure` (`product_size`는 상품 기본으로 옮김, 옵션 사이즈는 `size_no`) | 반영 |
 | 6-4 | 상품 · 정보 고시 `product_notice` | `product_notice` (상품 1:1, 공통 항목 컬럼 + 유형별 항목 NULL 가능 컬럼 + CHECK) | 반영 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
 | 6-6 | 상품 · 고객 연결 | 상품 찜, 재입고 알림(회원-옵션) | 대기 |
@@ -145,6 +145,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - 복합 FK(옵션·이미지 → 컬러)는 ERD에서 `color_no` 선으로 그린다(`lib.load`가 마지막 컬럼을 대표로). 편집 모드에서 복합 FK 삭제는 채팅으로.
 
 ### 6-3. 상품 · 사이즈·실측 (`product_sizing`)
+- `product_size`는 사이즈·실측 묶음에서 만들었지만 **상품 기본 묶음 소속** (사용자 결정 2026-11-25: 옵션 = 컬러 × 사이즈라 상품의 뼈대). 실측 묶음은 실측 항목 기준표·카테고리 실측 항목·상품 실측 3개.
 - 상세페이지 사이즈 정보 표 = 상품 사이즈(행) × 실측 항목(열). 단위는 모두 cm(신발 사이즈 mm는 사이즈 이름).
 - `product_measure_item` [실측 항목]: 기준표(PK 코드 TOTAL_LENGTH/SHOULDER/CHEST/…/BAG_WIDTH 등, 이름 UK, 품목 유형, 측정 방법 안내, 정렬·사용 여부, 관리자 감사 컬럼).
 - `product_category_measure_item` [카테고리 실측 항목]: PK (category_code, measure_item_code) + 정렬(표 열 순서). 어느 단계 카테고리에든 지정, 상품의 말단 카테고리에서 위로 올라가 가장 가까운 매핑을 씀(앱).
