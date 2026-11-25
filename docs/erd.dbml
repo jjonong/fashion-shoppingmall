@@ -554,7 +554,7 @@ Table cart_item [note: '[장바구니 상품] 회원이 담은 옵션. 같은 �
 }
 
 // =====================================================================
-// 주문 - 주문 기본 (주문 1건 = 결제 1번 → 브랜드별 묶음 → 주문 상품. 주문 당시 값은 스냅샷으로 복사해 5년 보관)
+// 주문 - 주문 기본 (주문 1건 = 결제 1번 → 브랜드별 묶음 → 주문 상세. 주문 당시 값은 스냅샷으로 복사해 5년 보관)
 // 결제·배송·혜택은 나중에 별도 영역으로 만들고, 주문에는 이어질 값(할인 금액·배송비·결제 단계 상태)만 둔다
 // =====================================================================
 
@@ -570,11 +570,11 @@ Table orders [note: '[주문] 주문 1건 = 결제 1번. 회원 주문과 비회
   orderer_email varchar(100) [not null, note: '[주문자 이메일] 주문 확인 메일 발송. 주문 당시 스냅샷']
   orderer_verified_at datetime [note: '[주문자 인증일시] 비회원 주문 시 휴대폰 인증 완료 시각. 회원은 가입 시 인증했으므로 NULL']
   product_amount bigint [not null, note: '[상품 금액] (판매가 + 추가 금액) × 수량의 합계. 주문은 전체, 주문 브랜드는 그 브랜드 합계']
-  discount_amount bigint [not null, default: 0, note: '[할인 금액] 쿠폰 등 할인 합계(포인트 제외). 쿠폰 연결은 혜택 영역에서. 주문은 전체, 주문 상품은 그 상품에 배분된 금액']
+  discount_amount bigint [not null, default: 0, note: '[할인 금액] 쿠폰 등 할인 합계(포인트 제외). 쿠폰 연결은 혜택 영역에서. 주문은 전체, 주문 상세은 그 상품에 배분된 금액']
   point_amount bigint [not null, default: 0, note: '[포인트 사용 금액] 회원만 사용. CHECK (point_amount = 0 OR member_id IS NOT NULL). 쿠폰 할인과 따로 두는 이유: 주문 내역에 따로 표시, 취소 시 포인트로 환원. 잔액·적립/사용 내역은 혜택 영역']
   shipping_fee bigint [not null, default: 0, note: '[배송비] 주문 브랜드 배송비(지역 추가 포함)의 합계. 캐시, 주문 생성 시 함께 계산. 고객이 낸 배송비는 이 한 번']
   pay_amount bigint [not null, note: '[결제 금액] CHECK (pay_amount = product_amount - discount_amount - point_amount + shipping_fee). 실제로 낸 돈. 결제 수단·PG 거래는 결제 영역']
-  status varchar(20) [not null, default: 'PAYMENT_WAITING', note: '[상태] PAYMENT_WAITING/PAID/CANCELLED (결제 대기/결제 완료/주문 취소). 결제 단계만, 출고·배송 진행은 주문 상품 상태. 무통장입금은 입금 전까지 결제 대기']
+  status varchar(20) [not null, default: 'PAYMENT_WAITING', note: '[상태] PAYMENT_WAITING/PAID/CANCELLED (결제 대기/결제 완료/주문 취소). 결제 단계만, 출고·배송 진행은 주문 상세 상태. 무통장입금은 입금 전까지 결제 대기']
   paid_at datetime [note: '[결제일시] status = PAID 처리 시각']
   cancelled_at datetime [note: '[취소일시] status = CANCELLED 처리 시각 (입금 기한 초과 자동 취소 포함)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 주문일시']
@@ -602,7 +602,7 @@ Table order_delivery [note: '[주문 배송지] 주문 1:1. 주문 당시 배송
 Table order_brand [note: '[주문 브랜드] 주문 안의 브랜드별 묶음. 브랜드별 상품 합계 + 배송비(장바구니·주문서의 브랜드별 합계). 브랜드가 따로 출고하므로 배송 영역의 출고·송장이 이 단위에 연결될 예정'] {
   order_no varchar(20) [not null, note: '[주문 번호] 브랜드 묶음의 주문']
   brand_id varchar(30) [not null, note: '[브랜드 아이디] 상품을 판매·출고하는 브랜드']
-  product_amount bigint [not null, note: '[상품 금액] 이 브랜드 주문 상품의 (판매가 + 추가 금액) × 수량 합계']
+  product_amount bigint [not null, note: '[상품 금액] 이 브랜드 주문 상세의 (판매가 + 추가 금액) × 수량 합계']
   shipping_fee bigint [not null, default: 0, note: '[배송비] 원본. 이 주문에서 이 브랜드에 매긴 배송비 = 기본 배송비(무료 배송 기준 반영) + 지역 추가 배송비. 주문 당시 브랜드 배송 정책으로 계산한 결과를 고정(정책이 바뀌어도 그대로, 반품·정산 근거)']
   extra_shipping_fee bigint [not null, default: 0, note: '[지역 추가 배송비] 배송비 중 제주·도서산간 추가분(주문서·주문 내역 표시용). CHECK (extra_shipping_fee <= shipping_fee)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 주문일시']
@@ -614,9 +614,9 @@ Table order_brand [note: '[주문 브랜드] 주문 안의 브랜드별 묶음. 
   }
 }
 
-Table order_item [note: '[주문 상품] 주문한 옵션 한 줄. 상품·옵션이 바뀌거나 판매 종료돼도 주문 내역이 그대로 보이게 주문 당시 값을 스냅샷으로 저장'] {
-  order_no varchar(20) [not null, note: '[주문 번호] 주문 상품의 주문']
-  item_no smallint [not null, note: '[주문 상품 번호] 주문별 1부터. 앱이 부여']
+Table order_item [note: '[주문 상세] 주문한 옵션 한 줄. 상품·옵션이 바뀌거나 판매 종료돼도 주문 내역이 그대로 보이게 주문 당시 값을 스냅샷으로 저장'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 주문 상세의 주문']
+  item_no smallint [not null, note: '[주문 상세 번호] 주문별 1부터. 앱이 부여']
   brand_id varchar(30) [not null, note: '[브랜드 아이디] 상품의 브랜드 (주문 브랜드 복합 FK)']
   product_code varchar(20) [not null, note: '[상품 코드] 주문한 상품']
   option_no smallint [not null, note: '[옵션 번호] 주문한 옵션 (컬러 × 사이즈)']
@@ -632,7 +632,7 @@ Table order_item [note: '[주문 상품] 주문한 옵션 한 줄. 상품·옵�
   status varchar(20) [not null, default: 'ORDERED', note: '[상태] ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED (주문 접수/상품 준비중/배송중/배송 완료/구매 확정/취소/반품). 세부 값은 배송 영역에서 확정']
   confirmed_at datetime [note: '[구매확정일시] status = CONFIRMED 처리 시각 (배송 완료 후 자동 확정 포함). 회원 등급 점수·리뷰 작성 기준']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 주문일시']
-  updated_at datetime [note: '[수정일시] 주문 상품 수정일시']
+  updated_at datetime [note: '[수정일시] 주문 상세 수정일시']
 
   indexes {
     (order_no, item_no) [pk, note: 'order_no 선두라 주문 FK 인덱스 겸용']

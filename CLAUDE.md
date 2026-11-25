@@ -131,7 +131,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - 사용자 결정 2026-11-25: **브랜드당 정책 1개**(brand 1:1), 제주·도서산간 판단은 **플랫폼 공통 우편번호 표**, 지금은 **배송비만**(교환·반품 배송비는 나중).
 - `brand_shipping_policy` [브랜드 배송 정책]: PK `brand_id`. 기본 배송비 `base_shipping_fee`(0이면 항상 무료), 무료 배송 기준 금액 `free_shipping_min_amount`(NULL이면 기준 없음), 제주 추가 배송비 `jeju_extra_fee`, 도서산간 추가 배송비 `remote_extra_fee`. 계산: 기본(브랜드 상품 합계가 기준 이상이면 0) + 지역 추가(**무료 배송이어도 부과**, 업계 관행).
 - `shipping_extra_zipcode` [추가 배송비 지역 우편번호]: PK `zipcode`(배송지 우편번호와 같은 물리명·논리명), 지역 유형 JEJU/REMOTE, 지역 이름. 운영자 관리 기준표, 목록에 없으면 추가비 없음.
-- **규칙은 브랜드, 결과는 주문**: 주문 때 계산한 배송비는 `order_brand.shipping_fee`(지역 추가 포함, 고정)와 그중 지역분 `extra_shipping_fee`, `orders.shipping_fee`는 그 합계 캐시. 정책이 바뀌어도 과거 주문은 그대로(상품 판매가 ↔ 주문 상품 판매가 스냅샷과 같은 원리).
+- **규칙은 브랜드, 결과는 주문**: 주문 때 계산한 배송비는 `order_brand.shipping_fee`(지역 추가 포함, 고정)와 그중 지역분 `extra_shipping_fee`, `orders.shipping_fee`는 그 합계 캐시. 정책이 바뀌어도 과거 주문은 그대로(상품 판매가 ↔ 주문 상세 판매가 스냅샷과 같은 원리).
 
 ### 6-1. 상품 · 기준 데이터 (`product_master`)
 - 표시 순서: 만든 순서는 기준 데이터가 먼저지만 dbml·ERD 페이지에서는 **상품 기본 → 기준 데이터 → 실측** 순(사용자 결정 2026-11-25: 핵심인 상품을 먼저 보이게).
@@ -175,11 +175,11 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `cart_item` [장바구니 상품]: PK (member_id, product_code, option_no), 수량. 회원만 DB, 비회원은 브라우저 저장 후 로그인 시 합침. 가격·할인·배송비·브랜드별 합계·총계는 저장하지 않고 화면에서 현재가로 계산.
 - `orders` [주문]: PK 주문 번호 `order_no varchar(20)`(앱 채번). 주문 1건 = 결제 1번. 주문 유형 NORMAL/GIFT(선물하기는 자리만, 흐름은 나중 묶음), 주문 경로, 주문자 스냅샷(이름·휴대폰 `_enc`/`_hash`·이메일), 상품 금액·할인 금액·배송비·결제 금액(CHECK 결제 = 상품 − 할인 + 배송비), 상태 PAYMENT_WAITING/PAID/CANCELLED(결제 단계만, 무통장 입금 대기 때문) ↔ `paid_at`/`cancelled_at`. 주문일시는 `created_at`.
 - `order_delivery` [주문 배송지] 1:1: 받는 분·연락처·주소·요청사항 스냅샷(`member_address`와 같은 물리명·논리명). "주문자와 동일"은 화면 기능.
-- `order_brand` [주문 브랜드]: PK (order_no, brand_id). 브랜드 정보가 아니라 **이 주문 안의 브랜드별 묶음**(주문 상품 ↔ 상품과 같은 관계). 브랜드별 상품 금액·배송비(브랜드 배송 정책으로 계산한 결과를 고정, 지역 추가분 `extra_shipping_fee` 따로), 주문의 배송비는 그 합계 캐시. 배송 영역의 출고·송장이 이 단위에 붙을 예정.
-- `order_item` [주문 상품]: PK (order_no, item_no). 주문 브랜드 복합 FK, 옵션 복합 FK + 스냅샷(상품 이름·브랜드 색상 이름·사이즈·정가·판매가·추가 금액), 수량, 할인 금액(쿠폰 배분, 부분 취소 환불 근거), 상태 ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED(세부는 배송 영역에서 확정), 구매확정일시.
-- **포인트는 쿠폰 할인과 따로** `point_amount`(주문·주문 상품, 사용자 확인 2026-11-25): 금액 내역(상품 − 쿠폰 − 포인트 + 배송비 = 결제 금액)은 주문 데이터. 주문 내역에 따로 표시, 부분 취소 시 쿠폰은 소멸·재발급 규칙·포인트는 포인트로 환원. 비회원은 0(CHECK). 결제 영역은 실제 낸 돈(`pay_amount`의 수단·PG·현금영수증)만, 포인트 잔액·내역은 혜택 영역.
+- `order_brand` [주문 브랜드]: PK (order_no, brand_id). 브랜드 정보가 아니라 **이 주문 안의 브랜드별 묶음**(주문 상세 ↔ 상품과 같은 관계). 브랜드별 상품 금액·배송비(브랜드 배송 정책으로 계산한 결과를 고정, 지역 추가분 `extra_shipping_fee` 따로), 주문의 배송비는 그 합계 캐시. 배송 영역의 출고·송장이 이 단위에 붙을 예정.
+- `order_item` [주문 상세]: PK (order_no, item_no). (논리명은 주문 상품 → **주문 상세**로 변경, 사용자 결정 2026-11-25: 영수증의 상품 한 줄이라는 익숙한 이름. 물리명 `order_item` 유지) 주문 브랜드 복합 FK, 옵션 복합 FK + 스냅샷(상품 이름·브랜드 색상 이름·사이즈·정가·판매가·추가 금액), 수량, 할인 금액(쿠폰 배분, 부분 취소 환불 근거), 상태 ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED(세부는 배송 영역에서 확정), 구매확정일시.
+- **포인트는 쿠폰 할인과 따로** `point_amount`(주문·주문 상세, 사용자 확인 2026-11-25): 금액 내역(상품 − 쿠폰 − 포인트 + 배송비 = 결제 금액)은 주문 데이터. 주문 내역에 따로 표시, 부분 취소 시 쿠폰은 소멸·재발급 규칙·포인트는 포인트로 환원. 비회원은 0(CHECK). 결제 영역은 실제 낸 돈(`pay_amount`의 수단·PG·현금영수증)만, 포인트 잔액·내역은 혜택 영역.
 - 회원 주문서 차이(사용자 정리): 주문자 정보 입력 없음(회원 정보에서 자동 복사, 스냅샷은 유지), 배송지는 `member_address` 목록 선택(결과는 똑같이 `order_delivery` 스냅샷), 포인트 사용, "결제 수단 다음에도 적용"은 결제 영역에서 회원 결제 설정(`member_payment_setting`, 나중)으로.
-- 같은 물리명 `product_amount`/`discount_amount`/`point_amount`/`shipping_fee`는 주문·주문 브랜드·주문 상품에서 논리명이 같고, 범위(전체/브랜드/상품)는 설명에.
+- 같은 물리명 `product_amount`/`discount_amount`/`point_amount`/`shipping_fee`는 주문·주문 브랜드·주문 상세에서 논리명이 같고, 범위(전체/브랜드/상품)는 설명에.
 - 화면 항목 중 주문 밖: 함께 구매하면 좋을 상품(추천), 오늘 출발 예정 안내(브랜드 출고 기준), 본인인증(가입 시 완료).
 
 ### 나중에 재검토
