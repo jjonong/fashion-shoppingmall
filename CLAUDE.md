@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 6-1 | 상품 · 기준 데이터 `product_master` | `product_category`, `product_std_color`, `product_std_material` | 반영 |
 | 6-2 | 상품 · 상품 기본 `product_basic` | `product`, `product_color`, `product_option`, `product_image`, `product_material`, `product_detail` | 반영 |
 | 6-3 | 상품 · 사이즈·실측 `product_sizing` | `product_measure_item`, `product_category_measure_item`, `product_size`, `product_size_measure` (+ 옵션 사이즈를 `size_no`로) | 반영 |
-| 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시. 상품 고시 행에 실제 `notice_type` 저장(카테고리 `default_notice_type`에서 시작) | 대기 |
+| 6-4 | 상품 · 정보 고시 `product_notice` | `product_notice` (상품 1:1, 공통 항목 컬럼 + 유형별 항목 NULL 가능 컬럼 + CHECK) | 반영 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
 | 6-6 | 상품 · 고객 연결 | 상품 찜, 재입고 알림(회원-옵션) | 대기 |
 | 7-1 | 주문 · 장바구니 `order_cart` | `cart_item` | 반영 |
@@ -151,6 +151,11 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `product_size` [상품 사이즈]: PK (product_code, size_no). `size_label`(S/M/230/FREE, 상품 안 UK)·정렬(S→M→L). **모델 정보(키·착용 사이즈)는 두지 않음** (사용자 결정 2026-11-25: 모델이 여러 명일 수 있고, 보통 상세 이미지 맨 아래에 함께 표기 → 상세 본문 HTML).
 - `product_size_measure` [상품 실측]: PK (product_code, size_no, measure_item_code), `measure_value decimal(5,1)` cm. 카테고리 항목만(앱 검증). 컬러와 상관없이 사이즈마다.
 - 범위 밖: 국가별 사이즈 환산표(상세 HTML), "정사이즈/작게 나옴"(리뷰 집계, 커뮤니티 단계).
+
+### 6-4. 상품 · 정보 고시 (`product_notice`)
+- 전자상거래법 상품정보제공 고시. **A안: 한 테이블** (사용자 결정 2026-11-25). 고시 유형 5개(의류/구두·신발/가방/패션잡화/귀금속·시계)의 항목 절반 이상이 공통이라 공통 항목은 NOT NULL 컬럼, 유형별 항목(종류·색상·중량·제조연월·주요 사양·보증서)은 NULL 가능 컬럼 + 유형별 CHECK로 필수 강제(B안 항목 기준표 + 값 행은 DB가 누락을 못 잡아 제외). 화면 라벨 차이(신발 "제품 주소재" 등)는 앱.
+- `product_notice`: PK `product_code`. `notice_type`(카테고리 `default_notice_type`에서 시작, 예외 상품은 변경), 종류 `item_kind`(가방·잡화 필수), 소재 `material_text`(브랜드 문구 그대로, 초안은 `product_material`), 색상 `color_text`(의류·신발·가방 필수), 치수 `size_text`, 중량 `weight_text`, 제조자 이름·수입자 이름(수입품만), 제조국 `made_in`, 취급 시 주의사항 `care_text`(의류는 세탁 방법), 제조연월 `manufactured_ym`(의류 필수, 문구), 주요 사양 `spec_text`·보증서 제공 여부 `is_warranty_card`(귀금속·시계 필수), 품질보증기준, A/S 책임자 이름·전화번호(사업장 번호라 평문). 감사 컬럼은 상품처럼 FK 없이.
+- 항목 목록은 고시 원문 별표와 대조하지 않은 상태(검색으로 별표를 찾지 못함) → 원문 확인 후 보정. 나중: A/S·품질보증기준 브랜드 기본값(브랜드 정책 묶음에서 복사), 고시 변경 이력(표시·광고 기록 6개월 보관, 이력 묶음에서 검토).
 
 ### 7. 주문 (`order_cart`, `order_basic`)
 - 근거: `docs/화면 캡처_주문.png`(장바구니·주문/결제 화면 항목 메모). 주문 + 파생 엔티티 장바구니만, 결제·배송·혜택은 별도 영역에서 FK 연결.

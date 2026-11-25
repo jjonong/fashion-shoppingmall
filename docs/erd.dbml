@@ -1,7 +1,7 @@
 // =====================================================================
 // 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: W컨셉 (디자이너 브랜드 입점, 의류·신발·가방·잡화)
-// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 1개 + 상품 13개(상품 기본 6 + 기준 데이터 3 + 사이즈·실측 4) + 주문 5개(장바구니 1 + 주문 기본 4) = 29개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
+// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 1개 + 상품 14개(상품 기본 6 + 기준 데이터 3 + 사이즈·실측 4 + 정보 고시 1) + 주문 5개(장바구니 1 + 주문 기본 4) = 30개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
@@ -237,7 +237,7 @@ Table brand [note: '[브랜드] 입점 브랜드. 상품은 한 브랜드에 속
 // 상품 - 상품 기본 (상품 1행 + 컬러 N + 옵션(컬러 × 사이즈) N. 상품은 브랜드 1개·말단 카테고리 1개에 속함)
 // =====================================================================
 
-Table product [note: '[상품] 브랜드가 등록한 판매 상품. 말단(3단계) 카테고리 하나에 속함(앱 검증). 품목 유형은 카테고리에서, 고시 유형은 상품 정보 고시(나중 묶음)에서'] {
+Table product [note: '[상품] 브랜드가 등록한 판매 상품. 말단(3단계) 카테고리 하나에 속함(앱 검증). 품목 유형은 카테고리에서, 고시 유형은 상품 정보 고시에서'] {
   product_code varchar(20) [pk, note: '[상품 코드] 숫자만. 앱이 발급(채번, AUTO_INCREMENT 아님), 브랜드 접두사 없음, 변경 불가. 상품 URL에 사용']
   brand_id varchar(30) [not null, note: '[브랜드 아이디] 상품을 판매하는 브랜드']
   category_code varchar(30) [not null, note: '[카테고리 코드] 말단(3단계) 카테고리만(앱 검증). 상위 카테고리 목록은 트리로 하위를 모아 조회']
@@ -322,7 +322,7 @@ Table product_image [note: '[상품 갤러리 이미지] 상세페이지 상단 
   }
 }
 
-Table product_material [note: '[상품 소재] 부위별 소재와 혼용률. 소재는 상품 단위(컬러별 아님). 법정 고시 문구는 상품 정보 고시(나중 묶음)에 따로'] {
+Table product_material [note: '[상품 소재] 부위별 소재와 혼용률. 소재는 상품 단위(컬러별 아님). 법정 고시 소재 문구는 상품 정보 고시에 브랜드 문구 그대로'] {
   product_code varchar(20) [not null, note: '[상품 코드] 소재 정보의 상품']
   part_type varchar(20) [not null, note: '[부위 유형] OUTER/LINING/FILLING/UPPER/SOLE (겉감/안감/충전재/갑피/밑창)']
   material_code varchar(30) [not null, note: '[표준 소재 코드] 소재 (예: WOOL)']
@@ -348,7 +348,7 @@ Table product_category [note: '[카테고리] 계층형 3단계 (예: 의류 > �
   depth tinyint [not null, note: '[단계] 1~3 (CHECK). 최상위가 1. 상위 카테고리에서 계산되는 값을 조회용으로 저장(단계별 메뉴 조회, 3단계 제한). 상위가 바뀌면 자신과 하위 카테고리 단계를 같은 트랜잭션에서 함께 갱신(앱)']
   sort_order smallint [not null, default: 0, note: '[정렬 순서] 같은 상위 카테고리 안에서 표시 순서']
   item_type varchar(20) [not null, note: '[품목 유형] CLOTHING/SHOES/BAG/ACC (의류/신발/가방/잡화). 사이즈 체계·실측 항목을 정함. 하위는 상위와 같게(앱 검증)']
-  default_notice_type varchar(20) [not null, note: '[고시 유형 기본값] 상품 등록 시 고시 입력 폼의 기본값. CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH (의류/구두·신발/가방/패션잡화/귀금속·시계). 실제 고시 유형은 상품 고시에 저장(카테고리만으로 안 갈리는 예외 상품은 상품에서 바꿈)']
+  default_notice_type varchar(20) [not null, note: '[고시 유형 기본값] 상품 등록 시 고시 입력 폼의 기본값. CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH (의류/구두·신발/가방/패션잡화/귀금속·시계). 실제 고시 유형은 상품 정보 고시에 저장(카테고리만으로 안 갈리는 예외 상품은 상품에서 바꿈)']
   is_active char(1) [not null, default: 'Y', note: '[사용 여부] 카테고리 사용 여부. Y/N']
   created_by varchar(20) [note: '[등록 관리자] 카테고리 등록 관리자 (운영자 테이블을 만들 때 FK 연결)']
   updated_by varchar(20) [note: '[수정 관리자] 카테고리 수정 관리자']
@@ -448,6 +448,39 @@ Table product_category_measure_item [note: '[카테고리 실측 항목] 카테�
   indexes {
     (category_code, measure_item_code) [pk, note: 'category_code 선두라 FK 인덱스 겸용']
     measure_item_code [name: 'ix_product_category_measure_item', note: '실측 항목 FK 인덱스']
+  }
+}
+
+
+// =====================================================================
+// 상품 - 정보 고시 (전자상거래법 상품정보제공 고시. 상품 1:1, 고시 유형마다 필수 항목이 다름. 값은 브랜드 문구 그대로)
+// =====================================================================
+
+Table product_notice [note: '[상품 정보 고시] 상품 1:1. 상세페이지 상품정보제공 고시 표. 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)마다 항목이 조금씩 달라 공통 항목은 컬럼, 유형별 항목은 NULL 가능 컬럼 + CHECK로 필수 강제. 화면 라벨(예: 신발 "제품 주소재")은 앱에서 유형별로'] {
+  product_code varchar(20) [pk, note: '[상품 코드] 고시 대상 상품']
+  notice_type varchar(20) [not null, note: '[고시 유형] CLOTHING/SHOES/BAG/FASHION_ACC/JEWELRY_WATCH (의류/구두·신발/가방/패션잡화/귀금속·시계). 상품 등록 시 카테고리의 고시 유형 기본값으로 시작, 예외 상품은 바꿈']
+  item_kind varchar(100) [note: '[종류] 가방·패션잡화 필수(예: 숄더백, 벨트). CHECK (notice_type NOT IN (BAG, FASHION_ACC) OR item_kind IS NOT NULL)']
+  material_text varchar(500) [not null, note: '[소재] 브랜드 문구 그대로(의류 제품 소재, 신발 겉감·안감 주소재, 귀금속 소재·순도·밴드 재질). 초안은 상품 소재에서 만듦']
+  color_text varchar(200) [note: '[색상] 의류·구두/신발·가방 필수. CHECK (notice_type NOT IN (CLOTHING, SHOES, BAG) OR color_text IS NOT NULL)']
+  size_text varchar(500) [not null, note: '[치수] 의류 치수, 신발 발길이(mm)·굽 높이(cm), 가방 크기(가로×세로×폭), 잡화·귀금속 치수']
+  weight_text varchar(100) [note: '[중량] 귀금속·시계 필수']
+  manufacturer_name varchar(100) [not null, note: '[제조자 이름] 제조사(자)']
+  importer_name varchar(100) [note: '[수입자 이름] 수입품만. 국내 제조면 NULL']
+  made_in varchar(100) [not null, note: '[제조국] 브랜드 문구 그대로(예: 대한민국, 중국)']
+  care_text varchar(1000) [not null, note: '[취급 시 주의사항] 의류는 세탁 방법 포함, 귀금속·시계는 착용 시 주의사항']
+  manufactured_ym varchar(50) [note: '[제조연월] 의류 필수. 문구로 받음(예: 2026년 9월, 2026년 9월 이후 생산분). CHECK (notice_type <> CLOTHING OR manufactured_ym IS NOT NULL)']
+  spec_text varchar(500) [note: '[주요 사양] 귀금속·시계 필수(귀금속·보석 등급, 시계 기능·방수 등)']
+  is_warranty_card char(1) [note: '[보증서 제공 여부] Y/N. 귀금속·시계 필수. CHECK (notice_type <> JEWELRY_WATCH OR (weight_text, spec_text, is_warranty_card 모두 NOT NULL))']
+  quality_warranty varchar(500) [not null, note: '[품질보증기준] 브랜드 문구 그대로(예: 관련 법 및 소비자분쟁해결기준에 따름)']
+  as_manager_name varchar(100) [not null, note: '[A/S 책임자 이름] 보통 브랜드(사업자) 이름. 브랜드 정책 묶음이 생기면 브랜드 기본값을 복사']
+  as_phone varchar(30) [not null, note: '[A/S 전화번호] 사업장 고객센터 번호라 평문']
+  created_by varchar(20) [note: '[등록 관리자] 고시 등록자 (브랜드 관리자·운영자 테이블을 만들 때 연결)']
+  updated_by varchar(20) [note: '[수정 관리자] 고시 수정자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 고시 등록일시']
+  updated_at datetime [note: '[수정일시] 고시 수정일시']
+
+  indexes {
+    notice_type [name: 'ix_product_notice_type', note: '유형별 누락 점검·일괄 수정(관리자)']
   }
 }
 
@@ -586,6 +619,7 @@ Ref: product_image.(product_code, color_no) > product_color.(product_code, color
 Ref: product_material.product_code > product.product_code [delete: cascade]
 Ref: product_material.material_code > product_std_material.material_code
 Ref: product_detail.product_code - product.product_code [delete: cascade]
+Ref: product_notice.product_code - product.product_code [delete: cascade]
 
 Ref: product_size.product_code > product.product_code [delete: cascade]
 Ref: product_option.(product_code, size_no) > product_size.(product_code, size_no)
@@ -648,6 +682,10 @@ TableGroup product_sizing [note: '상품 - 사이즈·실측'] {
   product_size_measure
   product_measure_item
   product_category_measure_item
+}
+
+TableGroup product_notice [note: '상품 - 정보 고시'] {
+  product_notice
 }
 
 TableGroup order_cart [note: '주문 - 장바구니'] {
