@@ -75,6 +75,7 @@ const isAdminAudit = (r, inner) => r.parent === 'admin_user' && AUDIT.has(r.ccol
 // leftOf: { hub, tables } — hub 테이블을 참조하는 자식 중 tables에 든 것은 hub 왼쪽에 배치 (허브형 배치)
 // 테이블 제목줄 색 (렌더 후 pill()이 이 색의 사각형과 행 상자 테두리(#ddd)를 같은 둥글기의 rect로 바꾼다)
 const PILL = '#2B2B2B', PILL_EXT = '#BDBDBD';
+const TITLE_SHIFT = 3; // 제목줄 글자를 행 글자 왼쪽 선에 맞추는 가로 보정(pt)
 const RADIUS = 5; // 제목줄·행 상자 공통 모서리 둥글기 (사용자 요청: 살짝, 둘이 같게)
 function pill(svg) {
   const box = (pts) => {
@@ -85,9 +86,10 @@ function pill(svg) {
   };
   return svg
     .replace(/<polygon fill="(#2b2b2b|#bdbdbd)" stroke="[^"]*" points="([^"]+)"\s*\/>/gi, (m, c, pts) => `<rect class="hd" fill="${c}" ${box(pts)}/>`)
-    // 한글 제목이 Graphviz 계산상 위로 치우쳐 보여서, 제목줄 안 글자를 아래로 조금 내린다
+    // 한글 제목이 Graphviz 계산상 위로 치우쳐 보여서, 제목줄 안 글자를 아래로 조금 내린다.
+    // 가로는 행 글자와 왼쪽 선을 맞춘다 (행: 상자 테두리 1 + 칸 여백 6 = 7pt, 제목: 칸 여백 4pt → 3pt 오른쪽으로, 사용자 요청)
     .replace(/(<rect class="hd"[^>]*height="([\d.]+)"[^>]*\/>)([\s\S]*?)(?=<polygon|<rect|<\/g>)/g, (m, r, h, rest) =>
-      r + rest.replace(/<text([^>]*) y="([\d.-]+)"/g, (t, at, y) => `<text${at} y="${(+y + h * 0.08).toFixed(2)}"`))
+      r + rest.replace(/<text([^>]*) x="([\d.-]+)" y="([\d.-]+)"/g, (t, at, x, y) => `<text${at} x="${(+x + TITLE_SHIFT).toFixed(2)}" y="${(+y + h * 0.08).toFixed(2)}"`))
     // 행 상자 테두리: 줄무늬 행 위에 그려지도록 맨 뒤(</g> 앞)로 옮긴다
     .replace(/<g id="([^"]*node[^"]*)" class="node">([\s\S]*?)<\/g>/g, (m, id, body) => {
       let border = '';
@@ -120,7 +122,7 @@ function erDot(ctx, tables, { hideAudit = false, leftOf = null } = {}) {
     `<TD ALIGN="LEFT" BGCOLOR="${opts.bg}"><FONT FACE="Consolas" POINT-SIZE="7.5" COLOR="#777777">${type}</FONT></TD>` +
     `<TD PORT="${port}_o" ALIGN="RIGHT" BGCOLOR="${opts.bg}"><FONT POINT-SIZE="8" COLOR="${key.includes('PK') ? '#000000' : '#777777'}"><B>${key}</B></FONT></TD></TR>`;
   const title = (t, name, bg, sub) =>
-    `<TR><TD ALIGN="LEFT" BGCOLOR="${bg}" CELLPADDING="4"><FONT COLOR="white" POINT-SIZE="11">&nbsp;&nbsp;&nbsp;<B>${xesc(logicalOf(t.note) || name)}${gap(logicalOf(t.note))}</B></FONT><FONT COLOR="${sub}" POINT-SIZE="8.5">&nbsp;&nbsp;${name}${wide(logicalOf(t.note))}&nbsp;&nbsp;&nbsp;</FONT></TD></TR>`;
+    `<TR><TD ALIGN="LEFT" BGCOLOR="${bg}" CELLPADDING="4"><FONT COLOR="white" POINT-SIZE="11"><B>${xesc(logicalOf(t.note) || name)}${gap(logicalOf(t.note))}</B></FONT><FONT COLOR="${sub}" POINT-SIZE="8.5">&nbsp;&nbsp;${name}${wide(logicalOf(t.note))}&nbsp;&nbsp;&nbsp;</FONT></TD></TR>`;
   // 제목행과 행 상자 사이 간격은 CELLSPACING으로 (빈 행은 Graphviz 최소 높이 때문에 너무 넓어짐, 사용자 요청으로 좁힘)
   const table = (head, rows) =>
     `<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2" CELLPADDING="0">${head}` +
