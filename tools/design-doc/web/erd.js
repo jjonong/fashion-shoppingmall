@@ -53,8 +53,11 @@
       h += `<div class="gnb-item${i === curStage ? ' on' : ''}">
         <a class="gnb-h${s.all === cur.g ? ' sel' : ''}" href="#g=${s.all}" title="${esc(s.name)} 전체 ERD 보기" aria-haspopup="true"><span class="dot" style="background:var(--s${i + 1})"></span>${esc(s.name)}<span class="n">${n}</span></a>
         <div class="gnb-drop">
-          <a class="gnb-g${s.all === cur.g ? ' on' : ''}" href="#g=${s.all}"><span>${esc(s.name)} 전체</span><span class="n">${n}</span></a>
-          ${s.groups.map((g) => `<a class="gnb-g${g === cur.g ? ' on' : ''}" href="#g=${g}"><span>${esc(D.groups[g].title)}</span><span class="n">${D.groups[g].tables.length}</span></a>`).join('')}
+          <a class="gnb-all${s.all === cur.g ? ' on' : ''}" href="#g=${s.all}">${esc(s.name)} 전체 ERD<span class="n">${n}개 테이블</span></a>
+          <div class="gnb-cols">${s.groups.map((g) => `<div class="gnb-col">
+            <a class="gnb-g${g === cur.g ? ' on' : ''}" href="#g=${g}"><span>${esc(D.groups[g].title)}</span><span class="n">${D.groups[g].tables.length}</span></a>
+            ${D.groups[g].tables.map((t) => `<a class="gnb-t${g === cur.g && t === cur.t ? ' on' : ''}" href="#g=${g}&t=${t}" title="${t}">${esc(tLg(t))}</a>`).join('')}
+          </div>`).join('')}</div>
         </div>
       </div>`;
     });
