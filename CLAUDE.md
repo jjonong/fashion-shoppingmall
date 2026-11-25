@@ -158,7 +158,9 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `order_delivery` [주문 배송지] 1:1: 받는 분·연락처·주소·요청사항 스냅샷(`member_address`와 같은 물리명·논리명). "주문자와 동일"은 화면 기능.
 - `order_brand` [주문 브랜드]: PK (order_no, brand_id). 브랜드별 상품 금액·배송비(주문 당시 브랜드 정책 스냅샷). 배송 영역의 출고·송장이 이 단위에 붙을 예정.
 - `order_item` [주문 상품]: PK (order_no, item_no). 주문 브랜드 복합 FK, 옵션 복합 FK + 스냅샷(상품 이름·브랜드 색상 이름·사이즈·정가·판매가·추가 금액), 수량, 할인 금액(쿠폰 배분, 부분 취소 환불 근거), 상태 ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED(세부는 배송 영역에서 확정), 구매확정일시.
-- 같은 물리명 `product_amount`/`discount_amount`/`shipping_fee`는 주문·주문 브랜드·주문 상품에서 논리명이 같고, 범위(전체/브랜드/상품)는 설명에.
+- **포인트는 쿠폰 할인과 따로** `point_amount`(주문·주문 상품, 사용자 확인 2026-11-25): 금액 내역(상품 − 쿠폰 − 포인트 + 배송비 = 결제 금액)은 주문 데이터. 주문 내역에 따로 표시, 부분 취소 시 쿠폰은 소멸·재발급 규칙·포인트는 포인트로 환원. 비회원은 0(CHECK). 결제 영역은 실제 낸 돈(`pay_amount`의 수단·PG·현금영수증)만, 포인트 잔액·내역은 혜택 영역.
+- 회원 주문서 차이(사용자 정리): 주문자 정보 입력 없음(회원 정보에서 자동 복사, 스냅샷은 유지), 배송지는 `member_address` 목록 선택(결과는 똑같이 `order_delivery` 스냅샷), 포인트 사용, "결제 수단 다음에도 적용"은 결제 영역에서 회원 결제 설정(`member_payment_setting`, 나중)으로.
+- 같은 물리명 `product_amount`/`discount_amount`/`point_amount`/`shipping_fee`는 주문·주문 브랜드·주문 상품에서 논리명이 같고, 범위(전체/브랜드/상품)는 설명에.
 - 화면 항목 중 주문 밖: 함께 구매하면 좋을 상품(추천), 오늘 출발 예정 안내(브랜드 출고 기준), 본인인증(가입 시 완료).
 
 ### 나중에 재검토
