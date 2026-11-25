@@ -253,11 +253,11 @@ ${p.inner.replace('@XYWH@', `x="${x + PAD}" y="${y + PAD + LABEL}" width="${iw}"
 // color/fill은 ERD 웹페이지 전체 구조도 색 (화면 CSS --s1~--s8과 같은 순서)
 // 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다
 const AREAS = [
-  { prefix: 'member', name: '고객', color: '#111111', fill: '#F7F7F7', desc: '회원 · 소셜 연동 · 체형 · 배송지 · 등급' },
-  { prefix: 'brand', name: '브랜드', color: '#555555', fill: '#F7F7F7', desc: '입점 브랜드 · 브랜드 관리자 · 브랜드 좋아요' },
-  { prefix: 'product', name: '상품', color: '#999999', fill: '#F7F7F7', desc: '카테고리 · 사이즈 · 컬러 · SKU · 재고' },
-  { prefix: 'order', name: '주문', color: '#777777', fill: '#F7F7F7', desc: '장바구니 · 주문 · 주문 배송지 · 브랜드별 묶음 · 주문 상품' },
-  { prefix: 'admin', name: '운영', color: '#333333', fill: '#F7F7F7', desc: '운영자 계정 · 역할 · 권한 이력 · 접속 기록' },
+  { prefix: 'member', name: '고객', color: '#4F6378', fill: '#F7F7F7', desc: '회원 · 소셜 연동 · 체형 · 배송지 · 등급' },
+  { prefix: 'brand', name: '브랜드', color: '#7D6C4F', fill: '#F7F7F7', desc: '입점 브랜드 · 브랜드 관리자 · 브랜드 좋아요' },
+  { prefix: 'product', name: '상품', color: '#5E7663', fill: '#F7F7F7', desc: '카테고리 · 사이즈 · 컬러 · SKU · 재고' },
+  { prefix: 'order', name: '주문', color: '#8E5D4C', fill: '#F7F7F7', desc: '장바구니 · 주문 · 주문 배송지 · 브랜드별 묶음 · 주문 상품' },
+  { prefix: 'admin', name: '운영', color: '#4D4D57', fill: '#F7F7F7', desc: '운영자 계정 · 역할 · 권한 이력 · 접속 기록' },
 ];
 const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
 

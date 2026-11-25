@@ -247,6 +247,12 @@
       n.dataset.t = t;
       const T = D.tables[t];
       if (!T) return;
+      // 테이블 제목줄에 영역 포인트 색 (다른 영역 참조 테이블은 같은 색을 옅게)
+      const hd = $('rect.hd', n);
+      if (hd) {
+        hd.style.fill = stageColor(T.group);
+        if (/^#bdbdbd$/i.test(hd.getAttribute('fill'))) hd.style.fillOpacity = '.45';
+      }
       // 마우스 팝업용 표시: 컬럼 이름 텍스트 → data-col, "+ N columns" → data-more
       const texts = [...n.querySelectorAll('text')];
       texts.forEach((tx) => {

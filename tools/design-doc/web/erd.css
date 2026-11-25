@@ -19,11 +19,12 @@
   --fk-soft: #ffffff;
   --uk: #555555;
   --uk-soft: #ececec;
-  --s1: #111111;
-  --s2: #555555;
-  --s3: #999999;
-  --s4: #111111;
-  --s5: #555555;
+  /* 영역 포인트 색: 채도를 낮춘 톤 (고객 슬레이트 블루 · 브랜드 카키 · 상품 세이지 · 주문 테라코타 · 운영 그래파이트) */
+  --s1: #4f6378;
+  --s2: #7d6c4f;
+  --s3: #5e7663;
+  --s4: #8e5d4c;
+  --s5: #4d4d57;
   --s6: #999999;
   --s7: #111111;
   --s8: #555555;
@@ -38,7 +39,7 @@
     --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
     --text: #f2f2f2; --muted: #9a9a9a; --sub: #bdbdbd; --accent: #f2f2f2; --accent-soft: #1f1f1f; --on-accent: #111111;
     --pk: #111111; --pk-soft: #f2f2f2; --fk: #f2f2f2; --fk-soft: #0f0f0f; --uk: #bbbbbb; --uk-soft: #262626;
-    --s1: #f2f2f2; --s2: #bbbbbb; --s3: #777777; --s4: #f2f2f2; --s5: #bbbbbb; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
+    --s1: #93a8bd; --s2: #bfad8a; --s3: #98b29d; --s4: #cd9886; --s5: #a3a3ad; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
     --hl: #f2f2f2; --paper: #f4f4f4; --shadow: none;
     color-scheme: dark;
   }
@@ -47,7 +48,7 @@
     --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
     --text: #f2f2f2; --muted: #9a9a9a; --sub: #bdbdbd; --accent: #f2f2f2; --accent-soft: #1f1f1f; --on-accent: #111111;
     --pk: #111111; --pk-soft: #f2f2f2; --fk: #f2f2f2; --fk-soft: #0f0f0f; --uk: #bbbbbb; --uk-soft: #262626;
-    --s1: #f2f2f2; --s2: #bbbbbb; --s3: #777777; --s4: #f2f2f2; --s5: #bbbbbb; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
+    --s1: #93a8bd; --s2: #bfad8a; --s3: #98b29d; --s4: #cd9886; --s5: #a3a3ad; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
     --hl: #f2f2f2; --paper: #f4f4f4; --shadow: none;
     color-scheme: dark;
 }
@@ -355,8 +356,8 @@ button { font: inherit; color: inherit; }
 .canvas g.node text { cursor: help; }
 .canvas g.node:hover rect.box { stroke: #999999; }
 .canvas g.node.sel rect.box { stroke: #8a8a8a; }
-.canvas g.node:hover rect.hd, .canvas g.node.sel rect.hd { fill: #000000; }
-.canvas g.node.sel rect.hd { stroke: #000000; stroke-width: 3; }
+.canvas g.node:hover rect.hd, .canvas g.node.sel rect.hd { filter: brightness(.78); }
+.canvas g.node.sel rect.hd { stroke: var(--text); stroke-width: 3; }
 .canvas.has-sel g.node:not(.sel):not(.rel) { opacity: .35; }
 .canvas.has-sel g.edge:not(.rel) { opacity: .15; }
 .canvas g.edge.rel path { stroke: #111111; stroke-width: 2; }
@@ -727,3 +728,13 @@ tr.ed-drop-after td { box-shadow: inset 0 -2px 0 var(--text); }
   .gnb { padding-left: 0; padding-right: 0; }
   .overview, .g-view { width: calc(100% - 32px); }
 }
+
+/* ---------- 영역 포인트 색 (모노톤 위에 살짝): 묶음 화면은 --c = 그 영역 색 ---------- */
+.g-head .crumb { color: var(--c); }
+.g-view .spec { border-top-color: var(--c); }
+.g-view .spec-h .no { background: var(--c); color: var(--on-accent); }
+.g-view .jump a.on { background: var(--c); border-color: var(--c); color: var(--on-accent); }
+.stage-col { border-top-color: var(--c); }
+.gnb-h .dot { width: 8px; height: 8px; }
+/* ERD 도화지는 다크 모드에서도 밝은 종이색이라, 도화지 안 제목줄은 항상 진한 톤 */
+.canvas { --s1: #4f6378; --s2: #7d6c4f; --s3: #5e7663; --s4: #8e5d4c; --s5: #4d4d57; }
