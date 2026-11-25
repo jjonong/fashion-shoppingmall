@@ -587,18 +587,6 @@ Table orders [note: '[주문] 주문 1건 = 결제 1번. 회원 주문과 비회
   }
 }
 
-Table order_delivery [note: '[주문 배송지] 주문 1:1. 주문 당시 배송지 스냅샷(회원 배송지에서 복사하거나 직접 입력). 주문자와 동일 체크는 화면 기능이라 저장하지 않음'] {
-  order_no varchar(20) [pk, note: '[주문 번호] 배송지의 주문']
-  recipient_name varchar(50) [not null, note: '[배송지 받는 분 이름] 주문 당시 스냅샷']
-  recipient_phone_enc varchar(255) [not null, note: '[배송지 받는 분 연락처(암호화)] AES-256 암호문. 주문 당시 스냅샷']
-  zipcode char(5) [not null, note: '[배송지 우편번호] 5자리 국가기초구역번호']
-  address1 varchar(200) [not null, note: '[배송지 기본 주소] 도로명 주소']
-  address2 varchar(200) [note: '[배송지 상세 주소]']
-  delivery_request varchar(100) [note: '[배송지 배송 요청사항] 주문 시 입력(회원 배송지 기본값에서 시작)']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 배송지 등록일시']
-  updated_at datetime [note: '[수정일시] 배송지 수정일시 (출고 전 배송지 변경)']
-}
-
 Table order_brand [note: '[주문 브랜드] 주문 안의 브랜드별 묶음. 브랜드별 상품 합계 + 배송비(장바구니·주문서의 브랜드별 합계). 브랜드가 따로 출고하므로 배송 영역의 출고·송장이 이 단위에 연결될 예정'] {
   order_no varchar(20) [not null, note: '[주문 번호] 브랜드 묶음의 주문']
   brand_id varchar(30) [not null, note: '[브랜드 아이디] 상품을 판매·출고하는 브랜드']
@@ -639,6 +627,18 @@ Table order_item [note: '[주문 상세] 주문한 옵션 한 줄. 상품·옵�
     (order_no, brand_id) [name: 'ix_order_item_brand', note: '주문 브랜드 복합 FK 인덱스']
     (product_code, option_no) [name: 'ix_order_item_option', note: '옵션 FK 인덱스, 상품별 판매 조회']
   }
+}
+
+Table order_delivery [note: '[주문 배송지] 주문 1:1. 주문 당시 배송지 스냅샷(회원 배송지에서 복사하거나 직접 입력). 주문자와 동일 체크는 화면 기능이라 저장하지 않음'] {
+  order_no varchar(20) [pk, note: '[주문 번호] 배송지의 주문']
+  recipient_name varchar(50) [not null, note: '[배송지 받는 분 이름] 주문 당시 스냅샷']
+  recipient_phone_enc varchar(255) [not null, note: '[배송지 받는 분 연락처(암호화)] AES-256 암호문. 주문 당시 스냅샷']
+  zipcode char(5) [not null, note: '[배송지 우편번호] 5자리 국가기초구역번호']
+  address1 varchar(200) [not null, note: '[배송지 기본 주소] 도로명 주소']
+  address2 varchar(200) [note: '[배송지 상세 주소]']
+  delivery_request varchar(100) [note: '[배송지 배송 요청사항] 주문 시 입력(회원 배송지 기본값에서 시작)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 배송지 등록일시']
+  updated_at datetime [note: '[수정일시] 배송지 수정일시 (출고 전 배송지 변경)']
 }
 
 // =====================================================================
@@ -757,7 +757,7 @@ TableGroup order_cart [note: '주문 - 장바구니'] {
 
 TableGroup order_basic [note: '주문 - 주문 기본'] {
   orders
-  order_delivery
   order_brand
   order_item
+  order_delivery
 }
