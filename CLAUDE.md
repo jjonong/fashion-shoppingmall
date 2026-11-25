@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 대상 DB: **MySQL 8.0** (8.0.16 이상: CHECK 제약이 실제로 검사됨, 8.0.13 이상: 함수 기반 인덱스). InnoDB, `utf8mb4` / `utf8mb4_0900_ai_ci`.
 - 판매 방식: **브랜드 입점형 (W컨셉식)** (사용자 확정). 상품은 브랜드에 속한다. 지금 단계의 판매자 범위는 **브랜드 기본만**(브랜드 정보·브랜드 관리자 계정·입점 상태·브랜드 좋아요). 브랜드 유형(입점 디자이너 브랜드·자체 브랜드 등)은 브랜드 묶음에서 정한다. 수수료·정산은 주문/결제 단계에서 다룬다.
 - 품목: **의류 + 신발 + 가방·잡화** (사용자 확정). 뷰티는 제외(W컨셉에는 있지만 범위 밖, 회원 뷰티 정보도 두지 않음). 품목군마다 사이즈 체계·실측 항목·상품정보제공고시 유형이 다르다.
-- **진행 방식** (사용자 요청: "너무 광범위하지 않게, 상세하게"): 고객 → 브랜드 기본 → 상품 순서로, **묶음(TableGroup) 단위로 컬럼까지 확정**하며 하나씩 추가한다. 사용자가 확인하기 전에 다음 묶음 테이블을 미리 넣지 않는다. 주문·결제·배송·혜택·커뮤니티는 아직 범위 밖.
+- **진행 방식** (사용자 요청: "너무 광범위하지 않게, 상세하게"): 고객 → 브랜드 기본 → 상품 순서로, **묶음(TableGroup) 단위로 컬럼까지 확정**하며 하나씩 추가한다. 사용자가 확인하기 전에 다음 묶음 테이블을 미리 넣지 않는다. 주문은 장바구니·주문 기본까지(2026-11-25). 결제·배송·혜택은 나중에 **각각 별도 영역**으로 만들고(주문 영역의 하위 묶음 아님, 사용자 결정), 커뮤니티도 아직 범위 밖.
 - 작업 방식: 사용자는 **설계를 먼저 확정한 뒤 파일(DDL SQL 등)을 만들기**를 원한다. 요청 없이 SQL 파일을 만들지 않는다.
 
 ### 로드맵 (목록만, 컬럼은 묶음마다 확정)
@@ -27,6 +27,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 6-4 | 상품 · 정보 고시 | 고시 유형(의류/구두·신발/가방/패션잡화/귀금속·시계)별 고시. 상품 고시 행에 실제 `notice_type` 저장(카테고리 `default_notice_type`에서 시작) | 대기 |
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
 | 6-6 | 상품 · 고객 연결 | 상품 찜, 재입고 알림(회원-옵션) | 대기 |
+| 7-1 | 주문 · 장바구니 `order_cart` | `cart_item` | 반영 |
+| 7-2 | 주문 · 주문 기본 `order_basic` | `orders`, `order_delivery`, `order_brand`, `order_item` | 반영 |
+| - | 결제 · 배송 · 혜택 (각각 별도 영역) | 결제 수단·PG·현금영수증·카드 혜택 / 출고·송장 / 쿠폰·포인트 | 나중 (선물하기도 나중 묶음) |
 
 상품 상세페이지 항목 중 상품 영역 밖: 판매자 정보·배송비·교환/반품 기준은 브랜드, 청약철회·환불지연 배상 등 법정 문구는 플랫폼 공통, 리뷰·Q&A는 커뮤니티, 쿠폰·기획전(더블유위크)은 혜택, 카드 혜택가·무이자·장바구니·바로구매·선물하기는 주문·결제, 함께 본 상품·맞춤 추천·스타일링은 추천(나중). 별점·리뷰 수·찜 수는 상품 캐시 컬럼, 할인율·선택 상품 총액은 계산값.
 
@@ -62,7 +65,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 **로컬 편집 모드** (`edit-server.js`, 사용자 요청 2026-11-24: 페이지에서 직접 설계 수정): 사용자는 프로젝트를 USB에 두고 집·학원 PC(둘 다 Node·git 있음)에서 쓴다. 편집 화면은 ERD 페이지와 같고 `--edit`로 만든 버전에만 버튼이 있다(공개 페이지에는 없음, `window.ERD_EDIT`). **빠른 입력 표**(사용자 요청: 지금은 논리명·키 설정에 집중, 나머지는 선택): 컬럼·테이블·묶음 추가는 한 줄에 컬럼 하나, 논리명·물리명만 필수이고 키(PK/FK/PK+FK/UK)는 고르기만 한다. 타입을 비우면 PK varchar(20), FK는 부모 PK 타입, 그 외 varchar(50). 물리명이 다른 테이블의 단일 PK와 같으면 FK로 자동 선택. Enter 다음 줄, Ctrl+Enter 저장. 저장 응답은 편집 화면만 바로 만들고 공개 페이지·draw.io는 뒤에서 만든다. 할 수 있는 것: 컬럼 추가·수정(이름 바꾸면 같은 테이블 인덱스·인덱스 이름·Ref도 같이)·삭제·**순서 바꾸기**(명세 표에서 손잡이 ⠿를 끌어 다른 컬럼 위/아래에 놓음, `created_by`~`updated_at` 시간·감사 컬럼은 맨 끝 고정), PK 변경(복합 PK 포함, 체크 순서대로), FK 추가(타입 일치·부모는 단일 PK/UNIQUE, N:1/1:1, ON DELETE, FK 인덱스 자동)·삭제, 인덱스 추가(`ix_`/`uk_`, 이름 자동)·삭제, 테이블 추가(단일/복합 PK + `created_at`/`updated_at` 자동)·삭제, 묶음 추가(영역 접두사 필수, 첫 테이블과 함께, 설명은 `lib.js` `groupDesc`에 기록). 서버가 매 요청마다 `erd.dbml`을 새로 읽어 줄 단위로 고치고(주석·서식 보존), snake_case·`[논리명]`·예약어·중복을 검사하고, PK·참조 중인 컬럼/테이블 삭제, FK로 이어진 컬럼 타입 변경, 참조받는 PK 변경은 거부한다. 파서 검증에 실패하면 저장하지 않고, 저장하면 공개 페이지·draw.io·편집 화면을 다시 만든다. 커밋·푸시는 하지 않는다. 사용자가 편집 모드로 고친 뒤 검토를 요청하면 설계 규칙(같은 물리명은 같은 논리명, 상단 주석 영역별 개수, 섹션 주석, CLAUDE.md 확정 설계·로드맵 동기화)에 맞는지 확인하고 정리한다.
 
 - 파일 구성: `lib.js`(DBML 로드, Graphviz ERD, 공통), `erd-page.js`(ERD 웹페이지, 화면은 `web/erd.css`·`web/erd.js` 인라인), `edit-server.js`(로컬 편집 모드), `drawio.js`, 그리고 아직 인테리어 내용인 `build.js`·`summary.js`·`slides.js`·`diagrams.js`. Chrome 경로가 다르면 `CHROME_PATH`.
-- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `brand_` 브랜드, `product_` 상품, `admin_` 운영. 감사 컬럼(`created_by` 등) → `admin_user` 선은 운영 영역 밖 ERD에서 그리지 않는다(`lib.isAdminAudit`). 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
+- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `brand_` 브랜드, `product_` 상품, `order_` 주문, `admin_` 운영. 감사 컬럼(`created_by` 등) → `admin_user` 선은 운영 영역 밖 ERD에서 그리지 않는다(`lib.isAdminAudit`). 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
 - Windows 환경에서 `python`은 스토어 스텁이라 실행되지 않는다. 스크립트는 `node`로.
 
 ## 설계 규칙 (DBML 전반에 일관되게 적용)
@@ -146,6 +149,17 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `product_size` [상품 사이즈]: PK (product_code, size_no). `size_label`(S/M/230/FREE, 상품 안 UK)·정렬(S→M→L)·**모델 착용 여부** `is_model_size`(상품당 1개, 함수 기반 `ux_product_size_model`). 모델 정보 포함은 사용자 결정(2026-11-25), 모델 키는 `product.model_height`.
 - `product_size_measure` [상품 실측]: PK (product_code, size_no, measure_item_code), `measure_value decimal(5,1)` cm. 카테고리 항목만(앱 검증). 컬러와 상관없이 사이즈마다.
 - 범위 밖: 국가별 사이즈 환산표(상세 HTML), "정사이즈/작게 나옴"(리뷰 집계, 커뮤니티 단계).
+
+### 7. 주문 (`order_cart`, `order_basic`)
+- 근거: `docs/화면 캡처_주문.png`(장바구니·주문/결제 화면 항목 메모). 주문 + 파생 엔티티 장바구니만, 결제·배송·혜택은 별도 영역에서 FK 연결.
+- **비회원 주문 받음** (사용자 결정 2026-11-25): `orders.member_id` NULL이면 비회원. `guest_password_hash`(bcrypt, 주문 번호 + 비밀번호로 조회), CHECK (member_id 또는 비밀번호 중 하나 필수)라 member_id FK는 참조 동작 없이. 비회원은 휴대폰 인증(`orderer_verified_at`). 비회원 개인정보 수집 동의는 약관 묶음.
+- `cart_item` [장바구니 상품]: PK (member_id, product_code, option_no), 수량. 회원만 DB, 비회원은 브라우저 저장 후 로그인 시 합침. 가격·할인·배송비·브랜드별 합계·총계는 저장하지 않고 화면에서 현재가로 계산.
+- `orders` [주문]: PK 주문 번호 `order_no varchar(20)`(앱 채번). 주문 1건 = 결제 1번. 주문 유형 NORMAL/GIFT(선물하기는 자리만, 흐름은 나중 묶음), 주문 경로, 주문자 스냅샷(이름·휴대폰 `_enc`/`_hash`·이메일), 상품 금액·할인 금액·배송비·결제 금액(CHECK 결제 = 상품 − 할인 + 배송비), 상태 PAYMENT_WAITING/PAID/CANCELLED(결제 단계만, 무통장 입금 대기 때문) ↔ `paid_at`/`cancelled_at`. 주문일시는 `created_at`.
+- `order_delivery` [주문 배송지] 1:1: 받는 분·연락처·주소·요청사항 스냅샷(`member_address`와 같은 물리명·논리명). "주문자와 동일"은 화면 기능.
+- `order_brand` [주문 브랜드]: PK (order_no, brand_id). 브랜드별 상품 금액·배송비(주문 당시 브랜드 정책 스냅샷). 배송 영역의 출고·송장이 이 단위에 붙을 예정.
+- `order_item` [주문 상품]: PK (order_no, item_no). 주문 브랜드 복합 FK, 옵션 복합 FK + 스냅샷(상품 이름·브랜드 색상 이름·사이즈·정가·판매가·추가 금액), 수량, 할인 금액(쿠폰 배분, 부분 취소 환불 근거), 상태 ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED(세부는 배송 영역에서 확정), 구매확정일시.
+- 같은 물리명 `product_amount`/`discount_amount`/`shipping_fee`는 주문·주문 브랜드·주문 상품에서 논리명이 같고, 범위(전체/브랜드/상품)는 설명에.
+- 화면 항목 중 주문 밖: 함께 구매하면 좋을 상품(추천), 오늘 출발 예정 안내(브랜드 출고 기준), 본인인증(가입 시 완료).
 
 ### 나중에 재검토
 - **운영 영역 (운영자 기본 `admin_basic`)**: 2026-11-24 사용자 요청으로 ERD에서 뺐다("아직 거기까지 다루고 싶지 않다"). 사용자가 다시 꺼내기 전에는 제안하지 않는다. 빼기 전 설계(`admin_user`·`admin_login`·`admin_role`·`admin_role_history`·`admin_access_log`, 개인정보 안전성 확보조치 기준 반영)는 커밋 `8692840`~`ad4d30d`에 있다. 지금 `created_by`/`updated_by` 컬럼(등급 기준표·혜택·등급 이력)은 FK 없이 운영자 아이디 `varchar(20)`만 두고, 운영자 테이블을 만들 때 `admin_user.admin_id` FK로 연결한다.

@@ -1,7 +1,7 @@
 // =====================================================================
 // 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: W컨셉 (디자이너 브랜드 입점, 의류·신발·가방·잡화)
-// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 1개 + 상품 13개(기준 데이터 3 + 상품 기본 6 + 사이즈·실측 4) = 24개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
+// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 1개 + 상품 13개(기준 데이터 3 + 상품 기본 6 + 사이즈·실측 4) + 주문 5개(장바구니 1 + 주문 기본 4) = 29개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
@@ -454,6 +454,110 @@ Table product_size_measure [note: '[상품 실측] 사이즈 × 실측 항목의
   }
 }
 
+
+// =====================================================================
+// 주문 - 장바구니 (회원만 DB에 저장. 비회원 장바구니는 브라우저 저장, 로그인 시 합침)
+// =====================================================================
+
+Table cart_item [note: '[장바구니 상품] 회원이 담은 옵션. 같은 옵션을 다시 담으면 수량 증가. 가격·할인·배송비·브랜드별 합계는 저장하지 않고 화면에서 현재가로 계산. 바로구매는 장바구니를 거치지 않음'] {
+  member_id varchar(20) [not null, note: '[회원 아이디] 장바구니 주인 회원']
+  product_code varchar(20) [not null, note: '[상품 코드] 담은 상품']
+  option_no smallint [not null, note: '[옵션 번호] 담은 옵션 (컬러 × 사이즈)']
+  quantity smallint [not null, default: 1, note: '[수량] CHECK (quantity >= 1). 재고 초과는 주문 시 확인(앱)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 장바구니에 담은 일시']
+  updated_at datetime [note: '[수정일시] 수량 변경일시']
+
+  indexes {
+    (member_id, product_code, option_no) [pk, note: 'member_id 선두라 회원 FK 인덱스 겸용']
+    (product_code, option_no) [name: 'ix_cart_item_option', note: '옵션 FK 인덱스']
+  }
+}
+
+// =====================================================================
+// 주문 - 주문 기본 (주문 1건 = 결제 1번 → 브랜드별 묶음 → 주문 상품. 주문 당시 값은 스냅샷으로 복사해 5년 보관)
+// 결제·배송·혜택은 나중에 별도 영역으로 만들고, 주문에는 이어질 값(할인 금액·배송비·결제 단계 상태)만 둔다
+// =====================================================================
+
+Table orders [note: '[주문] 주문 1건 = 결제 1번. 회원 주문과 비회원 주문(주문 번호 + 비밀번호로 조회). 주문자 정보는 주문 당시 스냅샷(회원은 회원 정보에서 복사, 비회원은 직접 입력 + 휴대폰 인증). order는 MySQL 예약어라 orders'] {
+  order_no varchar(20) [pk, note: '[주문 번호] 앱이 채번(예: 20261125 + 일련번호, AUTO_INCREMENT 아님). 변경 불가']
+  member_id varchar(20) [note: '[회원 아이디] 주문한 회원. 비회원 주문이면 NULL. CHECK (member_id IS NOT NULL OR guest_password_hash IS NOT NULL)에 쓰이므로 FK는 참조 동작 없이']
+  guest_password_hash varchar(60) [note: '[비회원 주문 비밀번호] bcrypt 해시. 비회원 주문조회(주문 번호 + 비밀번호). 회원 주문이면 NULL']
+  order_type varchar(20) [not null, default: 'NORMAL', note: '[주문 유형] NORMAL/GIFT (일반/선물하기). 선물하기 흐름(받는 사람 입력)은 나중 묶음']
+  order_channel varchar(20) [not null, note: '[주문 경로] PC_WEB/MOBILE_WEB/APP_IOS/APP_ANDROID']
+  orderer_name varchar(50) [not null, note: '[주문자 이름] 주문 당시 스냅샷']
+  orderer_phone_enc varchar(255) [not null, note: '[주문자 휴대폰 번호] AES-256 암호문. 주문 당시 스냅샷']
+  orderer_phone_hash char(64) [not null, note: '[주문자 휴대폰 번호 검색값] HMAC-SHA256(서버 비밀 키). 비회원 주문 찾기·고객센터 검색']
+  orderer_email varchar(100) [not null, note: '[주문자 이메일] 주문 확인 메일 발송. 주문 당시 스냅샷']
+  orderer_verified_at datetime [note: '[주문자 인증일시] 비회원 주문 시 휴대폰 인증 완료 시각. 회원은 가입 시 인증했으므로 NULL']
+  product_amount bigint [not null, note: '[상품 금액] (판매가 + 추가 금액) × 수량의 합계. 주문은 전체, 주문 브랜드는 그 브랜드 합계']
+  discount_amount bigint [not null, default: 0, note: '[할인 금액] 쿠폰 등 할인 합계. 쿠폰 연결은 혜택 영역에서. 주문은 전체, 주문 상품은 그 상품에 배분된 금액']
+  shipping_fee bigint [not null, default: 0, note: '[배송비] 주문은 브랜드별 배송비 합계, 주문 브랜드는 그 브랜드 배송비(주문 당시 브랜드 정책 스냅샷)']
+  pay_amount bigint [not null, note: '[결제 금액] CHECK (pay_amount = product_amount - discount_amount + shipping_fee). 결제 수단·PG 거래는 결제 영역']
+  status varchar(20) [not null, default: 'PAYMENT_WAITING', note: '[상태] PAYMENT_WAITING/PAID/CANCELLED (결제 대기/결제 완료/주문 취소). 결제 단계만, 출고·배송 진행은 주문 상품 상태. 무통장입금은 입금 전까지 결제 대기']
+  paid_at datetime [note: '[결제일시] status = PAID 처리 시각']
+  cancelled_at datetime [note: '[취소일시] status = CANCELLED 처리 시각 (입금 기한 초과 자동 취소 포함)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 주문일시']
+  updated_at datetime [note: '[수정일시] 주문 수정일시']
+
+  indexes {
+    (member_id, created_at) [name: 'ix_orders_member', note: '회원 FK 인덱스, 내 주문 목록(최신순)']
+    (status, created_at) [name: 'ix_orders_status', note: '입금 기한 초과 자동 취소 배치·관리자 조회']
+    orderer_phone_hash [name: 'ix_orders_orderer_phone', note: '비회원 주문 찾기·고객센터 검색']
+  }
+}
+
+Table order_delivery [note: '[주문 배송지] 주문 1:1. 주문 당시 배송지 스냅샷(회원 배송지에서 복사하거나 직접 입력). 주문자와 동일 체크는 화면 기능이라 저장하지 않음'] {
+  order_no varchar(20) [pk, note: '[주문 번호] 배송지의 주문']
+  recipient_name varchar(50) [not null, note: '[배송지 받는 분 이름] 주문 당시 스냅샷']
+  recipient_phone_enc varchar(255) [not null, note: '[배송지 받는 분 연락처] AES-256 암호문. 주문 당시 스냅샷']
+  zipcode char(5) [not null, note: '[배송지 우편번호] 5자리 국가기초구역번호']
+  address1 varchar(200) [not null, note: '[배송지 기본 주소] 도로명 주소']
+  address2 varchar(200) [note: '[배송지 상세 주소]']
+  delivery_request varchar(100) [note: '[배송지 배송 요청사항] 주문 시 입력(회원 배송지 기본값에서 시작)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 배송지 등록일시']
+  updated_at datetime [note: '[수정일시] 배송지 수정일시 (출고 전 배송지 변경)']
+}
+
+Table order_brand [note: '[주문 브랜드] 주문 안의 브랜드별 묶음. 브랜드별 상품 합계 + 배송비(장바구니·주문서의 브랜드별 합계). 브랜드가 따로 출고하므로 배송 영역의 출고·송장이 이 단위에 연결될 예정'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 브랜드 묶음의 주문']
+  brand_id varchar(30) [not null, note: '[브랜드 아이디] 상품을 판매·출고하는 브랜드']
+  product_amount bigint [not null, note: '[상품 금액] 이 브랜드 주문 상품의 (판매가 + 추가 금액) × 수량 합계']
+  shipping_fee bigint [not null, default: 0, note: '[배송비] 이 브랜드 배송비. 주문 당시 브랜드 배송비 정책(무료 배송 기준 등)으로 계산한 스냅샷']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 주문일시']
+  updated_at datetime [note: '[수정일시] 브랜드 묶음 수정일시']
+
+  indexes {
+    (order_no, brand_id) [pk, note: 'order_no 선두라 주문 FK 인덱스 겸용']
+    (brand_id, created_at) [name: 'ix_order_brand_brand', note: '브랜드 FK 인덱스, 브랜드별 주문 조회(최신순)']
+  }
+}
+
+Table order_item [note: '[주문 상품] 주문한 옵션 한 줄. 상품·옵션이 바뀌거나 판매 종료돼도 주문 내역이 그대로 보이게 주문 당시 값을 스냅샷으로 저장'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 주문 상품의 주문']
+  item_no smallint [not null, note: '[주문 상품 번호] 주문별 1부터. 앱이 부여']
+  brand_id varchar(30) [not null, note: '[브랜드 아이디] 상품의 브랜드 (주문 브랜드 복합 FK)']
+  product_code varchar(20) [not null, note: '[상품 코드] 주문한 상품']
+  option_no smallint [not null, note: '[옵션 번호] 주문한 옵션 (컬러 × 사이즈)']
+  product_name varchar(200) [not null, note: '[상품 이름] 주문 당시 스냅샷']
+  brand_color_name varchar(50) [not null, note: '[브랜드 색상 이름] 주문 당시 스냅샷']
+  size_label varchar(20) [not null, note: '[사이즈] 주문 당시 스냅샷']
+  list_price bigint [not null, note: '[정가] 주문 당시 스냅샷']
+  sale_price bigint [not null, note: '[판매가] 주문 당시 스냅샷. CHECK (sale_price <= list_price)']
+  extra_price bigint [not null, default: 0, note: '[추가 금액] 주문 당시 옵션 추가 금액 스냅샷']
+  quantity smallint [not null, note: '[수량] CHECK (quantity >= 1)']
+  discount_amount bigint [not null, default: 0, note: '[할인 금액] 이 상품에 배분된 할인(쿠폰 등). 부분 취소 시 환불 금액 계산 근거']
+  status varchar(20) [not null, default: 'ORDERED', note: '[상태] ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED (주문 접수/상품 준비중/배송중/배송 완료/구매 확정/취소/반품). 세부 값은 배송 영역에서 확정']
+  confirmed_at datetime [note: '[구매확정일시] status = CONFIRMED 처리 시각 (배송 완료 후 자동 확정 포함). 회원 등급 점수·리뷰 작성 기준']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 주문일시']
+  updated_at datetime [note: '[수정일시] 주문 상품 수정일시']
+
+  indexes {
+    (order_no, item_no) [pk, note: 'order_no 선두라 주문 FK 인덱스 겸용']
+    (order_no, brand_id) [name: 'ix_order_item_brand', note: '주문 브랜드 복합 FK 인덱스']
+    (product_code, option_no) [name: 'ix_order_item_option', note: '옵션 FK 인덱스, 상품별 판매 조회']
+  }
+}
+
 // =====================================================================
 // 관계
 // =====================================================================
@@ -490,6 +594,16 @@ Ref: product_category_measure_item.category_code > product_category.category_cod
 Ref: product_category_measure_item.measure_item_code > product_measure_item.measure_item_code
 Ref: product_size_measure.(product_code, size_no) > product_size.(product_code, size_no) [delete: cascade]
 Ref: product_size_measure.measure_item_code > product_measure_item.measure_item_code
+
+Ref: cart_item.member_id > member_account.member_id [delete: cascade]
+Ref: cart_item.(product_code, option_no) > product_option.(product_code, option_no) [delete: cascade]
+Ref: orders.member_id > member_account.member_id
+Ref: order_delivery.order_no - orders.order_no
+Ref: order_brand.order_no > orders.order_no
+Ref: order_brand.brand_id > brand.brand_id
+Ref: order_item.order_no > orders.order_no
+Ref: order_item.(order_no, brand_id) > order_brand.(order_no, brand_id)
+Ref: order_item.(product_code, option_no) > product_option.(product_code, option_no)
 
 // =====================================================================
 // 묶음
@@ -535,4 +649,15 @@ TableGroup product_sizing [note: '상품 - 사이즈·실측'] {
   product_category_measure_item
   product_size
   product_size_measure
+}
+
+TableGroup order_cart [note: '주문 - 장바구니'] {
+  cart_item
+}
+
+TableGroup order_basic [note: '주문 - 주문 기본'] {
+  orders
+  order_delivery
+  order_brand
+  order_item
 }
