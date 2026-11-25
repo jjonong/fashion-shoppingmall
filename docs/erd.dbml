@@ -71,21 +71,6 @@ Table member_login [note: '[회원 로그인 상태] member_account와 1:1, 가�
   }
 }
 
-Table member_social_account [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개). 연동 해제·탈퇴 시 제공자 연동 해제 API 호출 후 행 삭제. 비밀번호 없는 소셜 전용 회원은 마지막 남은 소셜 계정을 해제할 수 없음(앱 검증, 로그인 수단이 사라지므로)'] {
-  member_id varchar(20) [not null, note: '[회원 아이디] 소셜 연동 회원 아이디']
-  provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 회원당 제공자별 1개라 (회원 아이디, 제공자)를 PK로 사용']
-  provider_user_id varchar(100) [not null, note: '[소셜 제공자 회원 식별값] 소셜 서비스의 회원 고유 ID']
-  provider_email varchar(100) [note: '[소셜 계정 이메일] 제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음). 소셜 로그인 시 바뀌었으면 갱신']
-  refresh_token_enc varchar(1000) [note: '[소셜 연동 해제용 토큰] 제공자가 준 리프레시 토큰의 AES-256 암호문. 연동 해제·탈퇴 시 해제(revoke) API에 사용(애플은 탈퇴 시 해제 의무, 네이버도 토큰 필요). 카카오는 서버 키로 해제 가능해 NULL 허용. 액세스 토큰은 금방 만료되어 저장 안 함']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 소셜 계정 연동일시']
-  updated_at datetime [note: '[수정일시] 소셜 계정 정보 수정일시']
-
-  indexes {
-    (provider, provider_user_id) [unique, name: 'uk_member_social_account_provider', note: '같은 소셜 계정은 한 회원에게만']
-    (member_id, provider) [pk, note: '회원당 제공자별 1개. member_id 선두라 FK 인덱스 겸용']
-  }
-}
-
 Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추천, "나와 비슷한 체형" 리뷰 필터'] {
   member_id varchar(20) [pk, note: '[회원 아이디] 체형 정보 회원 아이디. member_account와 1:1']
   height_cm smallint [note: '[회원 키(cm)]']
@@ -96,26 +81,6 @@ Table member_body [note: '[회원 체형] member_account와 1:1. 사이즈 추�
   is_review_public char(1) [not null, default: 'Y', note: '[체형 리뷰 공개 기본 여부] Y/N. 리뷰 작성 화면의 "체형 공개" 체크박스 기본값. 리뷰를 쓸 때 그 시점의 체형과 공개 여부를 리뷰에 복사해 저장(상품 단계 리뷰 테이블). 나중에 체형을 바꿔도 지난 리뷰의 체형은 그대로']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 회원 체형 등록일시. 처음 입력한 시각 (가입 후 나중에 입력 가능)']
   updated_at datetime [note: '[수정일시] 회원 체형 수정일시']
-}
-
-Table member_address [note: '[배송지] 회원당 여러 개(최대 20개, 앱 검증: 추가 전 그 회원의 배송지 수 확인), 기본 배송지는 1개'] {
-  member_id varchar(20) [not null, note: '[회원 아이디] 배송지 소유 회원 아이디']
-  address_no smallint [not null, note: '[배송지 번호] 회원별 1부터. 앱이 그 회원의 MAX+1로 부여 (AUTO_INCREMENT 아님)']
-  address_name varchar(20) [note: '[배송지 이름] 집/회사']
-  recipient_name varchar(50) [not null, note: '[배송지 받는 분 이름]']
-  recipient_phone_enc varchar(255) [not null, note: '[배송지 받는 분 연락처] AES-256 암호문']
-  zipcode char(5) [not null, note: '[배송지 우편번호] 5자리 국가기초구역번호']
-  address1 varchar(200) [not null, note: '[배송지 기본 주소] 도로명 주소']
-  address2 varchar(200) [note: '[배송지 상세 주소]']
-  is_default char(1) [not null, default: 'N', note: '[기본 배송지 여부] Y/N']
-  delivery_request varchar(100) [note: '[배송지 배송 요청사항] 예: 부재 시 문 앞. 주문 시 기본값으로 복사']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 배송지 등록일시']
-  updated_at datetime [note: '[수정일시] 배송지 수정일시']
-
-  indexes {
-    (member_id, address_no) [pk, note: 'member_id 선두라 FK 인덱스 겸용']
-    `CASE WHEN is_default = 'Y' THEN member_id END` [unique, name: 'ux_member_address_default', note: '회원당 기본 배송지 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
-  }
 }
 
 Table member_refund_account [note: '[회원 환불 계좌] member_account와 1:1. 무통장·가상계좌 결제 취소 시 환불받을 계좌'] {
@@ -139,6 +104,41 @@ Table member_withdrawal [note: '[회원 탈퇴 정보] member_account와 1:1. �
   indexes {
     withdraw_reason_type [name: 'ix_member_withdrawal_reason', note: '탈퇴 사유별 집계']
     ci_hash [name: 'ix_member_withdrawal_ci', note: '가입 시 30일 내 탈퇴 이력 확인']
+  }
+}
+
+Table member_social_account [note: '[소셜 계정 연동] 한 회원이 여러 소셜 계정을 연결 가능 (제공자별 1개). 연동 해제·탈퇴 시 제공자 연동 해제 API 호출 후 행 삭제. 비밀번호 없는 소셜 전용 회원은 마지막 남은 소셜 계정을 해제할 수 없음(앱 검증, 로그인 수단이 사라지므로)'] {
+  member_id varchar(20) [not null, note: '[회원 아이디] 소셜 연동 회원 아이디']
+  provider varchar(20) [not null, note: '[소셜 제공자] KAKAO/NAVER/FACEBOOK/INSTAGRAM/GOOGLE/APPLE. 회원당 제공자별 1개라 (회원 아이디, 제공자)를 PK로 사용']
+  provider_user_id varchar(100) [not null, note: '[소셜 제공자 회원 식별값] 소셜 서비스의 회원 고유 ID']
+  provider_email varchar(100) [note: '[소셜 계정 이메일] 제공자가 준 이메일 (참고용, 로그인 이메일과 다를 수 있음). 소셜 로그인 시 바뀌었으면 갱신']
+  refresh_token_enc varchar(1000) [note: '[소셜 연동 해제용 토큰] 제공자가 준 리프레시 토큰의 AES-256 암호문. 연동 해제·탈퇴 시 해제(revoke) API에 사용(애플은 탈퇴 시 해제 의무, 네이버도 토큰 필요). 카카오는 서버 키로 해제 가능해 NULL 허용. 액세스 토큰은 금방 만료되어 저장 안 함']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 소셜 계정 연동일시']
+  updated_at datetime [note: '[수정일시] 소셜 계정 정보 수정일시']
+
+  indexes {
+    (provider, provider_user_id) [unique, name: 'uk_member_social_account_provider', note: '같은 소셜 계정은 한 회원에게만']
+    (member_id, provider) [pk, note: '회원당 제공자별 1개. member_id 선두라 FK 인덱스 겸용']
+  }
+}
+
+Table member_address [note: '[배송지] 회원당 여러 개(최대 20개, 앱 검증: 추가 전 그 회원의 배송지 수 확인), 기본 배송지는 1개'] {
+  member_id varchar(20) [not null, note: '[회원 아이디] 배송지 소유 회원 아이디']
+  address_no smallint [not null, note: '[배송지 번호] 회원별 1부터. 앱이 그 회원의 MAX+1로 부여 (AUTO_INCREMENT 아님)']
+  address_name varchar(20) [note: '[배송지 이름] 집/회사']
+  recipient_name varchar(50) [not null, note: '[배송지 받는 분 이름]']
+  recipient_phone_enc varchar(255) [not null, note: '[배송지 받는 분 연락처] AES-256 암호문']
+  zipcode char(5) [not null, note: '[배송지 우편번호] 5자리 국가기초구역번호']
+  address1 varchar(200) [not null, note: '[배송지 기본 주소] 도로명 주소']
+  address2 varchar(200) [note: '[배송지 상세 주소]']
+  is_default char(1) [not null, default: 'N', note: '[기본 배송지 여부] Y/N']
+  delivery_request varchar(100) [note: '[배송지 배송 요청사항] 예: 부재 시 문 앞. 주문 시 기본값으로 복사']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 배송지 등록일시']
+  updated_at datetime [note: '[수정일시] 배송지 수정일시']
+
+  indexes {
+    (member_id, address_no) [pk, note: 'member_id 선두라 FK 인덱스 겸용']
+    `CASE WHEN is_default = 'Y' THEN member_id END` [unique, name: 'ux_member_address_default', note: '회원당 기본 배송지 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
   }
 }
 
@@ -266,6 +266,13 @@ Table product [note: '[상품] 브랜드가 등록한 판매 상품. 말단(3단
   }
 }
 
+Table product_detail [note: '[상품 상세] 상품 1:1. 상세페이지 아래 상품 정보 영역. 큰 본문을 목록 조회와 분리'] {
+  product_code varchar(20) [pk, note: '[상품 코드] 상세페이지의 상품']
+  detail_html mediumtext [not null, note: '[상세 본문] 상세페이지 HTML. 브랜드가 만든 긴 상세 이미지(<img>)와 글. 상단 갤러리 이미지는 상품 갤러리 이미지']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세페이지 등록일시']
+  updated_at datetime [note: '[수정일시] 상세페이지 수정일시']
+}
+
 Table product_color [note: '[상품 컬러] 상품별 컬러. 브랜드가 붙인 색 이름 + 필터용 표준 색상'] {
   product_code varchar(20) [not null, note: '[상품 코드] 컬러가 속한 상품']
   color_no smallint [not null, note: '[컬러 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
@@ -330,13 +337,6 @@ Table product_material [note: '[상품 소재] 부위별 소재와 혼용률. �
   }
 }
 
-Table product_detail [note: '[상품 상세] 상품 1:1. 상세페이지 아래 상품 정보 영역. 큰 본문을 목록 조회와 분리'] {
-  product_code varchar(20) [pk, note: '[상품 코드] 상세페이지의 상품']
-  detail_html mediumtext [not null, note: '[상세 본문] 상세페이지 HTML. 브랜드가 만든 긴 상세 이미지(<img>)와 글. 상단 갤러리 이미지는 상품 갤러리 이미지']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상세페이지 등록일시']
-  updated_at datetime [note: '[수정일시] 상세페이지 수정일시']
-}
-
 // =====================================================================
 // 상품 - 기준 데이터 (카테고리·표준 색상·표준 소재. 여성/남성은 카테고리가 아니라 상품의 성별로 구분)
 // =====================================================================
@@ -391,6 +391,34 @@ Table product_std_material [note: '[표준 소재] 소재 필터·혼용률 입�
 // 상품 - 사이즈·실측 (실측 항목 기준표 → 카테고리별 항목, 상품 사이즈 × 항목 = 실측값. 단위는 모두 cm)
 // =====================================================================
 
+Table product_size [note: '[상품 사이즈] 상품별 사이즈 목록. 옵션(컬러 × 사이즈)과 실측값이 이 사이즈를 참조. 실측은 컬러와 상관없이 사이즈마다'] {
+  product_code varchar(20) [not null, note: '[상품 코드] 사이즈가 속한 상품']
+  size_no smallint [not null, note: '[사이즈 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
+  size_label varchar(20) [not null, note: '[사이즈] 화면 표시 사이즈 (예: S, M, 230, FREE)']
+  sort_order smallint [not null, default: 0, note: '[정렬 순서] 사이즈 표시 순서 (S → M → L)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 사이즈 등록일시']
+  updated_at datetime [note: '[수정일시] 사이즈 수정일시']
+
+  indexes {
+    (product_code, size_no) [pk, note: 'product_code 선두라 FK 인덱스 겸용']
+    (product_code, size_label) [unique, name: 'uk_product_size_label', note: '상품 안에서 사이즈 이름 중복 금지']
+  }
+}
+
+Table product_size_measure [note: '[상품 실측] 사이즈 × 실측 항목의 값. 상세페이지 사이즈 정보 표의 칸. 상품 카테고리의 실측 항목만 입력(앱 검증)'] {
+  product_code varchar(20) [not null, note: '[상품 코드] 실측값의 상품']
+  size_no smallint [not null, note: '[사이즈 번호] 실측값의 사이즈']
+  measure_item_code varchar(30) [not null, note: '[실측 항목 코드] 실측값의 항목']
+  measure_value decimal(5,1) [not null, note: '[실측값] cm']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 실측값 등록일시']
+  updated_at datetime [note: '[수정일시] 실측값 수정일시']
+
+  indexes {
+    (product_code, size_no, measure_item_code) [pk, note: '(product_code, size_no) 선두라 사이즈 FK 인덱스 겸용']
+    measure_item_code [name: 'ix_product_size_measure_item', note: '실측 항목 FK 인덱스']
+  }
+}
+
 Table product_measure_item [note: '[실측 항목] 사이즈 표의 열이 되는 실측 항목 기준표. 관리자가 수정하는 기준 데이터. 단위는 모두 cm(신발 사이즈 mm는 사이즈 이름)'] {
   measure_item_code varchar(30) [pk, note: '[실측 항목 코드] TOTAL_LENGTH/SHOULDER/CHEST/SLEEVE/WAIST/HIP/THIGH/RISE/HEM/HEEL_HEIGHT/BAG_WIDTH/BAG_HEIGHT/BAG_DEPTH/STRAP_LENGTH 등 영문 대문자. 앱이 정함, 변경 불가']
   measure_item_name varchar(30) [not null, note: '[실측 항목 이름] 화면 표시 이름 (예: 어깨 단면)']
@@ -420,34 +448,6 @@ Table product_category_measure_item [note: '[카테고리 실측 항목] 카테�
   indexes {
     (category_code, measure_item_code) [pk, note: 'category_code 선두라 FK 인덱스 겸용']
     measure_item_code [name: 'ix_product_category_measure_item', note: '실측 항목 FK 인덱스']
-  }
-}
-
-Table product_size [note: '[상품 사이즈] 상품별 사이즈 목록. 옵션(컬러 × 사이즈)과 실측값이 이 사이즈를 참조. 실측은 컬러와 상관없이 사이즈마다'] {
-  product_code varchar(20) [not null, note: '[상품 코드] 사이즈가 속한 상품']
-  size_no smallint [not null, note: '[사이즈 번호] 상품별 1부터. 앱이 그 상품의 MAX+1로 부여']
-  size_label varchar(20) [not null, note: '[사이즈] 화면 표시 사이즈 (예: S, M, 230, FREE)']
-  sort_order smallint [not null, default: 0, note: '[정렬 순서] 사이즈 표시 순서 (S → M → L)']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 사이즈 등록일시']
-  updated_at datetime [note: '[수정일시] 사이즈 수정일시']
-
-  indexes {
-    (product_code, size_no) [pk, note: 'product_code 선두라 FK 인덱스 겸용']
-    (product_code, size_label) [unique, name: 'uk_product_size_label', note: '상품 안에서 사이즈 이름 중복 금지']
-  }
-}
-
-Table product_size_measure [note: '[상품 실측] 사이즈 × 실측 항목의 값. 상세페이지 사이즈 정보 표의 칸. 상품 카테고리의 실측 항목만 입력(앱 검증)'] {
-  product_code varchar(20) [not null, note: '[상품 코드] 실측값의 상품']
-  size_no smallint [not null, note: '[사이즈 번호] 실측값의 사이즈']
-  measure_item_code varchar(30) [not null, note: '[실측 항목 코드] 실측값의 항목']
-  measure_value decimal(5,1) [not null, note: '[실측값] cm']
-  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 실측값 등록일시']
-  updated_at datetime [note: '[수정일시] 실측값 수정일시']
-
-  indexes {
-    (product_code, size_no, measure_item_code) [pk, note: '(product_code, size_no) 선두라 사이즈 FK 인덱스 겸용']
-    measure_item_code [name: 'ix_product_size_measure_item', note: '실측 항목 FK 인덱스']
   }
 }
 
@@ -611,11 +611,11 @@ Ref: order_item.(product_code, option_no) > product_option.(product_code, option
 TableGroup member_basic [note: '고객 - 회원 기본'] {
   member_account
   member_login
-  member_social_account
   member_body
-  member_address
   member_refund_account
   member_withdrawal
+  member_social_account
+  member_address
 }
 
 TableGroup member_grading [note: '고객 - 회원 등급'] {
@@ -630,11 +630,11 @@ TableGroup brand_basic [note: '브랜드 - 브랜드 기본'] {
 
 TableGroup product_basic [note: '상품 - 상품 기본'] {
   product
+  product_detail
   product_color
   product_option
   product_image
   product_material
-  product_detail
 }
 
 TableGroup product_master [note: '상품 - 기준 데이터'] {
@@ -644,10 +644,10 @@ TableGroup product_master [note: '상품 - 기준 데이터'] {
 }
 
 TableGroup product_sizing [note: '상품 - 사이즈·실측'] {
-  product_measure_item
-  product_category_measure_item
   product_size
   product_size_measure
+  product_measure_item
+  product_category_measure_item
 }
 
 TableGroup order_cart [note: '주문 - 장바구니'] {
