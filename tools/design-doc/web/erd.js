@@ -71,6 +71,21 @@
     if (document.activeElement && gnb.contains(document.activeElement)) document.activeElement.blur();
   });
   gnb.addEventListener('mouseleave', () => gnb.classList.remove('closing'));
+  // 드롭다운이 화면 오른쪽 밖으로 나가면 왼쪽으로 당긴다 (좁은 화면에서 상품처럼 묶음이 많은 영역이 잘리지 않게)
+  const placeDrop = (e) => {
+    const item = e.target.closest && e.target.closest('.gnb-item');
+    if (!item) return;
+    const drop = item.querySelector('.gnb-drop');
+    drop.style.left = '0px';
+    requestAnimationFrame(() => {
+      const r = drop.getBoundingClientRect();
+      if (!r.width) return;
+      const over = r.right - (document.documentElement.clientWidth - 16);
+      if (over > 0) drop.style.left = -Math.min(over, r.left - 16) + 'px';
+    });
+  };
+  gnb.addEventListener('mouseover', placeDrop);
+  gnb.addEventListener('focusin', placeDrop);
   gnb.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.activeElement && gnb.contains(document.activeElement)) document.activeElement.blur();
   });
