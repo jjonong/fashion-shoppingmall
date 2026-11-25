@@ -196,6 +196,7 @@ async function main() {
 <div class="layout">
   <main class="main" id="main"></main>
 </div>
+<aside class="remote" id="remote" aria-label="테이블 바로가기" hidden></aside>
 <div class="scrim" id="scrim" hidden></div>
 ${svgs.join('\n')}
 <script>window.ERD = ${json};${EDIT ? ' window.ERD_EDIT = true;' : ''}</script>

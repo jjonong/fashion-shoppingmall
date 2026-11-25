@@ -3,7 +3,7 @@
   const D = window.ERD;
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  const gnb = $('#gnb'), main = $('#main'), q = $('#q'), results = $('#results');
+  const gnb = $('#gnb'), remote = $('#remote'), main = $('#main'), q = $('#q'), results = $('#results');
 
   const stageOf = (g) => D.stages.findIndex((s) => g.startsWith(s.prefix + '_'));
   const stageColor = (g) => `var(--s${stageOf(g) + 1})`;
@@ -39,6 +39,7 @@
     cur = next;
     if (groupChanged) next.g ? renderGroup(next.g) : renderOverview();
     renderGnb();
+    if (groupChanged) renderRemote();
     selectTable(next.t);
     document.body.classList.remove('side-open');
     syncMenu();
@@ -73,6 +74,45 @@
   gnb.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.activeElement && gnb.contains(document.activeElement)) document.activeElement.blur();
   });
+
+  // ---------- 리모컨: 넓은 화면에서 콘텐츠 왼쪽 여백에 떠 있는 테이블 바로가기 (사용자 요청) ----------
+  function renderRemote() {
+    const G = cur.g && D.groups[cur.g];
+    if (!G) { remote.hidden = true; remote.innerHTML = ''; return; }
+    const item = (t) => `<a class="rm-t" href="#g=${cur.g}&t=${t}" data-t="${t}" title="${t}">${esc(tLg(t))}</a>`;
+    let list;
+    if (G.area) { // 영역 전체: 묶음별로 나눠서
+      const by = {};
+      G.tables.forEach((t) => (by[D.tables[t].group] = by[D.tables[t].group] || []).push(t));
+      list = Object.entries(by).map(([g, ts]) => `<div class="rm-g">${esc(D.groups[g].title)}</div>${ts.map(item).join('')}`).join('');
+    } else list = G.tables.map(item).join('');
+    remote.innerHTML = `<div class="rm-h" style="--c:${stageColor(G.area ? D.tables[G.tables[0]].group : cur.g)}">${esc(G.title)}</div>
+      <button type="button" class="rm-erd" data-rm="erd">ERD</button>
+      <div class="rm-list">${list}</div>
+      <button type="button" class="rm-top" data-rm="top">맨 위로 ↑</button>`;
+    remote.hidden = false;
+    spy();
+  }
+  remote.addEventListener('click', (e) => {
+    const a = e.target.closest('a.rm-t');
+    if (a) { e.preventDefault(); go(cur.g, a.dataset.t); return; }
+    const b = e.target.closest('[data-rm]');
+    if (!b) return;
+    const canvas = $('.canvas', main);
+    main.scrollTo({ top: b.dataset.rm === 'erd' && canvas ? Math.max(0, canvas.offsetTop - 120) : 0, behavior: 'smooth' });
+  });
+  // 스크롤 위치에 맞춰 지금 보고 있는 테이블 표시
+  function spy() {
+    if (remote.hidden) return;
+    const top = main.getBoundingClientRect().top + 140;
+    let on = null;
+    main.querySelectorAll('.spec').forEach((c) => { if (c.getBoundingClientRect().top <= top) on = c.id.replace(/^spec-/, ''); });
+    remote.querySelectorAll('.rm-t').forEach((a) => a.classList.toggle('on', a.dataset.t === on));
+    const erd = remote.querySelector('.rm-erd');
+    if (erd) erd.classList.toggle('on', !on);
+  }
+  let spyRaf = 0;
+  main.addEventListener('scroll', () => { if (!spyRaf) spyRaf = requestAnimationFrame(() => { spyRaf = 0; spy(); }); });
 
   // ---------- 개요 ----------
   function renderOverview() {

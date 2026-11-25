@@ -716,7 +716,7 @@ tr.ed-drop-after td { box-shadow: inset 0 -2px 0 var(--text); }
 .ed-drag.off { cursor: default; }
 
 /* ---------- 콘텐츠 폭 제한 (1920에서도 1520px 안에 정렬, 바 배경·선은 전체 폭) ---------- */
-:root { --wrap: 1520px; --gutter: max(32px, calc((100vw - var(--wrap)) / 2)); }
+:root { --wrap: 1440px; --gutter: max(32px, calc((100vw - var(--wrap)) / 2)); }
 .top, .gnb { padding-left: var(--gutter); padding-right: var(--gutter); }
 .gnb { padding-left: calc(var(--gutter) - 16px); } /* 메뉴 글자를 로고 왼쪽 선에 맞춤 (항목 안쪽 여백 16px) */
 .overview, .g-view { width: min(var(--wrap), 100% - 64px); margin-left: auto; margin-right: auto; }
@@ -738,3 +738,43 @@ tr.ed-drop-after td { box-shadow: inset 0 -2px 0 var(--text); }
 .gnb-h .dot { width: 8px; height: 8px; }
 /* ERD 도화지는 다크 모드에서도 밝은 종이색이라, 도화지 안 제목줄은 항상 진한 톤 */
 .canvas { --s1: #4f6378; --s2: #7d6c4f; --s3: #5e7663; --s4: #8e5d4c; --s5: #4d4d57; }
+
+/* ---------- 리모컨: 콘텐츠(1440) 왼쪽 여백에 고정된 테이블 바로가기. 여백이 충분한 넓은 화면에서만 ---------- */
+.remote { display: none; }
+@media (min-width: 1840px) {
+  .remote:not([hidden]) {
+    display: block;
+    position: fixed;
+    z-index: 15;
+    top: calc(56px + var(--gnb-h) + 40px);
+    left: calc((100vw - var(--wrap)) / 2 - 184px);
+    width: 160px;
+    max-height: calc(100vh - 56px - var(--gnb-h) - 80px);
+    overflow: auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 12px 0;
+    font-size: 13px;
+  }
+}
+.rm-h { padding: 0 14px 10px; margin-bottom: 6px; border-bottom: 2px solid var(--c); font-weight: 800; }
+.rm-g { padding: 10px 14px 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.rm-t, .rm-erd, .rm-top {
+  display: block;
+  width: 100%;
+  padding: 5px 14px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--sub);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rm-t:hover, .rm-erd:hover, .rm-top:hover { color: var(--text); background: var(--panel-2); text-decoration: none; }
+.rm-t.on, .rm-erd.on { color: var(--text); font-weight: 700; border-left-color: var(--text); }
+.rm-erd { font-weight: 600; }
+.rm-top { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
