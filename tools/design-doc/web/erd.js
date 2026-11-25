@@ -206,7 +206,7 @@
   function specCard(t, no) {
     const T = D.tables[t];
     const movable = (f) => EDIT && !AUDIT_TAIL_COLS.includes(f.name);
-    const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : ''}"${EDIT ? ` data-mv-t="${t}" data-mv-c="${esc(f.name)}"` : ''}>
+    const rows = T.fields.map((f) => `<tr class="${f.keys.includes('PK') ? 'is-pk' : AUDIT_TAIL_COLS.includes(f.name) ? 'is-sys' : ''}"${EDIT ? ` data-mv-t="${t}" data-mv-c="${esc(f.name)}"` : ''}>
         <td class="c-lg">${movable(f) ? '<span class="ed-drag" title="끌어서 순서 바꾸기" aria-hidden="true">⠿</span>' : EDIT ? '<span class="ed-drag off" aria-hidden="true"></span>' : ''}${esc(f.logical || f.name)}</td>
         <td class="c-name">${esc(f.name)}${EDIT ? `<span class="ed-row"><button class="ed-x" data-ed="col-edit" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 수정" aria-label="${esc(f.name)} 컬럼 수정">✎</button><button class="ed-x" data-ed="col-del" data-t="${t}" data-c="${esc(f.name)}" title="이 컬럼 삭제" aria-label="${esc(f.name)} 컬럼 삭제">×</button></span>` : ''}</td>
         <td class="c-type">${esc(f.type)}</td>
