@@ -741,7 +741,7 @@ Table payment_cancel_item [note: '[결제 취소 상세] 결제 취소 내역의
   }
 }
 
-Table payment_cash_receipt [note: '[현금영수증] 현금성 결제(실시간 계좌이체·가상계좌·간편결제 페이 머니)의 현금영수증 발급 기록. 발급 1건과 부분·전액 취소 때마다 취소 발급 1건씩 행이 쌓임(PG가 국세청에 발급, 우리는 요청·결과 저장). 고객이 주문서에서 용도·번호를 입력하고, 입력하지 않으면 자진발급. 결제 기록과 같이 5년 보관'] {
+Table payment_cash_receipt [note: '[현금영수증] 현금성 결제(실시간 계좌이체·가상계좌·간편결제 페이 머니)의 현금영수증 발급 기록. 발급 1건과 부분·전액 취소 때마다 취소 발급 1건씩 행이 쌓임(PG가 국세청에 발급, 우리는 요청·결과 저장). 고객이 주문서에서 용도·번호를 입력하고, 입력하지 않으면 자진발급(국세청 지정 번호로 발급, 고객이 홈택스에서 등록). 결제 기록과 같이 5년 보관(탈퇴해도 유지)'] {
   order_no varchar(20) [not null, note: '[주문 번호] 현금영수증을 발급한 주문']
   receipt_no smallint [not null, note: '[현금영수증 번호] 주문별 1부터, 발급·취소 발급마다 앱이 부여']
   payment_no smallint [not null, note: '[결제 번호] 현금영수증 대상 결제(성공한 결제). 결제 복합 FK용']
@@ -749,7 +749,7 @@ Table payment_cash_receipt [note: '[현금영수증] 현금성 결제(실시간 
   issue_type varchar(20) [not null, note: '[발급 유형] ISSUE/CANCEL (발급/취소 발급). 부분 취소면 취소 금액만큼 취소 발급']
   usage_type varchar(20) [not null, note: '[용도 유형] INCOME_DEDUCTION/EXPENSE_PROOF (소득공제/지출증빙). 자진발급은 소득공제']
   id_no_type varchar(20) [not null, note: '[발급 번호 유형] PHONE/BIZ_NO/CARD/SELF (휴대폰 번호/사업자 번호/현금영수증 카드 번호/자진발급). 자진발급은 국세청 지정 번호로 발급되고 고객이 홈택스에서 등록']
-  id_no_enc varchar(255) [note: '[발급 번호(암호화)] 휴대폰·사업자·현금영수증 카드 번호 AES-256 암호문. 자진발급이면 NULL. CHECK ((id_no_type = \'SELF\') = (id_no_enc IS NULL))']
+  id_no_enc varchar(255) [note: '[발급 번호(암호화)] 휴대폰·사업자·현금영수증 카드 번호 AES-256 암호문. 자진발급이면 NULL. CHECK ((id_no_type = \'SELF\') = (id_no_enc IS NULL)). 대금 결제 기록이라 회원이 탈퇴해도 지우지 않고 5년 보관 후 파기(배치)']
   receipt_amount bigint [not null, note: '[발급 금액] 발급이면 현금성 결제 금액, 취소 발급이면 이번 취소 금액. CHECK (receipt_amount = supply_amount + vat_amount)']
   supply_amount bigint [not null, note: '[공급가액] 발급 금액 중 부가세를 뺀 금액. 국세청 신고 항목']
   vat_amount bigint [not null, note: '[부가세] 발급 금액 중 부가가치세']
