@@ -14,7 +14,8 @@
   --panel: #ffffff;
   --panel-2: #f6f6f6;
   --content: #f5f5f5;   /* 콘텐츠 영역 미색 (눈부심 완화) */
-  --content-2: #ebebeb; /* 콘텐츠 영역 안의 옅은 강조 (PK 행·칩·hover) */
+  --content-2: #ebebeb; /* 콘텐츠 영역 안의 옅은 강조 (PK 행·칩) */
+  --row-hover: #f7f7f7; /* 명세 표 행 hover (PK 행보다 옅게) */
   --line: #e6e6e6;
   --line-strong: #111111;
   --text: #111111;
@@ -46,7 +47,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
+    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --row-hover: #151515; --line: #2a2a2a; --line-strong: #f2f2f2;
     --text: #f2f2f2; --muted: #9a9a9a; --sub: #bdbdbd; --accent: #f2f2f2; --accent-soft: #1f1f1f; --on-accent: #111111;
     --pk: #111111; --pk-soft: #f2f2f2; --fk: #f2f2f2; --fk-soft: #0f0f0f; --uk: #bbbbbb; --uk-soft: #262626;
     --s1: #93a8bd; --s2: #bfad8a; --s3: #98b29d; --s4: #cd9886; --s5: #a3a3ad; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
@@ -55,7 +56,7 @@
   }
 }
 :root[data-theme="dark"] {
-    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --line: #2a2a2a; --line-strong: #f2f2f2;
+    --bg: #0f0f0f; --panel: #0f0f0f; --panel-2: #1a1a1a; --content: #0f0f0f; --content-2: #1a1a1a; --row-hover: #151515; --line: #2a2a2a; --line-strong: #f2f2f2;
     --text: #f2f2f2; --muted: #9a9a9a; --sub: #bdbdbd; --accent: #f2f2f2; --accent-soft: #1f1f1f; --on-accent: #111111;
     --pk: #111111; --pk-soft: #f2f2f2; --fk: #f2f2f2; --fk-soft: #0f0f0f; --uk: #bbbbbb; --uk-soft: #262626;
     --s1: #93a8bd; --s2: #bfad8a; --s3: #98b29d; --s4: #cd9886; --s5: #a3a3ad; --s6: #777777; --s7: #f2f2f2; --s8: #bbbbbb;
@@ -660,7 +661,11 @@ a:hover { text-decoration: none; }
 .main { background: var(--content); }
 .toolbar { background: transparent; }
 .g-card { background: var(--panel); }
-.chips span, .cols tr.is-pk td, .cols tbody tr:hover td { background: var(--content-2); }
+.chips span, .cols tr.is-pk td { background: var(--content-2); }
+/* 행 hover는 PK 행(옅은 회색 바탕)과 구분: 더 옅은 바탕 + 왼쪽 검정 2px 선. PK 행 위에서는 바탕을 유지하고 선만 */
+.cols tbody tr:hover td { background: var(--row-hover); }
+.cols tbody tr.is-pk:hover td { background: var(--content-2); }
+.cols tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--line-strong); }
 .main .icon-btn { background: var(--panel); }
 
 /* ---------- 로컬 편집 모드 (edit-server.js 화면에서만 보임) ---------- */
