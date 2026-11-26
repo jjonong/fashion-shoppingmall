@@ -1,7 +1,7 @@
 // =====================================================================
 // 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: W컨셉 (디자이너 브랜드 입점, 의류·신발·가방·잡화)
-// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 3개(브랜드 기본 1 + 배송 정책 2) + 상품 15개(상품 기본 7 + 기준 데이터 3 + 실측 3 + 정보 고시 1 + 고객 연결 1) + 주문 5개(장바구니 1 + 주문 기본 4) + 결제 3개(결제 기본 3) = 36개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
+// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 3개(브랜드 기본 1 + 배송 정책 2) + 상품 15개(상품 기본 7 + 기준 데이터 3 + 실측 3 + 정보 고시 1 + 고객 연결 1) + 주문 5개(장바구니 1 + 주문 기본 4) + 결제 5개(결제 기본 5) = 38개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
@@ -658,13 +658,7 @@ Table payment [note: '[결제] 주문의 결제 시도 1건. 결제 수단은 �
   cancelled_amount bigint [not null, default: 0, note: '[누적 취소 금액] 캐시. 완료된 결제 취소 내역의 취소 금액 합계, 취소 내역과 같은 트랜잭션에서 갱신. CHECK (cancelled_amount <= pay_amount). 남은 결제 금액 = 결제 금액 - 누적 취소 금액']
   status varchar(20) [not null, default: 'READY', note: '[상태] READY/PAID/FAILED/PARTIAL_CANCELLED/CANCELLED (결제 대기/결제 완료/결제 실패/부분 취소/결제 취소). 가상계좌는 입금 전까지 결제 대기. 취소 시각은 결제 취소 내역의 취소일시(완료된 마지막 회차)라 결제에는 취소일시를 두지 않음. 수단이 하나라 부분결제 상태는 없음']
   fail_reason varchar(200) [note: '[실패 사유] status = FAILED일 때 PG 응답 코드·메시지 (예: 한도 초과, 사용자 취소)']
-  card_company_code varchar(10) [note: '[카드사 코드] 신용카드·카드 간편결제일 때 PG가 주는 카드사 코드']
-  card_no_masked varchar(30) [note: '[카드 번호(마스킹)] PG가 마스킹해서 주는 번호(예: 1234-56**-****-7890). 원래 번호는 저장하지 않음']
-  installment_months tinyint [note: '[할부 개월 수] 0이면 일시불. 카드 결제일 때만']
-  approval_no varchar(20) [note: '[카드 승인번호] 카드사가 발급하는 승인번호(영수증·고객 문의용). PG 거래 번호와 다른 값']
-  bank_code char(3) [note: '[은행 코드] 가상계좌 입금 은행 또는 실시간 계좌이체 은행. 금융결제원 3자리 은행 코드']
-  vaccount_no varchar(30) [note: '[가상계좌 번호] PG가 발급한 입금 전용 계좌. 고객 계좌가 아니라 평문']
-  deposit_due_at datetime [note: '[입금 기한] 가상계좌 입금 마감 시각. 지나면 결제 실패 + 주문 취소(배치). 가상계좌 환불은 회원 환불 계좌로']
+  bank_code char(3) [note: '[은행 코드] 실시간 계좌이체 은행(PG 승인 응답). 금융결제원 3자리 은행 코드. 계좌이체는 은행 하나뿐이라 결제에 둠(나중에 분리 가능). 환불은 PG가 같은 계좌로. 카드·가상계좌 정보는 1:1 테이블로 분리']
   paid_at datetime [note: '[결제일시] status = PAID 처리 시각 (카드는 승인, 가상계좌는 입금 웹훅 수신)']
   failed_at datetime [note: '[실패일시] status = FAILED 처리 시각']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 결제 요청(결제창 호출) 일시']
@@ -674,7 +668,36 @@ Table payment [note: '[결제] 주문의 결제 시도 1건. 결제 수단은 �
     (order_no, payment_no) [pk, note: 'order_no 선두라 주문 FK 인덱스 겸용']
     (pg_provider, pg_tx_id) [unique, name: 'uk_payment_pg_tx', note: 'PG 거래 1건 = 결제 1행. 웹훅으로 결제 찾기. pg_tx_id가 NULL인 행은 중복 허용']
     `CASE WHEN status IN ('PAID', 'PARTIAL_CANCELLED', 'CANCELLED') THEN order_no END` [unique, name: 'ux_payment_success', note: '주문당 성공한 결제 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
-    (status, deposit_due_at) [name: 'ix_payment_deposit_due', note: '입금 기한 초과 가상계좌 자동 취소 배치']
+  }
+}
+
+Table payment_card [note: '[결제 카드 정보] 결제 1:1. 신용카드 결제와 카드로 낸 간편결제(예: 카카오페이 안의 신한카드)일 때만 행이 생김. 모두 PG 승인 응답으로 받은 값이고, 결제 완료 처리와 같은 트랜잭션에서 저장. 카드 결제면 행이 꼭 있어야 하는 것은 앱 검증'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 카드로 결제한 주문']
+  payment_no smallint [not null, note: '[결제 번호] 카드로 결제한 결제 시도']
+  card_company_code varchar(10) [not null, note: '[카드사 코드] PG가 주는 카드사 코드. 주문 내역 표시(신한카드), 카드사별 통계, 카드 혜택 정산 근거']
+  card_no_masked varchar(30) [note: '[카드 번호(마스킹)] PG가 마스킹해서 주는 번호(예: 1234-56**-****-7890). 원래 번호는 저장하지 않음(카드 정보는 PG 결제창에서만 입력). 일부 간편결제는 주지 않아 NULL 가능']
+  installment_months tinyint [not null, default: 0, note: '[할부 개월 수] 고객이 결제창에서 고른 값. 0이면 일시불. 주문 내역 표시, 무이자 할부 비용 정산 근거']
+  approval_no varchar(20) [not null, note: '[카드 승인번호] 카드사가 발급하는 승인번호. 고객 카드 명세서에 찍히는 번호라 고객 문의·카드사 분쟁(차지백) 대조용. PG 거래 번호와 다른 값']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 카드 승인 정보 저장일시']
+  updated_at datetime [note: '[수정일시] 카드 정보 수정일시']
+
+  indexes {
+    (order_no, payment_no) [pk, note: '결제 PK와 같음 (1:1)']
+  }
+}
+
+Table payment_vaccount [note: '[결제 가상계좌 정보] 결제 1:1. 가상계좌 결제일 때만 행이 생김. PG의 계좌 발급 응답(입금 전)으로 받은 값. 입금은 나중에 PG 웹훅으로 알려 오고 그때 결제가 결제 완료. 가상계좌 환불은 고객 계좌로 보내야 해서 회원 환불 계좌 사용'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 가상계좌로 결제한 주문']
+  payment_no smallint [not null, note: '[결제 번호] 가상계좌로 결제한 결제 시도']
+  bank_code char(3) [not null, note: '[은행 코드] 가상계좌 입금 은행. 금융결제원 3자리 은행 코드']
+  vaccount_no varchar(30) [not null, note: '[가상계좌 번호] PG가 발급한 입금 전용 계좌. 고객 계좌가 아니라 평문']
+  deposit_due_at datetime [not null, note: '[입금 기한] 입금 마감 시각(예: 주문 후 24시간). 지나도 입금이 없으면 결제 실패 + 주문 취소(배치)']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 가상계좌 발급일시']
+  updated_at datetime [note: '[수정일시] 가상계좌 정보 수정일시']
+
+  indexes {
+    (order_no, payment_no) [pk, note: '결제 PK와 같음 (1:1)']
+    deposit_due_at [name: 'ix_payment_vaccount_due', note: '입금 기한 초과 자동 취소 배치 (결제 상태 = 결제 대기와 조인)']
   }
 }
 
@@ -770,6 +793,8 @@ Ref: order_item.(order_no, brand_id) > order_brand.(order_no, brand_id)
 Ref: order_item.(product_code, option_no) > product_option.(product_code, option_no)
 
 Ref: payment.order_no > orders.order_no
+Ref: payment_card.(order_no, payment_no) - payment.(order_no, payment_no)
+Ref: payment_vaccount.(order_no, payment_no) - payment.(order_no, payment_no)
 Ref: payment_cancel.(order_no, payment_no) > payment.(order_no, payment_no)
 Ref: payment_cancel_item.(order_no, cancel_no) > payment_cancel.(order_no, cancel_no)
 Ref: payment_cancel_item.(order_no, item_no) > order_item.(order_no, item_no)
@@ -846,6 +871,8 @@ TableGroup order_basic [note: '주문 - 주문 기본'] {
 
 TableGroup payment_basic [note: '결제 - 결제 기본'] {
   payment
+  payment_card
+  payment_vaccount
   payment_cancel
   payment_cancel_item
 }
