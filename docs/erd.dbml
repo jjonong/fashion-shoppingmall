@@ -656,7 +656,7 @@ Table payment [note: '[결제] 주문의 결제 시도 1건. 결제 수단은 �
   pg_tx_id varchar(100) [note: '[PG 거래 번호] PG가 거래마다 발급하는 키(예: 토스페이먼츠 paymentKey). 취소 요청에 사용. 결제창 인증 전이면 NULL']
   pay_amount bigint [not null, note: '[결제 금액] 이 결제로 요청·승인된 금액. 승인 전에 주문의 결제 금액과 PG가 보낸 금액이 같은지 서버가 검증(금액 위변조 방지)']
   cancelled_amount bigint [not null, default: 0, note: '[누적 취소 금액] 캐시. 완료된 결제 취소 내역의 취소 금액 합계, 취소 내역과 같은 트랜잭션에서 갱신. CHECK (cancelled_amount <= pay_amount). 남은 결제 금액 = 결제 금액 - 누적 취소 금액']
-  status varchar(20) [not null, default: 'READY', note: '[상태] READY/PAID/FAILED/PARTIAL_CANCELLED/CANCELLED (결제 대기/결제 완료/결제 실패/부분 취소/결제 취소). 가상계좌는 입금 전까지 결제 대기. 취소 시각은 결제 취소 내역의 취소일시(완료된 마지막 회차)라 결제에는 취소일시를 두지 않음. 수단이 하나라 부분결제 상태는 없음']
+  status varchar(20) [not null, default: 'WAITING', note: '[상태] WAITING/PAID/FAILED/PARTIAL_CANCELLED/CANCELLED (결제 대기/결제 완료/결제 실패/부분 취소/결제 취소). 가상계좌는 입금 전까지 결제 대기. 취소 시각은 결제 취소 내역의 취소일시(완료된 마지막 회차)라 결제에는 취소일시를 두지 않음. 수단이 하나라 부분결제 상태는 없음. 주문 상태 PAYMENT_WAITING과 톤을 맞춰 WAITING(결제 자체가 대상이라 접두사 없음)']
   fail_reason varchar(200) [note: '[실패 사유] status = FAILED일 때 PG 응답 코드·메시지 (예: 한도 초과, 사용자 취소)']
   bank_code char(3) [note: '[은행 코드] 실시간 계좌이체 은행(PG 승인 응답). 금융결제원 3자리 은행 코드. 계좌이체는 은행 하나뿐이라 결제에 둠(나중에 분리 가능). 환불은 PG가 같은 계좌로. 카드·가상계좌 정보는 1:1 테이블로 분리']
   paid_at datetime [note: '[결제일시] status = PAID 처리 시각 (카드는 승인, 가상계좌는 입금 웹훅 수신)']
