@@ -701,7 +701,7 @@ Table payment_cancel [note: '[결제 취소 내역] 결제의 PG 취소(환불) 
   }
 }
 
-Table payment_cancel_item [note: '[결제 취소 상품] 취소 1회에 포함된 주문 상세와 수량. 한 번에 여러 상품을 취소해도 PG 취소는 1번이라 회차로 묶음. 수량 일부 취소(2개 중 1개)도 가능, 주문 상세 상태는 수량을 모두 취소하면 CANCELLED(앱)'] {
+Table payment_cancel_item [note: '[결제 취소 상세] 결제 취소 내역의 상세 줄(주문 → 주문 상세와 같은 헤더-상세 관계). 취소 1회에 포함된 주문 상세와 수량. 한 번에 여러 상품을 취소해도 PG 취소는 1번이라 회차로 묶음. 수량 일부 취소(2개 중 1개)도 가능, 주문 상세 상태는 수량을 모두 취소하면 CANCELLED(앱)'] {
   order_no varchar(20) [not null, note: '[주문 번호] 취소한 주문']
   payment_no smallint [not null, note: '[결제 번호] 취소한 결제']
   cancel_no smallint [not null, note: '[취소 번호] 이 상품이 포함된 취소 회차']
@@ -710,7 +710,7 @@ Table payment_cancel_item [note: '[결제 취소 상품] 취소 1회에 포함�
   cancel_amount bigint [not null, note: '[취소 금액] 이 상품 몫의 환불액 = (판매가 + 추가 금액) × 취소 수량 - 배분된 할인 - 배분된 포인트. 회차 취소 금액 = 상품 몫 합계 - 배송비 차감 금액(앱)']
   point_refund_amount bigint [not null, default: 0, note: '[포인트 환원 금액] 이 상품 몫으로 포인트로 돌려준 금액']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 취소 요청일시']
-  updated_at datetime [note: '[수정일시] 취소 상품 수정일시']
+  updated_at datetime [note: '[수정일시] 결제 취소 상세 수정일시']
 
   indexes {
     (order_no, payment_no, cancel_no, item_no) [pk, note: '취소 회차 FK 인덱스 겸용']
