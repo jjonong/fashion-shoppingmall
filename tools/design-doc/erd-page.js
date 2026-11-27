@@ -164,7 +164,16 @@ async function main() {
   S.tables.forEach((t) => (data.tables[t.name] = tableData(t)));
   svgs.push(`<template id="svg-__all">${overallSvg()}</template>`);
 
-  const css = fs.readFileSync(path.join(__dirname, 'web', 'erd.css'), 'utf8');
+  // 영역 포인트 색(--s1…)은 화면에 나오는 영역 순서대로 lib.AREAS 색을 넣는다 (erd.css의 고정값을 덮어씀)
+  const lighten = (hex, r = 0.4) => '#' + [1, 3, 5].map((i) => { const v = parseInt(hex.slice(i, i + 2), 16); return Math.round(v + (255 - v) * r).toString(16).padStart(2, '0'); }).join('');
+  const sVars = (f) => data.stages.map((st, i) => `--s${i + 1}: ${f(AREAS.find((a) => a.prefix === st.prefix).color)};`).join(' ');
+  const darkVars = sVars((c) => lighten(c));
+  const stageCss = `
+:root { ${sVars((c) => c)} }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { ${darkVars} } }
+:root[data-theme="dark"] { ${darkVars} }
+.canvas { ${sVars((c) => c)} }`;
+  const css = fs.readFileSync(path.join(__dirname, 'web', 'erd.css'), 'utf8') + stageCss;
   const js = fs.readFileSync(path.join(__dirname, 'web', 'erd.js'), 'utf8');
   const json = JSON.stringify(data).replace(/</g, '\\u003c');
 
