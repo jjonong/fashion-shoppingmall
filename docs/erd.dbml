@@ -625,6 +625,7 @@ Table order_item [note: '[주문 상세] 주문한 옵션 한 줄. 상품·옵�
   indexes {
     (order_no, item_no) [pk, note: 'order_no 선두라 주문 FK 인덱스 겸용']
     (order_no, brand_id) [name: 'ix_order_item_brand', note: '주문 브랜드 복합 FK 인덱스']
+    (order_no, item_no, brand_id) [unique, name: 'uk_order_item_brand', note: '출고 상세가 (주문 상세, 브랜드)로 참조하는 FK 대상. PK에 브랜드를 붙인 것이라 값은 항상 유일. 출고 브랜드와 주문 상세 브랜드가 같은지 DB가 확인하게 함']
     (product_code, option_no) [name: 'ix_order_item_option', note: '옵션 FK 인덱스, 상품별 판매 조회']
   }
 }
@@ -816,23 +817,26 @@ Table delivery_shipment [note: '[출고] 브랜드가 상자 하나를 보내는
   indexes {
     (order_no, shipment_no) [pk, note: '출고 번호를 주문 기준으로 매겨 PK에서 브랜드를 뺌(출고 상세·배송 추적 이력 PK가 짧아짐)']
     (order_no, brand_id) [name: 'ix_delivery_shipment_order_brand', note: '주문 브랜드 FK 인덱스, 주문 브랜드별 출고 목록']
+    (order_no, shipment_no, brand_id) [unique, name: 'uk_delivery_shipment_brand', note: '출고 상세가 (출고, 브랜드)로 참조하는 FK 대상. PK에 브랜드를 붙인 것이라 값은 항상 유일']
     (carrier_code, invoice_no, created_at) [name: 'ix_delivery_shipment_invoice', note: '송장 조회·추적 웹훅이 택배사·송장 번호로 출고를 찾음. 택배사 FK 인덱스 겸용. UNIQUE가 아님: 택배사가 몇 년 뒤 송장 번호를 다시 쓰는 경우가 있어 5년 보관 중 겹칠 수 있음. 진행 중인 출고(배송 완료 전)끼리 중복은 앱 검증, 웹훅은 같은 번호 중 가장 최근 출고에 연결']
     (brand_id, status, created_at) [name: 'ix_delivery_shipment_brand', note: '브랜드 관리자 화면: 상태별 출고 목록(출고 준비·배송 대기·배송중)']
     (status, delivered_at) [name: 'ix_delivery_shipment_delivered', note: '배송 완료 7일 후 자동 구매 확정 배치']
   }
 }
 
-Table delivery_shipment_item [note: '[출고 상세] 출고 1번에 담은 주문 상세와 수량(출고 → 출고 상세는 주문 → 주문 상세와 같은 헤더-상세 관계). 분할 출고면 주문 상세 1줄이 여러 출고에 나뉨(예: 같은 티셔츠 3개 중 2개 먼저). 출고의 브랜드와 주문 상세의 브랜드가 같아야 함(앱 검증)'] {
+Table delivery_shipment_item [note: '[출고 상세] 출고 1번에 담은 주문 상세와 수량(출고 → 출고 상세는 주문 → 주문 상세와 같은 헤더-상세 관계). 분할 출고면 주문 상세 1줄이 여러 출고에 나뉨(예: 같은 티셔츠 3개 중 2개 먼저). 출고의 브랜드와 주문 상세의 브랜드가 같아야 하므로 브랜드 아이디를 PK가 아닌 컬럼으로 두고 두 FK에 모두 넣어 DB가 확인'] {
   order_no varchar(20) [not null, note: '[주문 번호] 출고한 주문']
   item_no smallint [not null, note: '[주문 상세 번호] 출고한 주문 상세']
   shipment_no smallint [not null, note: '[출고 번호] 이 주문 상세가 담긴 출고']
+  brand_id varchar(30) [not null, note: '[브랜드 아이디] 출고한 브랜드. PK가 아님. (출고, 브랜드)와 (주문 상세, 브랜드) 두 복합 FK에 모두 들어가서 다른 브랜드 상품이 섞이면 저장이 거부됨']
   quantity smallint [not null, note: '[수량] 이 출고에 담은 수량. CHECK (quantity >= 1). 같은 주문 상세의 출고 수량 합계는 (주문 수량 - 취소 수량) 이하(앱 검증)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 출고 상세 등록일시']
   updated_at datetime [note: '[수정일시] 출고 상세 수정일시']
 
   indexes {
-    (order_no, item_no, shipment_no) [pk, note: '주문 상세 기준 순서. (order_no, item_no) 선두라 주문 상세 FK 인덱스 겸용, 주문 상세별 출고 수량 합계']
-    (order_no, shipment_no) [name: 'ix_delivery_shipment_item_shipment', note: '출고 FK 인덱스, 출고 1건에 담은 상품 목록']
+    (order_no, item_no, shipment_no) [pk, note: '주문 상세 기준 순서. 주문 상세별 출고 수량 합계']
+    (order_no, item_no, brand_id) [name: 'ix_delivery_shipment_item_order_item', note: '주문 상세 복합 FK 인덱스 (MySQL FK 인덱스는 FK 컬럼이 같은 순서로 앞에 와야 함)']
+    (order_no, shipment_no, brand_id) [name: 'ix_delivery_shipment_item_shipment', note: '출고 복합 FK 인덱스, 출고 1건에 담은 상품 목록']
   }
 }
 
@@ -932,8 +936,8 @@ Ref: payment_cash_receipt.(order_no, cancel_no) > payment_cancel.(order_no, canc
 
 Ref: delivery_shipment.(order_no, brand_id) > order_brand.(order_no, brand_id)
 Ref: delivery_shipment.carrier_code > delivery_carrier.carrier_code
-Ref: delivery_shipment_item.(order_no, shipment_no) > delivery_shipment.(order_no, shipment_no)
-Ref: delivery_shipment_item.(order_no, item_no) > order_item.(order_no, item_no)
+Ref: delivery_shipment_item.(order_no, shipment_no, brand_id) > delivery_shipment.(order_no, shipment_no, brand_id)
+Ref: delivery_shipment_item.(order_no, item_no, brand_id) > order_item.(order_no, item_no, brand_id)
 Ref: delivery_tracking.(order_no, shipment_no) > delivery_shipment.(order_no, shipment_no)
 
 // =====================================================================
