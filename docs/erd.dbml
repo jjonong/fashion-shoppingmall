@@ -799,8 +799,8 @@ Table payment_cash_receipt [note: '[현금영수증] 현금성 결제(실시간 
 
 Table delivery_shipment [note: '[출고] 브랜드가 상자 하나를 보내는 단위 = 송장 1개. 주문 브랜드마다 1번 이상(예약 상품·일부 품절이면 나눠 출고). 상태는 송장 입력·택배사 추적 이벤트로 바뀌고, 바뀌면 주문 상세 상태를 같은 트랜잭션에서 갱신(앱)'] {
   order_no varchar(20) [not null, note: '[주문 번호] 출고한 주문']
-  brand_id varchar(30) [not null, note: '[브랜드 아이디] 출고한 브랜드 (주문 브랜드 복합 FK)']
-  shipment_no smallint [not null, note: '[출고 번호] 주문 브랜드별 1부터. 앱이 부여']
+  shipment_no smallint [not null, note: '[출고 번호] 주문별 1부터(브랜드와 상관없이 주문 안에서 이어 붙임). 앱이 부여']
+  brand_id varchar(30) [not null, note: '[브랜드 아이디] 출고한 브랜드. PK가 아니라 (order_no, brand_id)로 주문 브랜드 복합 FK']
   status varchar(20) [not null, default: 'READY', note: '[상태] READY/INVOICED/SHIPPING/DELIVERED (출고 준비/송장 입력(배송 대기)/배송중/배송 완료). 송장 입력은 브랜드 관리자, 배송중·배송 완료는 택배사 추적 이벤트(집하·배송 완료)로. 출고를 잠시 멈출 때는 송장을 입력하지 않고 출고 준비로 둠(보류 상태 없음). CHECK (status = \'READY\' OR (carrier_code IS NOT NULL AND invoice_no IS NOT NULL))']
   carrier_code varchar(20) [note: '[택배사 코드] 송장을 발급한 택배사. 송장 입력 전이면 NULL. CHECK에 쓰이므로 FK는 참조 동작 없이']
   invoice_no varchar(30) [note: '[송장 번호] 택배사 운송장 번호(숫자만 저장, 하이픈 제거). 송장 입력 전이면 NULL. 잘못 입력하면 배송 시작 전까지 수정 가능']
@@ -814,31 +814,30 @@ Table delivery_shipment [note: '[출고] 브랜드가 상자 하나를 보내는
   updated_at datetime [note: '[수정일시] 출고 수정일시']
 
   indexes {
-    (order_no, brand_id, shipment_no) [pk, note: '(order_no, brand_id) 선두라 주문 브랜드 FK 인덱스 겸용']
+    (order_no, shipment_no) [pk, note: '출고 번호를 주문 기준으로 매겨 PK에서 브랜드를 뺌(출고 상세·배송 추적 이력 PK가 짧아짐)']
+    (order_no, brand_id) [name: 'ix_delivery_shipment_order_brand', note: '주문 브랜드 FK 인덱스, 주문 브랜드별 출고 목록']
     (carrier_code, invoice_no, created_at) [name: 'ix_delivery_shipment_invoice', note: '송장 조회·추적 웹훅이 택배사·송장 번호로 출고를 찾음. 택배사 FK 인덱스 겸용. UNIQUE가 아님: 택배사가 몇 년 뒤 송장 번호를 다시 쓰는 경우가 있어 5년 보관 중 겹칠 수 있음. 진행 중인 출고(배송 완료 전)끼리 중복은 앱 검증, 웹훅은 같은 번호 중 가장 최근 출고에 연결']
     (brand_id, status, created_at) [name: 'ix_delivery_shipment_brand', note: '브랜드 관리자 화면: 상태별 출고 목록(출고 준비·배송 대기·배송중)']
     (status, delivered_at) [name: 'ix_delivery_shipment_delivered', note: '배송 완료 7일 후 자동 구매 확정 배치']
   }
 }
 
-Table delivery_shipment_item [note: '[출고 상세] 출고 1번에 담은 주문 상세와 수량(출고 → 출고 상세는 주문 → 주문 상세와 같은 헤더-상세 관계). 분할 출고면 주문 상세 1줄이 여러 출고에 나뉨(예: 같은 티셔츠 3개 중 2개 먼저). 출고는 한 주문 브랜드 안이라 그 브랜드의 주문 상세만 담음(앱 검증)'] {
+Table delivery_shipment_item [note: '[출고 상세] 출고 1번에 담은 주문 상세와 수량(출고 → 출고 상세는 주문 → 주문 상세와 같은 헤더-상세 관계). 분할 출고면 주문 상세 1줄이 여러 출고에 나뉨(예: 같은 티셔츠 3개 중 2개 먼저). 출고의 브랜드와 주문 상세의 브랜드가 같아야 함(앱 검증)'] {
   order_no varchar(20) [not null, note: '[주문 번호] 출고한 주문']
-  brand_id varchar(30) [not null, note: '[브랜드 아이디] 출고한 브랜드']
-  shipment_no smallint [not null, note: '[출고 번호] 이 주문 상세가 담긴 출고']
   item_no smallint [not null, note: '[주문 상세 번호] 출고한 주문 상세']
+  shipment_no smallint [not null, note: '[출고 번호] 이 주문 상세가 담긴 출고']
   quantity smallint [not null, note: '[수량] 이 출고에 담은 수량. CHECK (quantity >= 1). 같은 주문 상세의 출고 수량 합계는 (주문 수량 - 취소 수량) 이하(앱 검증)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 출고 상세 등록일시']
   updated_at datetime [note: '[수정일시] 출고 상세 수정일시']
 
   indexes {
-    (order_no, brand_id, shipment_no, item_no) [pk, note: '(order_no, brand_id, shipment_no) 선두라 출고 FK 인덱스 겸용']
-    (order_no, item_no) [name: 'ix_delivery_shipment_item_order_item', note: '주문 상세 FK 인덱스, 주문 상세별 출고 수량 합계']
+    (order_no, item_no, shipment_no) [pk, note: '주문 상세 기준 순서. (order_no, item_no) 선두라 주문 상세 FK 인덱스 겸용, 주문 상세별 출고 수량 합계']
+    (order_no, shipment_no) [name: 'ix_delivery_shipment_item_shipment', note: '출고 FK 인덱스, 출고 1건에 담은 상품 목록']
   }
 }
 
 Table delivery_tracking [note: '[배송 추적 이력] 택배사 추적 이벤트 1건(배송 추적 연동 서비스 웹훅). 고객 화면 배송 조회 단계 표시, 배송 지연 문의·분쟁 근거. 집하 이벤트면 출고를 배송중, 배송 완료 이벤트면 배송 완료로 바꿈(같은 트랜잭션). 이력이라 수정하지 않음'] {
   order_no varchar(20) [not null, note: '[주문 번호] 추적한 출고의 주문']
-  brand_id varchar(30) [not null, note: '[브랜드 아이디] 추적한 출고의 브랜드']
   shipment_no smallint [not null, note: '[출고 번호] 추적한 출고']
   tracking_no smallint [not null, note: '[추적 번호] 출고별 1부터, 이벤트를 받을 때마다 앱이 부여']
   event_type varchar(20) [not null, note: '[추적 이벤트 유형] PICKED_UP/IN_TRANSIT/OUT_FOR_DELIVERY/DELIVERED/FAILED (집하/이동중/배송 출발/배송 완료/배송 실패: 수취인 부재 등). 택배사별 코드를 연동 서비스가 표준화한 값']
@@ -849,8 +848,8 @@ Table delivery_tracking [note: '[배송 추적 이력] 택배사 추적 이벤�
   updated_at datetime [note: '[수정일시] 이력 수정일시 (이력은 수정하지 않음)']
 
   indexes {
-    (order_no, brand_id, shipment_no, tracking_no) [pk, note: '(order_no, brand_id, shipment_no) 선두라 출고 FK 인덱스 겸용, 출고별 추적 단계 조회']
-    (order_no, brand_id, shipment_no, event_type, event_at) [unique, name: 'uk_delivery_tracking_event', note: '같은 웹훅이 다시 와도 한 번만 저장(중복 수신 방지)']
+    (order_no, shipment_no, tracking_no) [pk, note: '(order_no, shipment_no) 선두라 출고 FK 인덱스 겸용, 출고별 추적 단계 조회']
+    (order_no, shipment_no, event_type, event_at) [unique, name: 'uk_delivery_tracking_event', note: '같은 웹훅이 다시 와도 한 번만 저장(중복 수신 방지)']
   }
 }
 
@@ -933,9 +932,9 @@ Ref: payment_cash_receipt.(order_no, cancel_no) > payment_cancel.(order_no, canc
 
 Ref: delivery_shipment.(order_no, brand_id) > order_brand.(order_no, brand_id)
 Ref: delivery_shipment.carrier_code > delivery_carrier.carrier_code
-Ref: delivery_shipment_item.(order_no, brand_id, shipment_no) > delivery_shipment.(order_no, brand_id, shipment_no)
+Ref: delivery_shipment_item.(order_no, shipment_no) > delivery_shipment.(order_no, shipment_no)
 Ref: delivery_shipment_item.(order_no, item_no) > order_item.(order_no, item_no)
-Ref: delivery_tracking.(order_no, brand_id, shipment_no) > delivery_shipment.(order_no, brand_id, shipment_no)
+Ref: delivery_tracking.(order_no, shipment_no) > delivery_shipment.(order_no, shipment_no)
 
 // =====================================================================
 // 묶음
