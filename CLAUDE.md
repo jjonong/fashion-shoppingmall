@@ -208,6 +208,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 ### 배송 · 반품·교환 (`delivery_claim`, 2026-11-27)
 - 근거: 클릭엔 관리자 반품관리·교환관리 화면(교환 신청/수거완료/재배송중/완료). 사용자 결정: **교환 배송비는 결제 유형을 추가해 따로 결제**, **교환은 같은 상품의 다른 옵션만**(다른 상품은 반품 후 재주문).
 - 기본안(이번에 정함): 신청 1건 = 주문 브랜드 1개(회수지가 브랜드 물류센터), 교환 재배송은 출고 재사용(`delivery_shipment.claim_no`, NULL이면 일반 출고), 주문 상세 상태에 반품·교환 진행 상태를 추가하지 않음(진행은 신청 상태, 반품 승인 수량이 다 차면 RETURNED, 진행 중 신청이 있으면 자동 구매 확정 건너뜀, 교환은 재배송 배송 완료 7일 후).
+- **반품·교환은 한 테이블** (사용자 확인 2026-11-27): 회수·신청 상세·이력·상태 흐름이 같고 교환만의 차이는 교환 옵션·재배송중뿐이라 신청 유형으로 구분. 교환 불가(품절) 시 반품 전환도 신청 유형만 바꿈(이력에 사유). 관리자 화면(반품관리/교환관리)은 `ix_delivery_claim_brand (brand_id, claim_type, status, created_at)`로 나눔.
 - `delivery_claim` [반품·교환 신청]: PK (order_no, claim_no), 주문 브랜드 복합 FK + `uk_delivery_claim_brand`. 신청 유형 RETURN/EXCHANGE, 신청 사유 유형 8개, 귀책 유형 CUSTOMER/SELLER(사유에서 기본값, 브랜드가 검수 후 변경), 반품·교환 배송비 스냅샷, 배송비 결제 방식 REFUND_DEDUCT/PAYMENT/NONE, 상태 REQUESTED/COLLECTING/COLLECTED/RESHIPPING/COMPLETED/REJECTED/WITHDRAWN ↔ `approved_at`/`collected_at`/`completed_at`/`rejected_at`/`withdrawn_at`(신청 = `created_at`, 재배송중은 출고 시각), 거부 사유.
 - `delivery_claim_pickup` [반품·교환 회수 정보] 1:1: 회수 방법 PICKUP/SELF_SEND, 회수지 스냅샷(연락처 `_enc`), 회수 택배사·송장(UNIQUE 아닌 조회 인덱스).
 - `delivery_claim_item` [반품·교환 신청 상세]: PK (order_no, claim_no, item_no), 브랜드 아이디를 신청 FK·주문 상세 FK 양쪽에(출고 상세와 같은 방식), 수량·**승인 수량**(검수 후, 일부 승인 가능, 환불·재배송 기준), 교환 옵션(`product_code` + `exchange_option_no` → 옵션 복합 FK, 같은 상품은 앱 검증).
