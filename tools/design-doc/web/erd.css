@@ -356,7 +356,7 @@ button { font: inherit; color: inherit; }
 .canvas g.node { cursor: pointer; }
 .canvas g.node text { cursor: help; }
 .canvas g.node:hover rect.box { stroke: #999999; }
-.canvas g.node.sel rect.box { stroke: #111111; stroke-width: 1.5; }
+.canvas g.node.sel rect.box { stroke: #111111; }
 .canvas g.node:hover rect.hd, .canvas g.node.sel rect.hd { filter: brightness(.78); }
 .canvas.has-sel g.node:not(.sel):not(.rel) { opacity: .35; }
 .canvas.has-sel g.edge:not(.rel) { opacity: .15; }
