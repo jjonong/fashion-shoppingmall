@@ -28,9 +28,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 6-5 | 상품 · 가격·재고 이력 | 가격 이력, 재고 이력 | 대기 |
 | 6-6 | 상품 · 고객 연결 `product_customer` | `product_like` / 나중에: 재입고 알림(회원-옵션) | `product_like`만 반영 |
 | 7-1 | 주문 · 장바구니 `order_cart` | `cart_item` | 반영 |
-| 7-2 | 주문 · 주문 기본 `order_basic` | `orders`, `order_delivery`, `order_brand`, `order_item` | 반영 |
+| 7-2 | 주문 · 주문 기본 `order_basic` | `orders`, `order_delivery`, `order_brand`, `order_item`, `order_item_history` | 반영 (상태 이력은 2026-11-27 배송 설계 때 추가) |
 | - | 결제 · 배송 · 혜택 (각각 별도 영역) | 결제 수단·PG·현금영수증·카드 혜택 / 출고·송장 / 쿠폰·포인트 | 나중 (선물하기도 나중 묶음) |
 | 8-1 | 결제 · 결제 기본 `payment_basic` | `payment`, `payment_card`, `payment_vaccount`, `payment_cancel`, `payment_cancel_item`, `payment_cash_receipt` / 나중에: 카드 혜택, 회원 결제 설정 | 반영 (시험 반영 2026-11-26, 결제 수단 1개·부분 취소 회차별 기록) |
+| 9-1 | 배송 · 출고 기본 `delivery_basic` | `delivery_shipment`, `delivery_shipment_item`, `delivery_tracking`, `delivery_carrier` | 반영 (2026-11-27) |
+| 9-2 | 배송 · 반품·교환 `delivery_claim` | 반품·교환 신청 + 신청 상세, 회수·재배송, 반품 환불 ↔ 결제 취소 내역, 교환·반품 배송비 | 대기 (출고 기본 확인 후) |
 
 상품 상세페이지 항목 중 상품 영역 밖: 판매자 정보·배송비·교환/반품 기준은 브랜드, 청약철회·환불지연 배상 등 법정 문구는 플랫폼 공통, 리뷰·Q&A는 커뮤니티, 쿠폰·기획전(더블유위크)은 혜택, 카드 혜택가·무이자·장바구니·바로구매·선물하기는 주문·결제, 함께 본 상품·맞춤 추천·스타일링은 추천(나중). 별점·리뷰 수·찜 수는 상품 캐시 컬럼, 할인율·선택 상품 총액은 계산값.
 
@@ -66,7 +68,7 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 **로컬 편집 모드** (`edit-server.js`, 사용자 요청 2026-11-24: 페이지에서 직접 설계 수정): 사용자는 프로젝트를 USB에 두고 집·학원 PC(둘 다 Node·git 있음)에서 쓴다. 편집 화면은 ERD 페이지와 같고 `--edit`로 만든 버전에만 버튼이 있다(공개 페이지에는 없음, `window.ERD_EDIT`). **빠른 입력 표**(사용자 요청: 지금은 논리명·키 설정에 집중, 나머지는 선택): 컬럼·테이블·묶음 추가는 한 줄에 컬럼 하나, 논리명·물리명만 필수이고 키(PK/FK/PK+FK/UK)는 고르기만 한다. 타입을 비우면 PK varchar(20), FK는 부모 PK 타입, 그 외 varchar(50). 물리명이 다른 테이블의 단일 PK와 같으면 FK로 자동 선택. Enter 다음 줄, Ctrl+Enter 저장. 저장 응답은 편집 화면만 바로 만들고 공개 페이지·draw.io는 뒤에서 만든다. 할 수 있는 것: 컬럼 추가·수정(이름 바꾸면 같은 테이블 인덱스·인덱스 이름·Ref도 같이)·삭제·**순서 바꾸기**(명세 표에서 손잡이 ⠿를 끌어 다른 컬럼 위/아래에 놓음, `created_by`~`updated_at` 시간·감사 컬럼은 맨 끝 고정), PK 변경(복합 PK 포함, 체크 순서대로), FK 추가(타입 일치·부모는 단일 PK/UNIQUE, N:1/1:1, ON DELETE, FK 인덱스 자동)·삭제, 인덱스 추가(`ix_`/`uk_`, 이름 자동)·삭제, 테이블 추가(단일/복합 PK + `created_at`/`updated_at` 자동)·삭제, 묶음 추가(영역 접두사 필수, 첫 테이블과 함께, 설명은 `lib.js` `groupDesc`에 기록). 서버가 매 요청마다 `erd.dbml`을 새로 읽어 줄 단위로 고치고(주석·서식 보존), snake_case·`[논리명]`·예약어·중복을 검사하고, PK·참조 중인 컬럼/테이블 삭제, FK로 이어진 컬럼 타입 변경, 참조받는 PK 변경은 거부한다. 파서 검증에 실패하면 저장하지 않고, 저장하면 공개 페이지·draw.io·편집 화면을 다시 만든다. 커밋·푸시는 하지 않는다. 사용자가 편집 모드로 고친 뒤 검토를 요청하면 설계 규칙(같은 물리명은 같은 논리명, 상단 주석 영역별 개수, 섹션 주석, CLAUDE.md 확정 설계·로드맵 동기화)에 맞는지 확인하고 정리한다.
 
 - 파일 구성: `lib.js`(DBML 로드, Graphviz ERD, 공통), `erd-page.js`(ERD 웹페이지, 화면은 `web/erd.css`·`web/erd.js` 인라인), `edit-server.js`(로컬 편집 모드), `drawio.js`, 그리고 아직 인테리어 내용인 `build.js`·`summary.js`·`slides.js`·`diagrams.js`. Chrome 경로가 다르면 `CHROME_PATH`.
-- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `brand_` 브랜드, `product_` 상품, `order_` 주문, `payment_` 결제, `admin_` 운영. 감사 컬럼(`created_by` 등) → `admin_user` 선은 운영 영역 밖 ERD에서 그리지 않는다(`lib.isAdminAudit`). 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
+- 영역 목록·이름·색은 `lib.js`의 `AREAS` 한 곳에서 관리한다: `member_` 고객, `brand_` 브랜드, `product_` 상품, `order_` 주문, `payment_` 결제, `delivery_` 배송, `admin_` 운영. 감사 컬럼(`created_by` 등) → `admin_user` 선은 운영 영역 밖 ERD에서 그리지 않는다(`lib.isAdminAudit`). 영역 구분은 `TableGroup` 이름 접두사 기준. 세부 영역 설명은 `lib.js`의 `groupDesc`(묶음을 추가하면 같이 쓴다). 테이블이 아직 없는 영역은 ERD 웹페이지·draw.io에서 건너뛴다.
 - Windows 환경에서 `python`은 스토어 스텁이라 실행되지 않는다. 스크립트는 `node`로.
 
 ## 설계 규칙 (DBML 전반에 일관되게 적용)
@@ -191,6 +193,16 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `payment_cancel_item` [결제 취소 상세]: 결제 취소 내역의 상세 줄(논리명은 주문 상세와 같은 이유로 결제 취소 상품 → 결제 취소 상세, 사용자 확인 2026-11-26). PK (order_no, cancel_no, item_no) (주문 상세 (order_no, item_no)와 나란한 모양) → 주문 상세 복합 FK. 취소 수량·상품 몫 취소 금액·포인트 환원 금액·**배송비 차감 금액**(사용자 결정 2026-11-26: 배송비는 브랜드별이라 상품 줄에 배분해 두고 주문 상세의 브랜드로 모아 브랜드별 차감액을 구함, 결제 취소 내역의 배송비 차감 금액은 그 합계 캐시). 주문 상세는 수량을 모두 취소하면 CANCELLED(앱).
 - `payment_cash_receipt` [현금영수증] (사용자 요청 2026-11-26): 현금성 결제(실시간 계좌이체·가상계좌·간편결제 페이 머니) 공통이라 계좌이체 컬럼이 아니라 별도 테이블. PK (order_no, receipt_no), 결제 복합 FK + 취소 발급이면 결제 취소 내역 복합 FK(`cancel_no`, CHECK에 쓰여 참조 동작 없음). 발급 유형 ISSUE/CANCEL(부분 취소마다 취소 발급 행), 용도 유형 INCOME_DEDUCTION/EXPENSE_PROOF, 발급 번호 유형 PHONE/BIZ_NO/CARD/SELF + 발급 번호 `id_no_enc`(AES-256, 자진발급이면 NULL). **번호를 입력하지 않으면 자진발급, 발급 번호는 탈퇴해도 5년 보관 후 파기** (사용자 결정 2026-11-26), 발급 금액 = 공급가액 + 부가세(CHECK), 상태 REQUESTED/ISSUED/FAILED ↔ `issued_at`, 발급 실패 사유 `receipt_fail_reason`, PG 현금영수증 키(UK), 국세청 승인번호, 조회 주소. 실시간 계좌이체 환불은 PG가 원래 계좌로(환불 계좌 불필요), 가상계좌만 환불 계좌 필요.
 - 결제 FK는 모두 참조 동작 없음(5년 보관). PG사 기준표는 만들지 않고 코드만(사용자 결정 2026-11-26: 브랜드 정산 단계에서 수수료와 함께 검토). 나중: 카드 혜택(즉시 할인·무이자), 회원 결제 설정, 비회원 가상계좌 환불 계좌.
+
+### 배송 · 출고 기본 (`delivery_basic`, 2026-11-27)
+- 근거: 카페24·가비아 클릭엔 관리자 화면 캡처(저장소 `image/`). 범위는 **출고 + 반품·교환**(사용자 결정 2026-11-27): 출고 전 취소는 결제 취소 내역으로 처리해 배송 영역 밖, 반품·교환은 다음 묶음 `delivery_claim`.
+- **분할 출고 허용, 합포장 없음** (사용자 결정): 출고는 주문 브랜드 아래 PK (order_no, brand_id, shipment_no), 다른 주문을 한 상자로 묶지 않는다(주문마다 배송비를 따로 받아 합포장하면 환불·정산을 다시 맞춰야 함). **배송 보류 상태 없음** (사용자 결정: 멈출 때는 송장을 입력하지 않고 출고 준비로 둠, 사유는 주문 상세 상태 이력).
+- `delivery_shipment` [출고]: 송장 1개 = 출고 1행. 상태 READY/INVOICED/SHIPPING/DELIVERED(출고 준비/송장 입력(배송 대기)/배송중/배송 완료) ↔ `invoiced_at`/`shipped_at`/`delivered_at`. 송장 입력은 브랜드 관리자, 배송중·완료는 추적 이벤트(집하·배송 완료). CHECK 출고 준비가 아니면 택배사·송장 번호 필수(그래서 택배사 FK 참조 동작 없음). UK (택배사, 송장 번호). 발송 예정일(예약 상품 안내). 감사 컬럼은 FK 없이.
+- `delivery_shipment_item` [출고 상세]: (출고 키 + `item_no`) → 주문 상세 복합 FK, 수량. 주문 상세 1줄이 여러 출고에 나뉨, 출고 수량 합계 ≤ 주문 수량 - 취소 수량(앱).
+- `delivery_tracking` [배송 추적 이력]: 배송 추적 이력 테이블 둠(사용자 결정). 택배사 웹훅 이벤트 1행(집하/이동중/배송 출발/배송 완료/배송 실패), 처리 위치·택배사 메시지·이벤트 일시(수신 시각은 `created_at`). 중복 수신 방지 UK.
+- `delivery_carrier` [택배사]: 기준표(코드·이름·송장 조회 주소 형식·정렬·사용 여부).
+- 주문 상세 상태는 출고 결과의 요약(배송 대기는 출고에서만 구분). **자동 구매 확정: 배송 완료 7일 후** (사용자 결정).
+- `order_item_history` [주문 상세 상태 이력] (사용자 요청: 되돌리기 대응, 주문 기본 묶음): PK (order_no, item_no, history_no), 이전 상태·상태·**처리 주체 유형** `actor_type` CUSTOMER/BRAND/ADMIN/SYSTEM·변경 사유(되돌리기·운영자 처리면 필수)·`created_by`.
 
 ### 나중에 재검토
 - **운영 영역 (운영자 기본 `admin_basic`)**: 2026-11-24 사용자 요청으로 ERD에서 뺐다("아직 거기까지 다루고 싶지 않다"). 사용자가 다시 꺼내기 전에는 제안하지 않는다. 빼기 전 설계(`admin_user`·`admin_login`·`admin_role`·`admin_role_history`·`admin_access_log`, 개인정보 안전성 확보조치 기준 반영)는 커밋 `8692840`~`ad4d30d`에 있다. 지금 `created_by`/`updated_by` 컬럼(등급 기준표·혜택·등급 이력)은 FK 없이 운영자 아이디 `varchar(20)`만 두고, 운영자 테이블을 만들 때 `admin_user.admin_id` FK로 연결한다.
