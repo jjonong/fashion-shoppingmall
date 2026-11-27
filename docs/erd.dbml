@@ -815,7 +815,7 @@ Table delivery_shipment [note: '[출고] 브랜드가 상자 하나를 보내는
 
   indexes {
     (order_no, brand_id, shipment_no) [pk, note: '(order_no, brand_id) 선두라 주문 브랜드 FK 인덱스 겸용']
-    (carrier_code, invoice_no) [unique, name: 'uk_delivery_shipment_invoice', note: '송장 1개 = 출고 1행(합포장 없음). 추적 웹훅이 택배사·송장 번호로 출고를 찾음. 택배사 FK 인덱스 겸용, 송장 입력 전 NULL은 중복 허용']
+    (carrier_code, invoice_no, created_at) [name: 'ix_delivery_shipment_invoice', note: '송장 조회·추적 웹훅이 택배사·송장 번호로 출고를 찾음. 택배사 FK 인덱스 겸용. UNIQUE가 아님: 택배사가 몇 년 뒤 송장 번호를 다시 쓰는 경우가 있어 5년 보관 중 겹칠 수 있음. 진행 중인 출고(배송 완료 전)끼리 중복은 앱 검증, 웹훅은 같은 번호 중 가장 최근 출고에 연결']
     (brand_id, status, created_at) [name: 'ix_delivery_shipment_brand', note: '브랜드 관리자 화면: 상태별 출고 목록(출고 준비·배송 대기·배송중)']
     (status, delivered_at) [name: 'ix_delivery_shipment_delivered', note: '배송 완료 7일 후 자동 구매 확정 배치']
   }
