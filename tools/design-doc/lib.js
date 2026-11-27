@@ -260,7 +260,7 @@ const AREAS = [
   { prefix: 'product', name: '상품', color: '#5E7663', fill: '#F7F7F7', desc: '상품 · 컬러 · 옵션(재고) · 기준 데이터 · 실측 · 정보 고시' },
   { prefix: 'order', name: '주문', color: '#8E5D4C', fill: '#F7F7F7', desc: '장바구니 · 주문 · 주문 배송지 · 브랜드별 묶음 · 주문 상세' },
   { prefix: 'payment', name: '결제', color: '#5A5F80', fill: '#F7F7F7', desc: '결제(시도·PG 거래) · 카드·가상계좌 정보 · 결제 취소 내역 · 결제 취소 상세 · 현금영수증' },
-  { prefix: 'delivery', name: '배송', color: '#2F666B', fill: '#F7F7F7', desc: '출고(송장) · 출고 상세 · 배송 추적 이력 · 택배사' },
+  { prefix: 'delivery', name: '배송', color: '#1B4E53', fill: '#F7F7F7', desc: '출고(송장) · 출고 상세 · 배송 추적 이력 · 택배사' },
   { prefix: 'admin', name: '운영', color: '#4D4D57', fill: '#F7F7F7', desc: '운영자 계정 · 역할 · 권한 이력 · 접속 기록' },
 ];
 const areaOf = (groupName) => AREAS.find((a) => groupName.startsWith(a.prefix + '_'));
