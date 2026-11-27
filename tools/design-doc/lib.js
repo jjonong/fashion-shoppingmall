@@ -46,7 +46,9 @@ function load(src) {
     };
   });
   const fk = {};
+  // 복합 FK는 모든 컬럼에 FK 표시 (선은 마지막 컬럼 대표). 대표 컬럼 매핑을 먼저, 앞 컬럼은 비어 있을 때만 채움
   refs.forEach((r) => (fk[`${r.child}.${r.ccol}`] = `${r.parent}.${r.pcol}`));
+  refs.forEach((r) => r.ccols.forEach((c, i) => { const k = `${r.child}.${c}`; if (!fk[k]) fk[k] = `${r.parent}.${r.pcols[i]}`; }));
   const fieldOf = (t, c) => tableMap[t].fields.find((f) => f.name === c);
   const compositePk = (t) => ((t.indexes || []).find((i) => i.pk)?.columns || []).map((c) => c.value);
   const baseType = (f) => f.type.type_name.replace(/\(.*\)/, '').toUpperCase();
