@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | - | 결제 · 배송 · 혜택 (각각 별도 영역) | 결제 수단·PG·현금영수증·카드 혜택 / 출고·송장 / 쿠폰·포인트 | 나중 (선물하기도 나중 묶음) |
 | 8-1 | 결제 · 결제 기본 `payment_basic` | `payment`, `payment_card`, `payment_vaccount`, `payment_cancel`, `payment_cancel_item`, `payment_cash_receipt` / 나중에: 카드 혜택, 회원 결제 설정 | 반영 (시험 반영 2026-11-26, 결제 수단 1개·부분 취소 회차별 기록) |
 | 9-1 | 배송 · 출고 기본 `delivery_basic` | `delivery_shipment`, `delivery_shipment_item`, `delivery_tracking`, `delivery_carrier` | 반영 (2026-11-27) |
-| 9-2 | 배송 · 반품·교환 `delivery_claim` | 반품·교환 신청 + 신청 상세, 회수·재배송, 반품 환불 ↔ 결제 취소 내역, 교환·반품 배송비 | 대기 (출고 기본 확인 후) |
+| 9-2 | 배송 · 반품·교환 `delivery_claim` | `delivery_claim`, `delivery_claim_pickup`, `delivery_claim_item`, `delivery_claim_history` (+ 결제·결제 취소·출고의 `claim_no`, 결제 취소 배송비 환불, 브랜드 반품·교환 배송비) | 반영 (2026-11-27) |
 
 상품 상세페이지 항목 중 상품 영역 밖: 판매자 정보·배송비·교환/반품 기준은 브랜드, 청약철회·환불지연 배상 등 법정 문구는 플랫폼 공통, 리뷰·Q&A는 커뮤니티, 쿠폰·기획전(더블유위크)은 혜택, 카드 혜택가·무이자·장바구니·바로구매·선물하기는 주문·결제, 함께 본 상품·맞춤 추천·스타일링은 추천(나중). 별점·리뷰 수·찜 수는 상품 캐시 컬럼, 할인율·선택 상품 총액은 계산값.
 
@@ -131,8 +131,8 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `brand`: PK **브랜드 아이디** `brand_id varchar(30)`(영문 소문자·숫자·하이픈, 변경·재사용 불가, 브랜드관 URL). 브랜드 한글명 `brand_name_ko`·브랜드 영문명 `brand_name_en`(UK, 대표 표기)·브랜드 유형(DESIGNER/OWN/IMPORT)·로고·소개·상태(ACTIVE/PAUSED/CLOSED ↔ `closed_at`)·좋아요 수 캐시. `created_by`/`updated_by`는 FK 없이(운영자 테이블 생기면 연결).
 
 ### 5-2. 브랜드 · 배송 정책 (`brand_shipping`)
-- 사용자 결정 2026-11-25: **브랜드당 정책 1개**(brand 1:1), 제주·도서산간 판단은 **플랫폼 공통 우편번호 표**, 지금은 **배송비만**(교환·반품 배송비는 나중).
-- `brand_shipping_policy` [브랜드 배송 정책]: PK `brand_id`. 기본 배송비 `base_shipping_fee`(0이면 항상 무료), 무료 배송 기준 금액 `free_shipping_min_amount`(NULL이면 기준 없음), 제주 추가 배송비 `jeju_extra_fee`, 도서산간 추가 배송비 `remote_extra_fee`. 계산: 기본(브랜드 상품 합계가 기준 이상이면 0) + 지역 추가(**무료 배송이어도 부과**, 업계 관행).
+- 사용자 결정 2026-11-25: **브랜드당 정책 1개**(brand 1:1), 제주·도서산간 판단은 **플랫폼 공통 우편번호 표**. 반품·교환 배송비는 2026-11-27 반품·교환 묶음과 함께 추가.
+- `brand_shipping_policy` [브랜드 배송 정책]: PK `brand_id`. 기본 배송비 `base_shipping_fee`(0이면 항상 무료), 무료 배송 기준 금액 `free_shipping_min_amount`(NULL이면 기준 없음), 제주 추가 배송비 `jeju_extra_fee`, 도서산간 추가 배송비 `remote_extra_fee`, 반품 배송비 `return_shipping_fee`(편도, 고객 귀책), 교환 배송비 `exchange_shipping_fee`(왕복, 고객 귀책), 반품 주소 `return_zipcode`·`return_address1`·`return_address2`(브랜드 물류센터). 계산: 기본(브랜드 상품 합계가 기준 이상이면 0) + 지역 추가(**무료 배송이어도 부과**, 업계 관행).
 - `shipping_extra_zipcode` [추가 배송비 지역 우편번호]: PK `zipcode`(배송지 우편번호와 같은 물리명·논리명), 지역 유형 JEJU/REMOTE, 지역 이름. 운영자 관리 기준표, 목록에 없으면 추가비 없음.
 - **규칙은 브랜드, 결과는 주문**: 주문 때 계산한 배송비는 `order_brand.shipping_fee`(지역 추가 포함, 고정)와 그중 지역분 `extra_shipping_fee`, `orders.shipping_fee`는 그 합계 캐시. 정책이 바뀌어도 과거 주문은 그대로(상품 판매가 ↔ 주문 상세 판매가 스냅샷과 같은 원리).
 
@@ -186,7 +186,8 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - 화면 항목 중 주문 밖: 함께 구매하면 좋을 상품(추천), 오늘 출발 예정 안내(브랜드 출고 기준), 본인인증(가입 시 완료).
 
 ### 결제 · 결제 기본 (`payment_basic`, 시험 반영 2026-11-26)
-- **주문 1건 = 결제 수단 1개** (사용자 결정 2026-11-26): 카드 여러 장·카드 + 휴대폰 같은 복합 결제는 받지 않는다. 포인트는 주문의 `point_amount`로 처리.
+- **주문 1건 = 결제 수단 1개** (사용자 결정 2026-11-26): 카드 여러 장·카드 + 휴대폰 같은 복합 결제는 받지 않는다. 포인트는 주문의 `point_amount`로 처리. **예외: 교환 배송비** (사용자 결정 2026-11-27): 결제 유형 `payment_type` ORDER/CLAIM_FEE + `claim_no`(반품·교환 신청 FK, CHECK라 참조 동작 없음)로 같은 결제 표에 따로 결제하고, `ux_payment_success`는 주문 결제(ORDER)에만 적용.
+- **배송비 환불** (2026-11-27): 결제 취소 상세·결제 취소 내역에 `shipping_refund_amount` [배송비 환불 금액](브랜드 전체 취소, 판매자 귀책 반품). 취소 금액 = (판매가 + 추가 금액) × 수량 − 할인 − 포인트 + 배송비 환불 − 배송비 차감. 반품 환불이면 결제 취소 내역의 `claim_no`(CHECK 취소 사유 유형 RETURN ↔ 신청 번호).
 - **부분 취소 받음 → 결제 취소 내역 테이블 둠** (사용자 요청 2026-11-26 "만들어줘"): 부분 취소(A·B·C 중 A만, 수량 일부, 한 브랜드만)는 여러 번 생길 수 있고 회차마다 PG 취소 거래 번호·환불액(배송비 차감·포인트 환원 반영)이 달라 결제 상태만으로 못 담는다. 반품 환불도 같은 표.
 - `payment` [결제]: PK (order_no, payment_no), 결제 시도마다 1행(실패 후 재시도, 결제창을 띄울 때 주문별 MAX+1. 주문 1:1로 덮어쓰는 안은 사용자가 거절 2026-11-26: 실무 수준으로 실패 시도도 DB에 남김), 성공한 결제는 주문당 1개(`ux_payment_success` 함수 기반 unique). 결제 수단 `pay_method`, 간편결제 종류, PG사, PG 거래 번호(UK with PG사), 결제 금액(승인 전 주문 결제 금액과 서버 검증), 누적 취소 금액 캐시, 상태 WAITING/PAID/FAILED/PARTIAL_CANCELLED/CANCELLED(주문 PAYMENT_WAITING과 단어 톤을 맞춤, 사용자 결정 2026-11-26) ↔ `paid_at`/`failed_at`, 실패 사유. **취소일시는 결제에 두지 않음** (사용자 결정 2026-11-26: 결제 취소 내역의 회차별 취소일시와 중복, 상태 ↔ 시각 짝 규칙의 예외). 실패는 결제 시도의 결과라 결제에 둔다. 수단별 정보는 **1:1 테이블로 분리** (사용자 요청 2026-11-26: 결제 테이블이 NULL 컬럼으로 지저분해서): `payment_card` [결제 카드 정보](카드사 코드·카드 번호(마스킹)·할부 개월 수·카드 승인번호, 카드로 낸 간편결제 포함), `payment_vaccount` [결제 가상계좌 정보](은행 코드·가상계좌 번호·입금 기한, 입금 기한 배치 인덱스). PK는 결제와 같은 (order_no, payment_no), 모두 PG 응답으로 받는 값(카드 정보는 고객이 PG 결제창에서만 입력). 카드 결제면 카드 정보 행 필수는 앱 검증. **카드 승인번호 인덱스** `ix_payment_card_approval` (사용자 요청 2026-11-26): 고객이 주문 번호 없이 카드 명세서의 승인번호만으로 문의하는 경우와 카드사 분쟁(차지백) 대조용. 5년 보관이라 행이 많아 전체 검색을 피함. 승인번호는 카드사·날짜가 다르면 겹칠 수 있어 UNIQUE가 아닌 일반 인덱스(겹치면 카드사 코드·결제일시로 구분). 실시간 계좌이체는 은행 코드 하나뿐이라 결제의 `bank_code`에 남김(사용자 결정, 나중에 분리 요청 가능). 가상계좌는 입금 웹훅이 와야 결제 완료, 기한 초과는 배치로 실패 + 주문 취소.
 - `payment_cancel` [결제 취소 내역]: 취소 사유 유형 6개(단순 변심/품절/배송 지연/반품/관리자 처리/기타)로 확정, 필요하면 나중에 추가(사용자 결정 2026-11-26). PK (order_no, cancel_no) (사용자 결정 2026-11-26: 성공한 결제가 주문당 1개라 결제 번호 없이 주문 기준 번호로 충분). `payment_no`는 PK가 아니라 결제 복합 FK 컬럼. 취소 사유 유형·사유(고객이 왜 취소했나), 취소 금액(PG 환불액), 포인트 환원 금액, 배송비 차감 금액, 상태 REQUESTED/COMPLETED/FAILED ↔ `cancelled_at`, 취소 실패 사유 `cancel_fail_reason`(PG 취소가 왜 실패했나, 결제의 `fail_reason` 실패 사유와 물리명 구분), PG 취소 거래 번호, `created_by`(관리자 처리 시).
@@ -203,6 +204,15 @@ npm run edit           # 로컬 편집 모드 (http://localhost:3000, 저장소 
 - `delivery_carrier` [택배사]: 기준표(코드·이름·송장 조회 주소 형식·정렬·사용 여부).
 - 주문 상세 상태는 출고 결과의 요약(배송 대기는 출고에서만 구분). **자동 구매 확정: 배송 완료 7일 후** (사용자 결정).
 - `order_item_history` [주문 상세 상태 이력] (사용자 요청: 되돌리기 대응, 주문 기본 묶음): PK (order_no, item_no, history_no), 이전 상태·상태·**처리 주체 유형** `actor_type` CUSTOMER/BRAND/ADMIN/SYSTEM·변경 사유(되돌리기·운영자 처리면 필수)·`created_by`.
+
+### 배송 · 반품·교환 (`delivery_claim`, 2026-11-27)
+- 근거: 클릭엔 관리자 반품관리·교환관리 화면(교환 신청/수거완료/재배송중/완료). 사용자 결정: **교환 배송비는 결제 유형을 추가해 따로 결제**, **교환은 같은 상품의 다른 옵션만**(다른 상품은 반품 후 재주문).
+- 기본안(이번에 정함): 신청 1건 = 주문 브랜드 1개(회수지가 브랜드 물류센터), 교환 재배송은 출고 재사용(`delivery_shipment.claim_no`, NULL이면 일반 출고), 주문 상세 상태에 반품·교환 진행 상태를 추가하지 않음(진행은 신청 상태, 반품 승인 수량이 다 차면 RETURNED, 진행 중 신청이 있으면 자동 구매 확정 건너뜀, 교환은 재배송 배송 완료 7일 후).
+- `delivery_claim` [반품·교환 신청]: PK (order_no, claim_no), 주문 브랜드 복합 FK + `uk_delivery_claim_brand`. 신청 유형 RETURN/EXCHANGE, 신청 사유 유형 8개, 귀책 유형 CUSTOMER/SELLER(사유에서 기본값, 브랜드가 검수 후 변경), 반품·교환 배송비 스냅샷, 배송비 결제 방식 REFUND_DEDUCT/PAYMENT/NONE, 상태 REQUESTED/COLLECTING/COLLECTED/RESHIPPING/COMPLETED/REJECTED/WITHDRAWN ↔ `approved_at`/`collected_at`/`completed_at`/`rejected_at`/`withdrawn_at`(신청 = `created_at`, 재배송중은 출고 시각), 거부 사유.
+- `delivery_claim_pickup` [반품·교환 회수 정보] 1:1: 회수 방법 PICKUP/SELF_SEND, 회수지 스냅샷(연락처 `_enc`), 회수 택배사·송장(UNIQUE 아닌 조회 인덱스).
+- `delivery_claim_item` [반품·교환 신청 상세]: PK (order_no, claim_no, item_no), 브랜드 아이디를 신청 FK·주문 상세 FK 양쪽에(출고 상세와 같은 방식), 수량·**승인 수량**(검수 후, 일부 승인 가능, 환불·재배송 기준), 교환 옵션(`product_code` + `exchange_option_no` → 옵션 복합 FK, 같은 상품은 앱 검증).
+- `delivery_claim_history` [반품·교환 처리 이력]: 주문 상세 상태 이력과 같은 구조(이전 상태·상태·처리 주체 유형·변경 사유·`created_by`).
+- 나중: 반품 증빙 사진, 비회원 가상계좌 환불 계좌, 쿠폰 재발급(혜택 영역).
 
 ### 나중에 재검토
 - **운영 영역 (운영자 기본 `admin_basic`)**: 2026-11-24 사용자 요청으로 ERD에서 뺐다("아직 거기까지 다루고 싶지 않다"). 사용자가 다시 꺼내기 전에는 제안하지 않는다. 빼기 전 설계(`admin_user`·`admin_login`·`admin_role`·`admin_role_history`·`admin_access_log`, 개인정보 안전성 확보조치 기준 반영)는 커밋 `8692840`~`ad4d30d`에 있다. 지금 `created_by`/`updated_by` 컬럼(등급 기준표·혜택·등급 이력)은 FK 없이 운영자 아이디 `varchar(20)`만 두고, 운영자 테이블을 만들 때 `admin_user.admin_id` FK로 연결한다.

@@ -1,7 +1,7 @@
 // =====================================================================
 // 패션 브랜드 입점형 쇼핑몰 DB 설계 (dbdiagram.io용 DBML)
 // 벤치마킹: W컨셉 (디자이너 브랜드 입점, 의류·신발·가방·잡화)
-// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 3개(브랜드 기본 1 + 배송 정책 2) + 상품 15개(상품 기본 7 + 기준 데이터 3 + 실측 3 + 정보 고시 1 + 고객 연결 1) + 주문 6개(장바구니 1 + 주문 기본 5) + 결제 6개(결제 기본 6) + 배송 4개(출고 기본 4) = 44개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
+// 진행 중: 고객 10개(회원 기본 7 + 회원 등급 3) + 브랜드 3개(브랜드 기본 1 + 배송 정책 2) + 상품 15개(상품 기본 7 + 기준 데이터 3 + 실측 3 + 정보 고시 1 + 고객 연결 1) + 주문 6개(장바구니 1 + 주문 기본 5) + 결제 6개(결제 기본 6) + 배송 8개(출고 기본 4 + 반품·교환 4) = 48개 테이블 (묶음 단위로 컬럼까지 확정하며 추가)
 // 사용법: https://dbdiagram.io/d 에 접속 → 왼쪽 편집기에 이 파일 내용을 전체 붙여넣기
 // DBMS: MySQL 8.0 (8.0.16 이상: CHECK 제약 적용, 8.0.13 이상: 함수 기반 인덱스)
 // 이전 설계 보관: docs/archive_interior/ (인테리어몰), docs/archive_fashion/ (패션몰 Oracle), docs/archive_oracle/
@@ -237,12 +237,17 @@ Table brand [note: '[브랜드] 입점 브랜드. 상품은 한 브랜드에 속
 // 브랜드 - 배송 정책 (브랜드당 정책 1개 + 플랫폼 공통 제주·도서산간 우편번호. 주문 때 계산한 결과는 주문 브랜드에 고정)
 // =====================================================================
 
-Table brand_shipping_policy [note: '[브랜드 배송 정책] brand 1:1, 브랜드 입점 시 함께 생성(앱). 브랜드 배송비 = 기본 배송비(이 브랜드 상품 금액 합계가 무료 배송 기준 이상이면 0) + 지역 추가 배송비(제주·도서산간, 무료 배송이어도 부과). 정책을 바꿔도 과거 주문은 그대로(계산 결과는 주문 브랜드에 고정). 교환·반품 배송비는 나중 묶음'] {
+Table brand_shipping_policy [note: '[브랜드 배송 정책] brand 1:1, 브랜드 입점 시 함께 생성(앱). 브랜드 배송비 = 기본 배송비(이 브랜드 상품 금액 합계가 무료 배송 기준 이상이면 0) + 지역 추가 배송비(제주·도서산간, 무료 배송이어도 부과). 정책을 바꿔도 과거 주문은 그대로(계산 결과는 주문 브랜드에 고정). 반품·교환 배송비와 반품 주소도 여기(신청 당시 금액은 반품·교환 신청에 스냅샷)'] {
   brand_id varchar(30) [pk, note: '[브랜드 아이디] 정책의 브랜드']
   base_shipping_fee bigint [not null, default: 0, note: '[기본 배송비] 주문 안의 이 브랜드 묶음 1건당. 0이면 항상 무료. CHECK (base_shipping_fee >= 0)']
   free_shipping_min_amount bigint [note: '[무료 배송 기준 금액] 이 브랜드 상품 금액 합계가 이 금액 이상이면 기본 배송비 0. NULL이면 기준 없음. CHECK (free_shipping_min_amount IS NULL OR free_shipping_min_amount > 0)']
   jeju_extra_fee bigint [not null, default: 0, note: '[제주 추가 배송비] 배송지 우편번호가 제주(JEJU)면 추가. CHECK (jeju_extra_fee >= 0)']
   remote_extra_fee bigint [not null, default: 0, note: '[도서산간 추가 배송비] 배송지 우편번호가 제주 외 도서산간(REMOTE)이면 추가. CHECK (remote_extra_fee >= 0)']
+  return_shipping_fee bigint [not null, default: 0, note: '[반품 배송비] 고객 귀책(단순 변심·사이즈 등) 반품의 편도 회수 배송비. 환불에서 차감. 반품으로 무료 배송 기준이 깨지면 처음 무료였던 기본 배송비도 따로 차감(결제 취소의 배송비 차감 금액). 판매자 귀책이면 받지 않음. CHECK (return_shipping_fee >= 0)']
+  exchange_shipping_fee bigint [not null, default: 0, note: '[교환 배송비] 고객 귀책 교환의 왕복 배송비(회수 + 재배송). 돌려줄 돈이 없어 교환 신청 때 따로 결제. 판매자 귀책이면 받지 않음. CHECK (exchange_shipping_fee >= 0)']
+  return_zipcode char(5) [not null, note: '[반품 우편번호] 반품·교환 상품을 받을 브랜드 물류센터(회수 택배 도착지)']
+  return_address1 varchar(200) [not null, note: '[반품 기본 주소] 도로명 주소']
+  return_address2 varchar(200) [note: '[반품 상세 주소]']
   created_by varchar(20) [note: '[등록 관리자] 정책 등록자 (브랜드 관리자·운영자 테이블을 만들 때 연결)']
   updated_by varchar(20) [note: '[수정 관리자] 정책 수정자']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 정책 등록일시']
@@ -558,7 +563,7 @@ Table cart_item [note: '[장바구니 상품] 회원이 담은 옵션. 같은 �
 // 결제·배송·혜택은 나중에 별도 영역으로 만들고, 주문에는 이어질 값(할인 금액·배송비·결제 단계 상태)만 둔다
 // =====================================================================
 
-Table orders [note: '[주문] 주문 1건 = 결제 1번. 회원 주문과 비회원 주문(주문 번호 + 비밀번호로 조회). 주문자 정보는 주문 당시 스냅샷(회원은 회원 정보에서 복사, 비회원은 직접 입력 + 휴대폰 인증). order는 MySQL 예약어라 orders'] {
+Table orders [note: '[주문] 주문 1건 = 결제 1번(교환 배송비는 반품·교환 신청마다 따로 결제).회원 주문과 비회원 주문(주문 번호 + 비밀번호로 조회). 주문자 정보는 주문 당시 스냅샷(회원은 회원 정보에서 복사, 비회원은 직접 입력 + 휴대폰 인증). order는 MySQL 예약어라 orders'] {
   order_no varchar(20) [pk, note: '[주문 번호] 앱이 채번(예: 20261125 + 일련번호, AUTO_INCREMENT 아님). 변경 불가']
   member_id varchar(20) [note: '[회원 아이디] 주문한 회원. 비회원 주문이면 NULL. CHECK (member_id IS NOT NULL OR guest_password_hash IS NOT NULL)에 쓰이므로 FK는 참조 동작 없이']
   guest_password_hash varchar(255) [note: '[비회원 주문 비밀번호(해시)] bcrypt 해시. 비회원 주문조회(주문 번호 + 비밀번호). 회원 주문이면 NULL']
@@ -617,8 +622,8 @@ Table order_item [note: '[주문 상세] 주문한 옵션 한 줄. 상품·옵�
   quantity smallint [not null, note: '[수량] CHECK (quantity >= 1)']
   discount_amount bigint [not null, default: 0, note: '[할인 금액] 이 상품에 배분된 할인(쿠폰 등, 포인트 제외). 부분 취소 시 환불 금액 계산 근거']
   point_amount bigint [not null, default: 0, note: '[포인트 사용 금액] 이 상품에 배분된 포인트. 부분 취소 시 포인트로 환원할 금액']
-  status varchar(20) [not null, default: 'ORDERED', note: '[상태] ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED (주문 접수/상품 준비중/배송중/배송 완료/구매 확정/취소/반품). 출고 결과의 요약: 결제 완료 후 상품 준비중, 출고 수량 합계가 (주문 수량 - 취소 수량)을 채운 출고가 모두 배송 시작이면 배송중, 모두 배송 완료면 배송 완료(앱). 송장만 입력한 배송 대기는 출고 상태에서만 구분. 바뀔 때마다 주문 상세 상태 이력에 1행. 교환 진행 표시는 반품·교환 묶음에서 확정']
-  confirmed_at datetime [note: '[구매확정일시] status = CONFIRMED 처리 시각. 고객이 직접 확정하거나, 배송 완료 7일 후 자동 확정(배치, 출고 배송 완료일시 기준). 회원 등급 점수·리뷰 작성 기준']
+  status varchar(20) [not null, default: 'ORDERED', note: '[상태] ORDERED/PREPARING/SHIPPING/DELIVERED/CONFIRMED/CANCELLED/RETURNED (주문 접수/상품 준비중/배송중/배송 완료/구매 확정/취소/반품). 출고 결과의 요약: 결제 완료 후 상품 준비중, 출고 수량 합계가 (주문 수량 - 취소 수량)을 채운 출고가 모두 배송 시작이면 배송중, 모두 배송 완료면 배송 완료(앱). 송장만 입력한 배송 대기는 출고 상태에서만 구분. 바뀔 때마다 주문 상세 상태 이력에 1행. 반품·교환 진행(신청·회수·재배송)은 주문 상세 상태가 아니라 반품·교환 신청의 상태로 표시하고, 반품 승인 수량 합계가 (주문 수량 - 취소 수량)을 채우면 RETURNED. 교환은 완료돼도 배송 완료 그대로(교환 옵션은 신청 상세)']
+  confirmed_at datetime [note: '[구매확정일시] status = CONFIRMED 처리 시각. 고객이 직접 확정하거나, 배송 완료 7일 후 자동 확정(배치, 출고 배송 완료일시 기준, 교환이면 재배송 출고의 배송 완료일시 기준). 진행 중인 반품·교환 신청이 있으면 자동 확정하지 않음(앱). 회원 등급 점수·리뷰 작성 기준']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 주문일시']
   updated_at datetime [note: '[수정일시] 주문 상세 수정일시']
 
@@ -666,14 +671,16 @@ Table order_item_history [note: '[주문 상세 상태 이력] 주문 상세 상
 // 카드 혜택·회원 결제 설정은 나중에
 // =====================================================================
 
-Table payment [note: '[결제] 주문의 결제 시도 1건. 결제 수단은 하나만(복합 결제 없음, 포인트는 주문의 포인트 사용 금액). 실패 후 재시도·수단 변경이면 행이 하나 더 생기고, 성공한(결제 완료 이후 상태) 결제는 주문당 1개. 결제·환불 기록은 5년 보관'] {
+Table payment [note: '[결제] 주문의 결제 시도 1건. 결제 수단은 하나만(복합 결제 없음, 포인트는 주문의 포인트 사용 금액). 실패 후 재시도·수단 변경이면 행이 하나 더 생기고, 성공한(결제 완료 이후 상태) 주문 결제는 주문당 1개. 교환 배송비처럼 주문 뒤에 따로 받는 돈도 같은 표에 결제 유형으로 구분해 남김(카드 취소·현금영수증 구조를 그대로 씀). 결제·환불 기록은 5년 보관'] {
   order_no varchar(20) [not null, note: '[주문 번호] 결제한 주문']
-  payment_no smallint [not null, note: '[결제 번호] 주문별 1부터, 결제 시도마다 앱이 부여']
+  payment_no smallint [not null, note: '[결제 번호] 주문별 1부터, 결제 시도마다 앱이 부여(주문 결제·반품·교환 배송비 결제를 이어서)']
+  payment_type varchar(20) [not null, default: 'ORDER', note: '[결제 유형] ORDER/CLAIM_FEE (주문 결제/반품·교환 배송비). 반품·교환 배송비는 고객 귀책 교환의 왕복 배송비처럼 환불에서 뺄 수 없는 배송비를 신청 때 결제. CHECK ((payment_type = \'CLAIM_FEE\') = (claim_no IS NOT NULL))']
+  claim_no smallint [note: '[반품·교환 신청 번호] 결제 유형이 반품·교환 배송비일 때 대상 신청. 주문 결제면 NULL. CHECK에 쓰이므로 FK는 참조 동작 없이']
   pay_method varchar(20) [not null, note: '[결제 수단] CARD/EASY_PAY/VIRTUAL_ACCOUNT/BANK_TRANSFER/MOBILE (신용카드/간편결제/가상계좌/실시간 계좌이체/휴대폰 결제)']
   easy_pay_provider varchar(20) [note: '[간편결제 종류] NAVERPAY/SSGPAY/SMILEPAY/KAKAOPAY/TOSSPAY/SAMSUNGPAY/PAYCO. CHECK ((pay_method = \'EASY_PAY\') = (easy_pay_provider IS NOT NULL))']
   pg_provider varchar(20) [not null, note: '[PG사] TOSS/INICIS/KCP/NICE 등 결제를 처리한 PG']
   pg_tx_id varchar(100) [note: '[PG 거래 번호] PG가 거래마다 발급하는 키(예: 토스페이먼츠 paymentKey). 취소 요청에 사용. 결제창 인증 전이면 NULL']
-  pay_amount bigint [not null, note: '[결제 금액] 이 결제로 요청·승인된 금액. 승인 전에 주문의 결제 금액과 PG가 보낸 금액이 같은지 서버가 검증(금액 위변조 방지)']
+  pay_amount bigint [not null, note: '[결제 금액] 이 결제로 요청·승인된 금액. 승인 전에 주문의 결제 금액(반품·교환 배송비면 신청의 반품·교환 배송비)과 PG가 보낸 금액이 같은지 서버가 검증(금액 위변조 방지)']
   cancelled_amount bigint [not null, default: 0, note: '[누적 취소 금액] 캐시. 완료된 결제 취소 내역의 취소 금액 합계, 취소 내역과 같은 트랜잭션에서 갱신. CHECK (cancelled_amount <= pay_amount). 남은 결제 금액 = 결제 금액 - 누적 취소 금액']
   status varchar(20) [not null, default: 'WAITING', note: '[상태] WAITING/PAID/FAILED/PARTIAL_CANCELLED/CANCELLED (결제 대기/결제 완료/결제 실패/부분 취소/결제 취소). 가상계좌는 입금 전까지 결제 대기. 취소 시각은 결제 취소 내역의 취소일시(완료된 마지막 회차)라 결제에는 취소일시를 두지 않음. 수단이 하나라 부분결제 상태는 없음. 주문 상태 PAYMENT_WAITING과 톤을 맞춰 WAITING(결제 자체가 대상이라 접두사 없음)']
   fail_reason varchar(200) [note: '[실패 사유] status = FAILED일 때 PG 응답 코드·메시지 (예: 한도 초과, 사용자 취소)']
@@ -686,7 +693,8 @@ Table payment [note: '[결제] 주문의 결제 시도 1건. 결제 수단은 �
   indexes {
     (order_no, payment_no) [pk, note: 'order_no 선두라 주문 FK 인덱스 겸용']
     (pg_provider, pg_tx_id) [unique, name: 'uk_payment_pg_tx', note: 'PG 거래 1건 = 결제 1행. 웹훅으로 결제 찾기. pg_tx_id가 NULL인 행은 중복 허용']
-    `CASE WHEN status IN ('PAID', 'PARTIAL_CANCELLED', 'CANCELLED') THEN order_no END` [unique, name: 'ux_payment_success', note: '주문당 성공한 결제 1개. MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
+    `CASE WHEN payment_type = 'ORDER' AND status IN ('PAID', 'PARTIAL_CANCELLED', 'CANCELLED') THEN order_no END` [unique, name: 'ux_payment_success', note: '주문당 성공한 주문 결제 1개(반품·교환 배송비 결제는 제외). MySQL 8.0.13+ 함수 기반 인덱스 (NULL은 중복 허용)']
+    (order_no, claim_no) [name: 'ix_payment_claim', note: '반품·교환 신청 복합 FK 인덱스, 신청별 배송비 결제 조회']
   }
 }
 
@@ -721,14 +729,16 @@ Table payment_vaccount [note: '[결제 가상계좌 정보] 결제 1:1. 가상�
   }
 }
 
-Table payment_cancel [note: '[결제 취소 내역] 결제의 PG 취소(환불) 1회. 부분 취소가 여러 번 생기면 회차마다 1행(PG 취소 거래 번호·금액·시각이 회차마다 다름). 전액 취소도 1행. 반품 환불도 같은 표에 남김(배송 영역에서 연결). 환불 금액은 상품 금액 합계가 아니라 할인 회수·포인트 환원·배송비 차감을 반영한 값'] {
+Table payment_cancel [note: '[결제 취소 내역] 결제의 PG 취소(환불) 1회. 부분 취소가 여러 번 생기면 회차마다 1행(PG 취소 거래 번호·금액·시각이 회차마다 다름). 전액 취소도 1행. 반품 환불도 같은 표에 남기고 반품·교환 신청 번호로 연결. 환불 금액은 상품 금액 합계가 아니라 할인 회수·포인트 환원·배송비 환불·배송비 차감을 반영한 값'] {
   order_no varchar(20) [not null, note: '[주문 번호] 취소한 결제의 주문']
   cancel_no smallint [not null, note: '[취소 번호] 주문별 1부터, 취소 요청마다 앱이 부여. 성공한 결제가 주문당 1개라 주문 기준으로 번호']
   payment_no smallint [not null, note: '[결제 번호] 취소한 결제(그 주문의 성공한 결제, 앱 검증). PK가 아니라 결제 복합 FK용']
-  cancel_reason_type varchar(20) [not null, note: '[취소 사유 유형] CHANGE_MIND/OUT_OF_STOCK/DELAY/RETURN/ADMIN/ETC (단순 변심/품절/배송 지연/반품/관리자 처리/기타). 사유별 통계']
+  claim_no smallint [note: '[반품·교환 신청 번호] 반품 환불이면 그 반품 신청(검수 승인 수량만큼 환불). 출고 전 취소면 NULL. CHECK ((cancel_reason_type = \'RETURN\') = (claim_no IS NOT NULL))에 쓰이므로 FK는 참조 동작 없이']
+  cancel_reason_type varchar(20) [not null, note: '[취소 사유 유형] CHANGE_MIND/OUT_OF_STOCK/DELAY/RETURN/ADMIN/ETC (단순 변심/품절/배송 지연/반품/관리자 처리/기타). 사유별 통계. 반품의 세부 사유는 반품·교환 신청의 신청 사유 유형']
   cancel_reason varchar(200) [note: '[취소 사유] 취소 사유 유형을 보충하는 자유 입력 문장']
   cancel_amount bigint [not null, note: '[취소 금액] 이번 회차에 PG로 돌려준 돈(실제 환불액) = 결제 취소 상세 취소 금액의 합계. CHECK (cancel_amount >= 0). 0이면 포인트 결제분만 취소']
   point_refund_amount bigint [not null, default: 0, note: '[포인트 환원 금액] 이번 회차에 포인트로 돌려준 금액(주문 상세의 포인트 사용 금액에서). 포인트 내역은 혜택 영역']
+  shipping_refund_amount bigint [not null, default: 0, note: '[배송비 환불 금액] 환불에 더해 돌려준 배송비. 한 브랜드 상품을 모두 취소해 주문 때 낸 그 브랜드 배송비를 돌려주거나, 판매자 귀책 반품으로 배송비를 돌려주는 경우. 회차 전체 합계(캐시, 원본은 결제 취소 상세의 상품 줄별 배송비 환불 금액)']
   shipping_deduct_amount bigint [not null, default: 0, note: '[배송비 차감 금액] 환불에서 뺀 배송비. 남은 상품이 무료 배송 기준보다 적어지거나 반품 배송비가 생긴 경우. 회차 전체 합계(캐시, 원본은 결제 취소 상세의 상품 줄별 배송비 차감 금액)']
   status varchar(20) [not null, default: 'REQUESTED', note: '[상태] REQUESTED/COMPLETED/FAILED (취소 요청/취소 완료/취소 실패). 완료되면 결제 누적 취소 금액·상태를 같은 트랜잭션에서 갱신']
   cancel_fail_reason varchar(200) [note: '[취소 실패 사유] status = FAILED일 때 PG 응답 코드·메시지 (예: PG 점검, 이미 취소된 거래, 환불 계좌 오류). 운영자가 원인을 보고 재처리. 고객이 취소한 이유는 취소 사유']
@@ -741,6 +751,7 @@ Table payment_cancel [note: '[결제 취소 내역] 결제의 PG 취소(환불) 
   indexes {
     (order_no, cancel_no) [pk, note: 'order_no 선두라 주문별 취소 내역 조회 겸용']
     (order_no, payment_no) [name: 'ix_payment_cancel_payment', note: '결제 복합 FK 인덱스']
+    (order_no, claim_no) [name: 'ix_payment_cancel_claim', note: '반품·교환 신청 복합 FK 인덱스, 반품 신청의 환불 내역']
     (cancel_reason_type, created_at) [name: 'ix_payment_cancel_reason', note: '취소 사유별 집계']
   }
 }
@@ -750,8 +761,9 @@ Table payment_cancel_item [note: '[결제 취소 상세] 결제 취소 내역의
   cancel_no smallint [not null, note: '[취소 번호] 이 상품이 포함된 취소 회차']
   item_no smallint [not null, note: '[주문 상세 번호] 취소한 주문 상세']
   quantity smallint [not null, note: '[수량] 이번에 취소한 수량. CHECK (quantity >= 1). 같은 주문 상세의 취소 수량 합계는 주문 수량 이하(앱 검증)']
-  cancel_amount bigint [not null, note: '[취소 금액] 이 상품 몫의 환불액 = (판매가 + 추가 금액) × 취소 수량 - 배분된 할인 - 배분된 포인트 - 배송비 차감 금액. 회차 취소 금액은 이 값의 합계(앱)']
+  cancel_amount bigint [not null, note: '[취소 금액] 이 상품 몫의 환불액 = (판매가 + 추가 금액) × 취소 수량 - 배분된 할인 - 배분된 포인트 + 배송비 환불 금액 - 배송비 차감 금액. 회차 취소 금액은 이 값의 합계(앱)']
   point_refund_amount bigint [not null, default: 0, note: '[포인트 환원 금액] 이 상품 몫으로 포인트로 돌려준 금액']
+  shipping_refund_amount bigint [not null, default: 0, note: '[배송비 환불 금액] 이 상품 줄에 배분한 돌려주는 배송비. 브랜드별 환불액을 그 브랜드의 취소 상품 줄에 나눠 담음(앱, 배송비 차감 금액과 같은 방식). 주문 상세의 브랜드로 모으면 브랜드별 배송비 환불액(정산 근거)']
   shipping_deduct_amount bigint [not null, default: 0, note: '[배송비 차감 금액] 이 상품 줄에 배분한 배송비 차감. 브랜드별 차감액을 그 브랜드의 취소 상품 줄에 나눠 담음(앱). 주문 상세의 브랜드로 모으면 브랜드별 차감액(브랜드 정산 근거). 회차 전체는 결제 취소 내역의 배송비 차감 금액']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 취소 요청일시']
   updated_at datetime [note: '[수정일시] 결제 취소 상세 수정일시']
@@ -795,13 +807,14 @@ Table payment_cash_receipt [note: '[현금영수증] 현금성 결제(실시간 
 // =====================================================================
 // 배송 - 출고 기본 (주문 브랜드 → 출고(송장 1개) → 출고 상세(주문 상세 × 수량) → 배송 추적 이력)
 // 분할 출고 허용(주문 브랜드 하나를 여러 번 출고), 다른 주문 합포장은 받지 않음(출고는 한 주문 브랜드 안에서만)
-// 반품·교환(회수·재배송)은 다음 묶음. 배송 기록은 주문과 같이 5년 보관이라 FK 참조 동작 없음
+// 교환 재배송도 출고로 남김(반품·교환 신청 번호로 구분). 배송 기록은 주문과 같이 5년 보관이라 FK 참조 동작 없음
 // =====================================================================
 
 Table delivery_shipment [note: '[출고] 브랜드가 상자 하나를 보내는 단위 = 송장 1개. 주문 브랜드마다 1번 이상(예약 상품·일부 품절이면 나눠 출고). 상태는 송장 입력·택배사 추적 이벤트로 바뀌고, 바뀌면 주문 상세 상태를 같은 트랜잭션에서 갱신(앱)'] {
   order_no varchar(20) [not null, note: '[주문 번호] 출고한 주문']
   shipment_no smallint [not null, note: '[출고 번호] 주문별 1부터(브랜드와 상관없이 주문 안에서 이어 붙임). 앱이 부여']
   brand_id varchar(30) [not null, note: '[브랜드 아이디] 출고한 브랜드. PK가 아니라 (order_no, brand_id)로 주문 브랜드 복합 FK']
+  claim_no smallint [note: '[반품·교환 신청 번호] 교환 재배송 출고면 그 교환 신청, 일반 출고면 NULL. 교환 출고의 상품은 신청 상세의 교환 옵션이고 수량은 승인 수량 이하(앱). 일반 출고 수량 합계는 (주문 수량 - 취소 수량) 이하로 따로 셈']
   status varchar(20) [not null, default: 'READY', note: '[상태] READY/INVOICED/SHIPPING/DELIVERED (출고 준비/송장 입력(배송 대기)/배송중/배송 완료). 송장 입력은 브랜드 관리자, 배송중·배송 완료는 택배사 추적 이벤트(집하·배송 완료)로. 출고를 잠시 멈출 때는 송장을 입력하지 않고 출고 준비로 둠(보류 상태 없음). CHECK (status = \'READY\' OR (carrier_code IS NOT NULL AND invoice_no IS NOT NULL))']
   carrier_code varchar(20) [note: '[택배사 코드] 송장을 발급한 택배사. 송장 입력 전이면 NULL. CHECK에 쓰이므로 FK는 참조 동작 없이']
   invoice_no varchar(30) [note: '[송장 번호] 택배사 운송장 번호(숫자만 저장, 하이픈 제거). 송장 입력 전이면 NULL. 잘못 입력하면 배송 시작 전까지 수정 가능']
@@ -817,6 +830,7 @@ Table delivery_shipment [note: '[출고] 브랜드가 상자 하나를 보내는
   indexes {
     (order_no, shipment_no) [pk, note: '출고 번호를 주문 기준으로 매겨 PK에서 브랜드를 뺌(출고 상세·배송 추적 이력 PK가 짧아짐)']
     (order_no, brand_id) [name: 'ix_delivery_shipment_order_brand', note: '주문 브랜드 FK 인덱스, 주문 브랜드별 출고 목록']
+    (order_no, claim_no) [name: 'ix_delivery_shipment_claim', note: '반품·교환 신청 복합 FK 인덱스, 교환 신청의 재배송 출고']
     (order_no, shipment_no, brand_id) [unique, name: 'uk_delivery_shipment_brand', note: '출고 상세가 (출고, 브랜드)로 참조하는 FK 대상. PK에 브랜드를 붙인 것이라 값은 항상 유일']
     (carrier_code, invoice_no, created_at) [name: 'ix_delivery_shipment_invoice', note: '송장 조회·추적 웹훅이 택배사·송장 번호로 출고를 찾음. 택배사 FK 인덱스 겸용. UNIQUE가 아님: 택배사가 몇 년 뒤 송장 번호를 다시 쓰는 경우가 있어 5년 보관 중 겹칠 수 있음. 진행 중인 출고(배송 완료 전)끼리 중복은 앱 검증, 웹훅은 같은 번호 중 가장 최근 출고에 연결']
     (brand_id, status, created_at) [name: 'ix_delivery_shipment_brand', note: '브랜드 관리자 화면: 상태별 출고 목록(출고 준비·배송 대기·배송중)']
@@ -829,7 +843,7 @@ Table delivery_shipment_item [note: '[출고 상세] 출고 1번에 담은 주�
   item_no smallint [not null, note: '[주문 상세 번호] 출고한 주문 상세']
   shipment_no smallint [not null, note: '[출고 번호] 이 주문 상세가 담긴 출고']
   brand_id varchar(30) [not null, note: '[브랜드 아이디] 출고한 브랜드. PK가 아님. (출고, 브랜드)와 (주문 상세, 브랜드) 두 복합 FK에 모두 들어가서 다른 브랜드 상품이 섞이면 저장이 거부됨']
-  quantity smallint [not null, note: '[수량] 이 출고에 담은 수량. CHECK (quantity >= 1). 같은 주문 상세의 출고 수량 합계는 (주문 수량 - 취소 수량) 이하(앱 검증)']
+  quantity smallint [not null, note: '[수량] 이 출고에 담은 수량. CHECK (quantity >= 1). 같은 주문 상세의 일반 출고 수량 합계는 (주문 수량 - 취소 수량) 이하, 교환 재배송 출고는 교환 승인 수량 이하(앱 검증)']
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 출고 상세 등록일시']
   updated_at datetime [note: '[수정일시] 출고 상세 수정일시']
 
@@ -870,6 +884,101 @@ Table delivery_carrier [note: '[택배사] 송장 입력·배송 조회에 쓰�
 
   indexes {
     carrier_name [unique, name: 'uk_delivery_carrier_name']
+  }
+}
+
+// =====================================================================
+// 배송 - 반품·교환 (반품·교환 신청(브랜드 1개) → 회수 정보(1:1) → 신청 상세(주문 상세 × 수량, 교환 옵션) → 처리 이력)
+// 반품 환불은 결제 취소 내역, 교환 배송비는 결제(결제 유형 반품·교환 배송비), 교환 재배송은 출고에 신청 번호로 연결
+// 교환은 같은 상품의 다른 옵션만(다른 상품은 반품 후 다시 주문). 주문과 같이 5년 보관이라 FK 참조 동작 없음
+// =====================================================================
+
+Table delivery_claim [note: '[반품·교환 신청] 배송 완료 후 고객이 신청한 반품 또는 교환 1건. 회수지(브랜드 물류센터)가 브랜드마다 달라 신청 1건은 주문 브랜드 1개 안에서만. 상태는 신청 → 회수중 → 회수 완료(검수) → (교환은 재배송중) → 완료, 중간에 거부·철회. 반품이 완료되면 결제 취소 내역(반품)으로 환불, 교환이 승인되면 재배송 출고를 만듦'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 반품·교환을 신청한 주문']
+  claim_no smallint [not null, note: '[반품·교환 신청 번호] 주문별 1부터(반품·교환 구분 없이 이어 붙임). 앱이 부여']
+  brand_id varchar(30) [not null, note: '[브랜드 아이디] 반품·교환을 처리할 브랜드. PK가 아니라 (order_no, brand_id)로 주문 브랜드 복합 FK']
+  claim_type varchar(20) [not null, note: '[신청 유형] RETURN/EXCHANGE (반품/교환). 교환은 같은 상품의 다른 옵션으로만']
+  claim_reason_type varchar(20) [not null, note: '[신청 사유 유형] CHANGE_MIND/SIZE/COLOR/DEFECT/DAMAGED/WRONG_ITEM/DELAY/ETC (단순 변심/사이즈 안 맞음/색상 다름/상품 불량/배송 중 파손/오배송/배송 지연/기타). 사유별 통계, 귀책 유형의 기본값']
+  claim_reason varchar(500) [note: '[신청 사유] 신청 사유 유형을 보충하는 고객 자유 입력 문장']
+  fault_type varchar(20) [not null, note: '[귀책 유형] CUSTOMER/SELLER (고객 귀책/판매자 귀책). 단순 변심·사이즈·색상은 고객, 불량·파손·오배송·지연은 판매자를 기본값으로 하고 브랜드가 검수 후 바꿀 수 있음(바꾸면 처리 이력에 사유). 반품·교환 배송비를 누가 내는지 결정']
+  claim_shipping_fee bigint [not null, default: 0, note: '[반품·교환 배송비] 고객이 내는 배송비. 신청 당시 브랜드 배송 정책의 반품 배송비(편도) 또는 교환 배송비(왕복)를 스냅샷, 판매자 귀책이면 0. 반품으로 깨진 무료 배송분은 여기에 넣지 않고 환불 때 배송비 차감 금액으로. CHECK (claim_shipping_fee >= 0)']
+  fee_pay_method varchar(20) [not null, note: '[배송비 결제 방식] REFUND_DEDUCT/PAYMENT/NONE (환불에서 차감/별도 결제/없음). 반품은 환불에서 차감, 교환은 신청 때 결제(결제 유형 반품·교환 배송비), 배송비 0이면 없음. CHECK ((claim_shipping_fee = 0) = (fee_pay_method = \'NONE\'))']
+  status varchar(20) [not null, default: 'REQUESTED', note: '[상태] REQUESTED/COLLECTING/COLLECTED/RESHIPPING/COMPLETED/REJECTED/WITHDRAWN (신청/회수중/회수 완료(검수)/재배송중/완료/거부/철회). 브랜드가 승인하면 회수중(회수 요청), 회수 송장 배송 완료 또는 브랜드 입고 확인이면 회수 완료, 검수 후 반품은 환불 완료 시 완료, 교환은 재배송 출고를 만들면 재배송중 → 재배송 배송 완료 시 완료. 거부는 신청·검수 단계에서, 철회는 회수 전 고객이. CHECK (status <> \'RESHIPPING\' OR claim_type = \'EXCHANGE\'). 바뀔 때마다 처리 이력에 1행']
+  reject_reason varchar(200) [note: '[거부 사유] status = REJECTED일 때 고객에게 보여 줄 사유(예: 착용 흔적, 신청 기한 경과). CHECK ((status = \'REJECTED\') = (reject_reason IS NOT NULL))']
+  approved_at datetime [note: '[승인일시] status = COLLECTING 처리 시각(브랜드가 신청을 승인하고 회수 요청)']
+  collected_at datetime [note: '[회수 완료일시] status = COLLECTED 처리 시각(상품이 브랜드에 도착)']
+  completed_at datetime [note: '[완료일시] status = COMPLETED 처리 시각(반품 환불 완료 또는 교환 재배송 배송 완료)']
+  rejected_at datetime [note: '[거부일시] status = REJECTED 처리 시각']
+  withdrawn_at datetime [note: '[철회일시] status = WITHDRAWN 처리 시각(고객이 회수 전에 신청 취소)']
+  created_by varchar(20) [note: '[등록 관리자] 운영자가 대신 접수했으면 운영자 아이디, 고객 신청이면 NULL (브랜드 관리자·운영자 테이블을 만들 때 연결)']
+  updated_by varchar(20) [note: '[수정 관리자] 승인·검수·거부를 처리한 브랜드 관리자 또는 운영자']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 신청일시. 반품·교환 신청 기한(배송 완료 후 7일) 확인 기준']
+  updated_at datetime [note: '[수정일시] 신청 수정일시']
+
+  indexes {
+    (order_no, claim_no) [pk, note: 'order_no 선두라 주문별 반품·교환 목록 겸용']
+    (order_no, brand_id) [name: 'ix_delivery_claim_order_brand', note: '주문 브랜드 FK 인덱스']
+    (order_no, claim_no, brand_id) [unique, name: 'uk_delivery_claim_brand', note: '신청 상세가 (신청, 브랜드)로 참조하는 FK 대상. PK에 브랜드를 붙인 것이라 값은 항상 유일']
+    (brand_id, status, created_at) [name: 'ix_delivery_claim_brand', note: '브랜드 관리자 화면: 상태별 반품·교환 목록(신청·회수중·회수 완료)']
+    (claim_reason_type, created_at) [name: 'ix_delivery_claim_reason', note: '신청 사유별 집계(사이즈 반품 비율 등)']
+  }
+}
+
+Table delivery_claim_pickup [note: '[반품·교환 회수 정보] 반품·교환 신청 1:1. 고객에게서 상품을 거둬 오는 택배 정보(회수지 스냅샷·회수 송장). 신청 테이블에 NULL 컬럼이 늘지 않게 분리(결제 카드 정보와 같은 이유). 신청과 함께 생성, 회수 송장은 브랜드가 회수 요청 후 입력하거나 고객이 직접 발송 후 입력'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 회수할 신청의 주문']
+  claim_no smallint [not null, note: '[반품·교환 신청 번호] 회수할 신청']
+  pickup_method varchar(20) [not null, default: 'PICKUP', note: '[회수 방법] PICKUP/SELF_SEND (회수 요청: 브랜드 지정 택배 기사가 방문 / 고객 직접 발송: 고객이 택배를 보내고 송장 입력)']
+  pickup_name varchar(50) [not null, note: '[회수지 보내는 분 이름] 주문 배송지의 받는 분에서 시작, 신청 때 바꿀 수 있음']
+  pickup_phone_enc varchar(255) [not null, note: '[회수지 보내는 분 연락처(암호화)] AES-256 암호문. 택배 기사 연락용']
+  pickup_zipcode char(5) [not null, note: '[회수지 우편번호] 주문 배송지에서 시작']
+  pickup_address1 varchar(200) [not null, note: '[회수지 기본 주소] 도로명 주소']
+  pickup_address2 varchar(200) [note: '[회수지 상세 주소]']
+  carrier_code varchar(20) [note: '[택배사 코드] 회수 택배사. 송장 입력 전이면 NULL']
+  invoice_no varchar(30) [note: '[송장 번호] 회수 운송장 번호(숫자만, 하이픈 제거). 송장 입력 전이면 NULL. CHECK ((carrier_code IS NULL) = (invoice_no IS NULL))']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 회수 정보 등록일시']
+  updated_at datetime [note: '[수정일시] 회수 정보 수정일시 (회수 송장 입력)']
+
+  indexes {
+    (order_no, claim_no) [pk, note: '반품·교환 신청 PK와 같음 (1:1)']
+    (carrier_code, invoice_no, created_at) [name: 'ix_delivery_claim_pickup_invoice', note: '회수 송장 조회·추적 웹훅. 택배사 FK 인덱스 겸용. 출고 송장과 같은 이유로 UNIQUE가 아님']
+  }
+}
+
+Table delivery_claim_item [note: '[반품·교환 신청 상세] 신청 1건에 담은 주문 상세와 수량(신청 → 신청 상세는 출고 → 출고 상세와 같은 헤더-상세 관계). 주문 상세 1줄의 일부 수량만 신청 가능(3개 중 1개). 검수 후 승인 수량이 정해지고 반품 환불·교환 재배송은 승인 수량 기준. 신청과 주문 상세의 브랜드가 같아야 하므로 브랜드 아이디를 두 FK에 모두 넣어 DB가 확인'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 반품·교환한 주문']
+  claim_no smallint [not null, note: '[반품·교환 신청 번호] 이 상품이 담긴 신청']
+  item_no smallint [not null, note: '[주문 상세 번호] 반품·교환할 주문 상세']
+  brand_id varchar(30) [not null, note: '[브랜드 아이디] 신청 브랜드. PK가 아님. (신청, 브랜드)와 (주문 상세, 브랜드) 두 복합 FK에 모두 들어가서 다른 브랜드 상품이 섞이면 저장이 거부됨']
+  quantity smallint [not null, note: '[수량] 신청 수량. CHECK (quantity >= 1). 같은 주문 상세의 진행 중·완료된 신청 수량 합계는 배송 완료 수량 이하(앱 검증)']
+  accepted_quantity smallint [note: '[승인 수량] 검수 후 반품·교환을 받아들인 수량. 검수 전이면 NULL, 일부만 승인(예: 2개 중 1개 착용 흔적)하면 나머지는 고객에게 돌려보냄. CHECK (accepted_quantity IS NULL OR accepted_quantity BETWEEN 0 AND quantity)']
+  product_code varchar(20) [note: '[상품 코드] 교환 옵션의 상품. 교환이면 주문 상세의 상품과 같아야 함(앱 검증, 다른 상품으로 교환 불가). 반품이면 NULL']
+  exchange_option_no smallint [note: '[교환 옵션 번호] 교환으로 받을 옵션(같은 상품의 다른 컬러·사이즈, 추가 금액이 같은 옵션만, 앱 검증). 반품이면 NULL. CHECK ((product_code IS NULL) = (exchange_option_no IS NULL))']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 신청 상세 등록일시']
+  updated_at datetime [note: '[수정일시] 신청 상세 수정일시 (검수 승인 수량 입력)']
+
+  indexes {
+    (order_no, claim_no, item_no) [pk, note: '신청 기준 순서']
+    (order_no, claim_no, brand_id) [name: 'ix_delivery_claim_item_claim', note: '신청 복합 FK 인덱스 (MySQL FK 인덱스는 FK 컬럼이 같은 순서로 앞에 와야 함)']
+    (order_no, item_no, brand_id) [name: 'ix_delivery_claim_item_order_item', note: '주문 상세 복합 FK 인덱스, 주문 상세별 반품·교환 수량 합계']
+    (product_code, exchange_option_no) [name: 'ix_delivery_claim_item_option', note: '교환 옵션 복합 FK 인덱스, 옵션별 교환 요청 수(재고 확보)']
+  }
+}
+
+Table delivery_claim_history [note: '[반품·교환 처리 이력] 반품·교환 신청 상태가 바뀔 때마다 1행(승인·회수·검수·거부·철회·귀책 변경 포함). 누가 언제 왜 바꿨는지 남겨 고객 분쟁·브랜드 정산 근거. 주문 상세 상태 이력과 같은 구조. 이력이라 수정하지 않음, 주문과 같이 5년 보관'] {
+  order_no varchar(20) [not null, note: '[주문 번호] 상태가 바뀐 신청의 주문']
+  claim_no smallint [not null, note: '[반품·교환 신청 번호] 상태가 바뀐 신청']
+  history_no smallint [not null, note: '[이력 번호] 신청별 1부터. 앱이 부여']
+  prev_status varchar(20) [note: '[이전 상태] 바뀌기 전 신청 상태. 처음 신청 행이면 NULL']
+  status varchar(20) [not null, note: '[상태] 바뀐 뒤 신청 상태(반품·교환 신청의 상태와 같은 값 목록). 귀책 유형만 바뀌면 상태는 그대로 두고 사유에 기록']
+  actor_type varchar(20) [not null, note: '[처리 주체 유형] CUSTOMER/BRAND/ADMIN/SYSTEM (고객: 신청·철회 / 브랜드 관리자: 승인·검수·거부 / 운영자 / 자동: 회수 송장 배송 완료 웹훅·환불 완료)']
+  reason varchar(200) [note: '[변경 사유] 상태 변경을 보충하는 자유 입력 문장. 거부·귀책 변경·운영자 처리면 필수(앱 검증). 예: 검수 결과 오염 1개 제외']
+  created_by varchar(20) [note: '[등록 관리자] 처리한 브랜드 관리자 또는 운영자 아이디. 고객·자동 처리면 NULL (브랜드 관리자·운영자 테이블을 만들 때 연결). 이력이라 updated_by 없음']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`, note: '[등록일시] 상태 변경일시']
+  updated_at datetime [note: '[수정일시] 이력 수정일시 (이력은 수정하지 않음)']
+
+  indexes {
+    (order_no, claim_no, history_no) [pk, note: '(order_no, claim_no) 선두라 신청 FK 인덱스 겸용']
+    (status, created_at) [name: 'ix_delivery_claim_history_status', note: '기간별 상태 변경 집계(일별 반품 완료 건수 등)']
   }
 }
 
@@ -939,6 +1048,17 @@ Ref: delivery_shipment.carrier_code > delivery_carrier.carrier_code
 Ref: delivery_shipment_item.(order_no, shipment_no, brand_id) > delivery_shipment.(order_no, shipment_no, brand_id)
 Ref: delivery_shipment_item.(order_no, item_no, brand_id) > order_item.(order_no, item_no, brand_id)
 Ref: delivery_tracking.(order_no, shipment_no) > delivery_shipment.(order_no, shipment_no)
+Ref: delivery_shipment.(order_no, claim_no) > delivery_claim.(order_no, claim_no)
+
+Ref: delivery_claim.(order_no, brand_id) > order_brand.(order_no, brand_id)
+Ref: delivery_claim_pickup.(order_no, claim_no) - delivery_claim.(order_no, claim_no)
+Ref: delivery_claim_pickup.carrier_code > delivery_carrier.carrier_code
+Ref: delivery_claim_item.(order_no, claim_no, brand_id) > delivery_claim.(order_no, claim_no, brand_id)
+Ref: delivery_claim_item.(order_no, item_no, brand_id) > order_item.(order_no, item_no, brand_id)
+Ref: delivery_claim_item.(product_code, exchange_option_no) > product_option.(product_code, option_no)
+Ref: delivery_claim_history.(order_no, claim_no) > delivery_claim.(order_no, claim_no)
+Ref: payment.(order_no, claim_no) > delivery_claim.(order_no, claim_no)
+Ref: payment_cancel.(order_no, claim_no) > delivery_claim.(order_no, claim_no)
 
 // =====================================================================
 // 묶음
@@ -1025,4 +1145,11 @@ TableGroup delivery_basic [note: '배송 - 출고 기본'] {
   delivery_shipment_item
   delivery_tracking
   delivery_carrier
+}
+
+TableGroup delivery_claim [note: '배송 - 반품·교환'] {
+  delivery_claim
+  delivery_claim_pickup
+  delivery_claim_item
+  delivery_claim_history
 }
