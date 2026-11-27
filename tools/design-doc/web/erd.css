@@ -356,9 +356,8 @@ button { font: inherit; color: inherit; }
 .canvas g.node { cursor: pointer; }
 .canvas g.node text { cursor: help; }
 .canvas g.node:hover rect.box { stroke: #999999; }
-.canvas g.node.sel rect.box { stroke: #8a8a8a; }
+.canvas g.node.sel rect.box { stroke: #111111; stroke-width: 1.5; }
 .canvas g.node:hover rect.hd, .canvas g.node.sel rect.hd { filter: brightness(.78); }
-.canvas g.node.sel rect.hd { stroke: var(--text); stroke-width: 3; }
 .canvas.has-sel g.node:not(.sel):not(.rel) { opacity: .35; }
 .canvas.has-sel g.edge:not(.rel) { opacity: .15; }
 .canvas g.edge.rel path { stroke: #111111; stroke-width: 2; }

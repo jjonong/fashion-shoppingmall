@@ -30,7 +30,7 @@
   --fk-soft: #ffffff;
   --uk: #555555;
   --uk-soft: #ececec;
-  /* 영역 포인트 색: 채도를 낮춘 톤 (고객 슬레이트 블루 · 브랜드 카키 · 상품 세이지 · 주문 테라코타 · 운영 그래파이트) */
+  /* 영역 포인트 색: 기본값일 뿐, erd-page.js가 lib.AREAS 색으로 영역 순서대로 덮어씀 */
   --s1: #4f6378;
   --s2: #7d6c4f;
   --s3: #5e7663;
@@ -366,9 +366,8 @@ button { font: inherit; color: inherit; }
 .canvas g.node { cursor: pointer; }
 .canvas g.node text { cursor: help; }
 .canvas g.node:hover rect.box { stroke: #999999; }
-.canvas g.node.sel rect.box { stroke: #8a8a8a; }
+.canvas g.node.sel rect.box { stroke: #111111; stroke-width: 1.5; }
 .canvas g.node:hover rect.hd, .canvas g.node.sel rect.hd { filter: brightness(.78); }
-.canvas g.node.sel rect.hd { stroke: var(--text); stroke-width: 3; }
 .canvas.has-sel g.node:not(.sel):not(.rel) { opacity: .35; }
 .canvas.has-sel g.edge:not(.rel) { opacity: .15; }
 .canvas g.edge.rel path { stroke: #111111; stroke-width: 2; }
